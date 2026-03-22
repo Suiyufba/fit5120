@@ -25,8 +25,6 @@ function closeMenu() {
 
 <template>
   <nav class="navbar">
-    <div class="navbar-accent"></div>
-    
     <div class="navbar-content">
       <button class="menu-toggle" @click="toggleMenu" :class="{ active: mobileMenuOpen }">
         <span></span>
@@ -58,11 +56,6 @@ function closeMenu() {
   z-index: 1000;
   background: var(--color-surface);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-}
-
-.navbar-accent {
-  height: 3px;
-  background: linear-gradient(90deg, #2EC4B6, #20B2AA, #3CB371);
 }
 
 .navbar-content {
