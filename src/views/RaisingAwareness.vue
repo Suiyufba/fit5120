@@ -203,7 +203,7 @@ const skinTypes = [
 
 <style scoped>
 .page-header {
-  background: linear-gradient(135deg, #1B4965 0%, #2D6A8F 100%);
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 50%, #FFB088 100%);
   padding: 60px 0;
   color: white;
 }
