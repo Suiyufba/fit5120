@@ -440,7 +440,7 @@ const faqs = [
 .cta-section {
   text-align: center;
   padding: 60px 40px;
-  background: linear-gradient(135deg, #FFF7ED 0%, #FEF3C7 100%);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.08) 0%, rgba(255, 209, 102, 0.08) 100%);
   border-radius: var(--radius-xl);
 }
 .cta-section h2 {

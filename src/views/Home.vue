@@ -43,7 +43,7 @@
   min-height: calc(100vh - 72px);
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, #FFF7ED 0%, #FEF3C7 50%, #DBEAFE 100%);
+  background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-surface) 100%);
   position: relative;
   overflow: hidden;
 }
@@ -55,7 +55,7 @@
   right: -20%;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(255, 107, 53, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 107, 53, 0.1) 0%, transparent 70%);
   border-radius: 50%;
 }
 

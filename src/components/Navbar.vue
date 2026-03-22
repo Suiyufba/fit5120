@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
+import ThemeToggle from './ThemeToggle.vue'
 
 const route = useRoute()
 const mobileMenuOpen = ref(false)
@@ -25,24 +26,28 @@ function closeMenu() {
 <template>
   <nav class="navbar">
     <div class="navbar-accent"></div>
+    
+    <div class="navbar-content">
+      <button class="menu-toggle" @click="toggleMenu" :class="{ active: mobileMenuOpen }">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
 
-    <button class="menu-toggle" @click="toggleMenu" :class="{ active: mobileMenuOpen }">
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
-
-    <ul class="nav-links" :class="{ open: mobileMenuOpen }">
-      <li v-for="link in navLinks" :key="link.path">
-        <router-link
-          :to="link.path"
-          :class="{ active: route.path === link.path }"
-          @click="closeMenu"
-        >
-          {{ link.name }}
-        </router-link>
-      </li>
-    </ul>
+      <ul class="nav-links" :class="{ open: mobileMenuOpen }">
+        <li v-for="link in navLinks" :key="link.path">
+          <router-link
+            :to="link.path"
+            :class="{ active: route.path === link.path }"
+            @click="closeMenu"
+          >
+            {{ link.name }}
+          </router-link>
+        </li>
+      </ul>
+      
+      <ThemeToggle />
+    </div>
   </nav>
 </template>
 
@@ -51,13 +56,22 @@ function closeMenu() {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: #fff;
+  background: var(--color-surface);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .navbar-accent {
   height: 3px;
   background: linear-gradient(90deg, #2EC4B6, #20B2AA, #3CB371);
+}
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
 }
 
 .nav-links {
@@ -68,11 +82,13 @@ function closeMenu() {
   list-style: none;
   padding: 0;
   margin: 0;
+  flex: 1;
 }
 
 .nav-links li {
   flex: 1;
   text-align: center;
+  max-width: 140px;
 }
 
 .nav-links a {
@@ -80,7 +96,7 @@ function closeMenu() {
   padding: 14px 8px;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #64748B;
+  color: var(--color-text-secondary);
   transition: all 0.2s;
   white-space: nowrap;
   border-bottom: 3px solid transparent;
@@ -138,7 +154,7 @@ function closeMenu() {
     top: 100%;
     left: 0;
     right: 0;
-    background: #fff;
+    background: var(--color-surface);
     flex-direction: column;
     padding: 8px 0;
     gap: 0;
@@ -159,6 +175,7 @@ function closeMenu() {
   .nav-links li {
     flex: none;
     width: 100%;
+    max-width: none;
   }
 
   .nav-links a {
@@ -177,6 +194,10 @@ function closeMenu() {
   .nav-links a:hover {
     border-bottom: none;
     border-left-color: rgba(255, 107, 53, 0.3);
+  }
+  
+  .navbar-content {
+    padding: 0 16px;
   }
 }
 </style>
