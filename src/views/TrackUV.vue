@@ -444,7 +444,7 @@ onMounted(() => {
 
 /* Page Header */
 .page-header {
-  background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 50%, #FFB088 100%);
+  background: linear-gradient(135deg, var(--color-header-start) 0%, var(--color-header-mid) 50%, var(--color-header-end) 100%);
   padding: 60px 0;
   color: white;
 }

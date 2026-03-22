@@ -13,8 +13,9 @@
   --color-text: #1E293B;
   --color-text-secondary: #64748B;
   --color-border: #E2E8F0;
-  --color-header-start: #1B4965;
-  --color-header-end: #2D6A8F;
+  --color-header-start: #FF6B35;
+  --color-header-mid: #FF8C5A;
+  --color-header-end: #FFB088;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
@@ -33,8 +34,9 @@
   --color-text: #F1F5F9;
   --color-text-secondary: #94A3B8;
   --color-border: #334155;
-  --color-header-start: #0F172A;
-  --color-header-end: #1E293B;
+  --color-header-start: #1E293B;
+  --color-header-mid: #334155;
+  --color-header-end: #475569;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
