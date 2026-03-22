@@ -18,8 +18,7 @@ const protectionMethods = [
       'Reapply every 2 hours, or after swimming/sweating',
       'Use about 1 teaspoon for your face, 1 tablespoon per limb',
       'Don\'t forget ears, neck, feet, and lips'
-    ],
-    color: '#FFF7ED'
+    ]
   },
   {
     icon: '👒',
@@ -31,8 +30,7 @@ const protectionMethods = [
       'Dark, tightly woven fabrics offer better protection',
       'Long sleeves and collared shirts are ideal',
       'Rash vests / swim shirts at the pool or beach'
-    ],
-    color: '#EFF6FF'
+    ]
   },
   {
     icon: '🕶️',
@@ -44,8 +42,7 @@ const protectionMethods = [
       'Bigger lenses = more coverage',
       'Kids need quality sunglasses too',
       'Polarised lenses reduce glare but check UV rating'
-    ],
-    color: '#F0FDF4'
+    ]
   },
   {
     icon: '🌳',
@@ -57,8 +54,7 @@ const protectionMethods = [
       'Shade is most important between 10am–2pm',
       'Create your own shade with a portable umbrella',
       'Plan outdoor activities around shade availability'
-    ],
-    color: '#FEFCE8'
+    ]
   },
   {
     icon: '⏰',
@@ -70,8 +66,7 @@ const protectionMethods = [
       'UV can be high even on cool or cloudy days',
       'In summer, UV is dangerous from early morning',
       'Be extra cautious near water, snow, or at altitude'
-    ],
-    color: '#FDF2F8'
+    ]
   },
   {
     icon: '📱',
@@ -83,8 +78,7 @@ const protectionMethods = [
       'Learn to recognise signs of sun damage',
       'Monitor moles for changes (ABCDE rule)',
       'Schedule annual skin checks with your GP'
-    ],
-    color: '#F5F3FF'
+    ]
   }
 ]
 
@@ -162,7 +156,6 @@ const faqs = [
           v-for="method in protectionMethods"
           :key="method.title"
           class="method-card"
-          :style="{ background: method.color }"
         >
           <div class="method-header">
             <span class="method-icon">{{ method.icon }}</span>
@@ -261,7 +254,7 @@ const faqs = [
 
 /* Slogan Banner */
 .slogan-banner {
-  background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
+  background: linear-gradient(135deg, var(--color-header-start) 0%, var(--color-header-mid) 100%);
   border-radius: var(--radius-xl);
   padding: 40px;
   margin-bottom: 48px;
@@ -314,6 +307,7 @@ const faqs = [
 .method-card {
   border-radius: var(--radius-lg);
   padding: 28px;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   transition: transform 0.2s;
 }
