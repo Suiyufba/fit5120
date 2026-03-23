@@ -87,7 +87,7 @@ function restartQuiz() {
       <!-- Quiz Header -->
       <header class="quiz-top">
         <button class="back-link" @click="$router.push('/')">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             <path d="M13 4l-6 6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           Back
@@ -98,7 +98,7 @@ function restartQuiz() {
           <span class="progress-total">{{ questions.length }}</span>
         </div>
         <div class="score-live" v-if="!isComplete">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <circle cx="8" cy="8" r="6" fill="var(--color-primary)" opacity="0.2"/>
             <circle cx="8" cy="8" r="3" fill="var(--color-primary)"/>
           </svg>
@@ -134,12 +134,12 @@ function restartQuiz() {
               <span class="option-key">{{ ['A', 'B', 'C', 'D'][index] }}</span>
               <span class="option-label">{{ option }}</span>
               <span class="option-indicator" v-if="showFeedback && index === currentQuestion.correct">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
                   <path d="M4 9l3.5 3.5L14 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </span>
               <span class="option-indicator wrong-icon" v-if="showFeedback && selectedAnswer === index && index !== currentQuestion.correct">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
                   <path d="M5 5l8 8M13 5l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
               </span>
@@ -161,7 +161,7 @@ function restartQuiz() {
               <p class="feedback-explanation">{{ currentQuestion.explanation }}</p>
               <button class="btn-next" @click="nextQuestion">
                 {{ currentIndex < questions.length - 1 ? 'Next Question' : 'See Results' }}
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </button>
@@ -174,7 +174,7 @@ function restartQuiz() {
           <div class="sidebar-card">
             <h3>Quiz Progress</h3>
             <div class="sidebar-progress-ring">
-              <svg viewBox="0 0 80 80">
+              <svg viewBox="0 0 80 80" aria-hidden="true">
                 <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-border-light)" stroke-width="5"/>
                 <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-primary)" stroke-width="5"
                   stroke-linecap="round"

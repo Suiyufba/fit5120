@@ -21,7 +21,7 @@ const features = [
     link: '/quiz',
     accent: 'var(--color-primary)',
     accentBg: 'var(--color-primary-muted)',
-    icon: `<svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="6" y="6" width="36" height="36" rx="8" stroke="currentColor" stroke-width="2"/><path d="M20 18h8M20 24h12M20 30h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="15" cy="18" r="1.5" fill="currentColor"/><circle cx="15" cy="24" r="1.5" fill="currentColor"/><circle cx="15" cy="30" r="1.5" fill="currentColor"/></svg>`
+    icon: `<svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="6" y="6" width="36" height="36" rx="8" stroke="currentColor" stroke-width="2"/><path d="M20 18h8M20 24h12M20 30h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="15" cy="18" r="1.5" fill="currentColor"/><circle cx="15" cy="24" r="1.5" fill="currentColor"/><circle cx="15" cy="30" r="1.5" fill="currentColor"/></svg>`
   },
   {
     id: 'events',
@@ -32,7 +32,7 @@ const features = [
     link: '/events',
     accent: 'var(--color-secondary)',
     accentBg: 'var(--color-secondary-muted)',
-    icon: `<svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M24 8c-4 6-12 10-12 20a12 12 0 0024 0c0-10-8-14-12-20z" stroke="currentColor" stroke-width="2"/><path d="M24 28v-8M20 24l4-4 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    icon: `<svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M24 8c-4 6-12 10-12 20a12 12 0 0024 0c0-10-8-14-12-20z" stroke="currentColor" stroke-width="2"/><path d="M24 28v-8M20 24l4-4 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
   },
   {
     id: 'rewards',
@@ -43,7 +43,7 @@ const features = [
     link: '/rewards',
     accent: 'var(--color-ochre)',
     accentBg: 'rgba(184, 134, 11, 0.08)',
-    icon: `<svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="16" stroke="currentColor" stroke-width="2"/><path d="M24 14v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="24" r="3" fill="currentColor" opacity="0.3"/></svg>`
+    icon: `<svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="16" stroke="currentColor" stroke-width="2"/><path d="M24 14v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="24" r="3" fill="currentColor" opacity="0.3"/></svg>`
   },
 ]
 
@@ -103,7 +103,7 @@ const upcomingEvents = [
         <div class="hero-actions animate-in animate-in-delay-3">
           <button class="btn-hero-primary" @click="router.push('/quiz')">
             Take the Quiz
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
@@ -220,7 +220,7 @@ const upcomingEvents = [
             <p class="feature-desc">{{ feature.desc }}</p>
             <button class="feature-cta" :style="{ '--cta-color': feature.accent }" @click="router.push(feature.link)">
               {{ feature.cta }}
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </button>
@@ -239,15 +239,15 @@ const upcomingEvents = [
           </div>
           <router-link to="/events" class="see-all-link">
             See all activities
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </router-link>
         </div>
         <div class="events-list">
-          <div v-for="(event, i) in upcomingEvents" :key="i" class="event-row">
+          <button v-for="(event, i) in upcomingEvents" :key="i" class="event-row" @click="router.push('/events')">
             <div class="event-top-row">
-              <div class="event-date-block">
+              <div class="event-date-block" aria-hidden="true">
                 <span class="event-day">{{ event.date.split(' ')[1].replace(',', '') }}</span>
                 <span class="event-month">{{ event.date.split(' ')[0] }}</span>
               </div>
@@ -262,7 +262,7 @@ const upcomingEvents = [
               <span class="event-spots">{{ event.spots }} spots left</span>
               <div class="event-points-badge">+{{ event.points }} pts</div>
             </div>
-          </div>
+          </button>
         </div>
       </div>
     </section>
@@ -806,11 +806,15 @@ const upcomingEvents = [
   flex-direction: column;
   gap: 16px;
   padding: 24px;
+  width: 100%;
+  text-align: left;
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-xl);
   transition: all 0.3s var(--ease-out-expo);
   cursor: pointer;
+  font: inherit;
+  color: inherit;
 }
 
 .event-row:hover {

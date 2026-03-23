@@ -184,21 +184,21 @@ function resetFilters() {
               <p class="event-desc">{{ event.description }}</p>
               <div class="event-details">
                 <div class="event-detail">
-                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.2"/>
                     <path d="M2 7h12M5 1v4M11 1v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
                   </svg>
                   <span>{{ event.date }}</span>
                 </div>
                 <div class="event-detail">
-                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/>
                     <path d="M8 5v3l2.5 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                   <span>{{ event.time }}</span>
                 </div>
                 <div class="event-detail">
-                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5s4.5-5 4.5-8.5c0-2.5-2-4.5-4.5-4.5z" stroke="currentColor" stroke-width="1.2"/>
                     <circle cx="8" cy="6" r="1.5" stroke="currentColor" stroke-width="1.2"/>
                   </svg>
@@ -220,7 +220,7 @@ function resetFilters() {
 
         <!-- Empty State -->
         <div v-if="filteredEvents.length === 0" class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
             <circle cx="24" cy="24" r="20" stroke="var(--color-text-muted)" stroke-width="1.5"/>
             <path d="M18 30s2-3 6-3 6 3 6 3M17 19h2M29 19h2" stroke="var(--color-text-muted)" stroke-width="1.5" stroke-linecap="round"/>
           </svg>

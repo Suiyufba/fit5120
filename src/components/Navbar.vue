@@ -25,7 +25,7 @@ function toggleMenu() {
   <header class="navbar">
     <div class="navbar-inner">
       <router-link to="/" class="brand">
-        <svg class="brand-icon" width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <svg class="brand-icon" width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
           <circle cx="14" cy="14" r="13" stroke="currentColor" stroke-width="1.5"/>
           <path d="M14 5c-1 3-4 5-6 8s-1 7 2 9c2 1.5 4 1 5-1 1 2 3 2.5 5 1 3-2 4-6 2-9s-5-5-6-8h-2z" fill="currentColor" opacity="0.15"/>
           <path d="M14 7c-0.8 2.5-3 4.5-5 7s-1 5.5 1.5 7c1.5 1 3 0.5 3.5-1 0.5 1.5 2 2 3.5 1 2.5-1.5 3-5 1.5-7s-3.5-4.5-4.2-7h-0.8z" fill="currentColor" opacity="0.7"/>
@@ -48,7 +48,7 @@ function toggleMenu() {
 
       <div class="nav-right">
         <div class="points-pill">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <circle cx="8" cy="8" r="6" fill="var(--color-primary)" opacity="0.2"/>
             <circle cx="8" cy="8" r="3" fill="var(--color-primary)"/>
           </svg>

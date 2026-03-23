@@ -56,7 +56,7 @@ function exchange(reward) {
         <div class="points-ways">
           <div class="pw-item">
             <div class="pw-icon">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                 <rect x="3" y="3" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.2"/>
                 <path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
@@ -68,7 +68,7 @@ function exchange(reward) {
           </div>
           <div class="pw-item">
             <div class="pw-icon">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                 <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.2"/>
                 <path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
@@ -104,7 +104,7 @@ function exchange(reward) {
                   <h4>{{ reward.name }}</h4>
                   <div class="reward-bottom">
                     <span class="reward-cost">
-                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                         <circle cx="8" cy="8" r="6" fill="currentColor" opacity="0.2"/>
                         <circle cx="8" cy="8" r="3" fill="currentColor"/>
                       </svg>

@@ -95,27 +95,27 @@ const menuItems = [
             <h2>Settings</h2>
             <div class="settings-list">
               <button v-for="item in menuItems" :key="item.label" class="setting-row">
-                <svg v-if="item.icon === 'user'" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <svg v-if="item.icon === 'user'" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
                   <circle cx="9" cy="6" r="3" stroke="currentColor" stroke-width="1.2"/>
                   <path d="M3 16c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
                 </svg>
-                <svg v-else-if="item.icon === 'bell'" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <svg v-else-if="item.icon === 'bell'" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
                   <path d="M7 14a2 2 0 004 0M9 2a5 5 0 00-5 5c0 2-1 4-2 5h14c-1-1-2-3-2-5a5 5 0 00-5-5z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <svg v-else-if="item.icon === 'moon'" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <svg v-else-if="item.icon === 'moon'" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
                   <path d="M15.1 10.4A7 7 0 017.6 2.9 7 7 0 1015.1 10.4z" stroke="currentColor" stroke-width="1.2"/>
                 </svg>
-                <svg v-else-if="item.icon === 'help'" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <svg v-else-if="item.icon === 'help'" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
                   <circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.2"/>
                   <path d="M7 7a2 2 0 013.5 1.5c0 1.5-2 1.5-2 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
                   <circle cx="9" cy="13.5" r="0.5" fill="currentColor"/>
                 </svg>
-                <svg v-else width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <svg v-else width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
                   <circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.2"/>
                   <path d="M9 6v4M9 12h.01" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
                 </svg>
                 <span class="setting-label">{{ item.label }}</span>
-                <svg class="setting-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <svg class="setting-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </button>
