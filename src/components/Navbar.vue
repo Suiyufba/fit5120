@@ -1,196 +1,176 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import ThemeToggle from './ThemeToggle.vue'
 
 const route = useRoute()
-const mobileMenuOpen = ref(false)
 
-const navLinks = [
-  { name: 'Home', path: '/' },
-  { name: 'UV Tracker', path: '/track-uv' },
-  { name: 'Sun Safety Hub', path: '/raising-awareness' },
-  { name: 'Prevention', path: '/prevention' },
-  { name: 'Community', path: '/community' },
+const points = ref(120)
+
+const navItems = [
+  { name: '首页', path: '/', icon: '🏠' },
+  { name: '问答', path: '/quiz', icon: '📝' },
+  { name: '活动', path: '/events', icon: '📅' },
+  { name: '积分', path: '/rewards', icon: '🎁' },
+  { name: '我的', path: '/profile', icon: '👤' },
 ]
-
-function toggleMenu() {
-  mobileMenuOpen.value = !mobileMenuOpen.value
-}
-
-function closeMenu() {
-  mobileMenuOpen.value = false
-}
 </script>
 
 <template>
-  <nav class="navbar">
-    <div class="navbar-content">
-      <button class="menu-toggle" @click="toggleMenu" :class="{ active: mobileMenuOpen }">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <div class="top-bar-content">
+      <div class="logo">
+        <span class="logo-icon">🌿</span>
+        <span class="logo-text">EcoQuiz</span>
+      </div>
+      <div class="top-bar-right">
+        <div class="points-badge">
+          <span class="points-value">{{ points }}</span>
+          <span class="points-icon">🌱</span>
+        </div>
+        <button class="notification-btn">
+          🔔
+          <span class="notification-dot"></span>
+        </button>
+      </div>
+    </div>
+  </header>
 
-      <ul class="nav-links" :class="{ open: mobileMenuOpen }">
-        <li v-for="link in navLinks" :key="link.path">
-          <router-link
-            :to="link.path"
-            :class="{ active: route.path === link.path }"
-            @click="closeMenu"
-          >
-            {{ link.name }}
-          </router-link>
-        </li>
-      </ul>
-      
-      <ThemeToggle />
+  <!-- Bottom Navigation (Mobile) -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-content">
+      <router-link
+        v-for="item in navItems"
+        :key="item.path"
+        :to="item.path"
+        class="nav-item"
+        :class="{ active: route.path === item.path }"
+      >
+        <span class="nav-icon">{{ item.icon }}</span>
+        <span class="nav-label">{{ item.name }}</span>
+      </router-link>
     </div>
   </nav>
 </template>
 
 <style scoped>
-.navbar {
+/* Top Bar */
+.top-bar {
   position: sticky;
   top: 0;
-  z-index: 1000;
-  background: var(--color-surface);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  z-index: 100;
+  background: var(--color-surface, #ffffff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.navbar-content {
+.top-bar-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 1200px;
+  max-width: 480px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 12px 16px;
 }
 
-.nav-links {
+.logo {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  flex: 1;
+  gap: 6px;
 }
 
-.nav-links li {
-  flex: 1;
-  text-align: center;
-  max-width: 140px;
+.logo-icon {
+  font-size: 1.5rem;
 }
 
-.nav-links a {
-  display: block;
-  padding: 14px 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  transition: all 0.2s;
-  white-space: nowrap;
-  border-bottom: 3px solid transparent;
+.logo-text {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: #4caf50;
 }
 
-.nav-links a:hover {
-  color: var(--color-primary);
-  background: rgba(255, 107, 53, 0.04);
-  border-bottom-color: rgba(255, 107, 53, 0.3);
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.nav-links a.active {
-  color: var(--color-primary);
+.points-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(76, 175, 80, 0.1);
+  padding: 4px 12px;
+  border-radius: 100px;
+}
+
+.points-value {
   font-weight: 600;
-  border-bottom-color: var(--color-primary);
+  color: #4caf50;
 }
 
-/* Hamburger - mobile only */
-.menu-toggle {
-  display: none;
-  flex-direction: column;
-  gap: 5px;
+.points-icon {
+  font-size: 0.875rem;
+}
+
+.notification-btn {
+  position: relative;
   background: none;
   border: none;
+  font-size: 1.25rem;
   cursor: pointer;
-  padding: 14px 20px;
+  padding: 4px;
 }
 
-.menu-toggle span {
-  display: block;
-  width: 22px;
-  height: 2px;
-  background: var(--color-text);
-  border-radius: 2px;
-  transition: all 0.3s;
+.notification-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  background: #f44336;
+  border-radius: 50%;
 }
 
-.menu-toggle.active span:nth-child(1) {
-  transform: rotate(45deg) translate(5px, 5px);
+/* Bottom Navigation */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--color-surface, #ffffff);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
-.menu-toggle.active span:nth-child(2) {
-  opacity: 0;
+
+.bottom-nav-content {
+  display: flex;
+  justify-content: space-around;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 8px 0;
 }
-.menu-toggle.active span:nth-child(3) {
-  transform: rotate(-45deg) translate(5px, -5px);
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 16px;
+  text-decoration: none;
+  color: var(--color-text-secondary, #64748b);
+  transition: color 0.2s;
 }
 
-@media (max-width: 768px) {
-  .menu-toggle {
-    display: flex;
-  }
+.nav-item.active {
+  color: #4caf50;
+}
 
-  .nav-links {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: var(--color-surface);
-    flex-direction: column;
-    padding: 8px 0;
-    gap: 0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transform: translateY(-120%);
-    opacity: 0;
-    transition: all 0.3s ease;
-    pointer-events: none;
-    z-index: -1;
-  }
+.nav-icon {
+  font-size: 1.25rem;
+  margin-bottom: 2px;
+}
 
-  .nav-links.open {
-    transform: translateY(0);
-    opacity: 1;
-    pointer-events: all;
-  }
-
-  .nav-links li {
-    flex: none;
-    width: 100%;
-    max-width: none;
-  }
-
-  .nav-links a {
-    padding: 14px 24px;
-    text-align: left;
-    font-size: 1rem;
-    border-bottom: none;
-    border-left: 3px solid transparent;
-  }
-
-  .nav-links a.active {
-    border-bottom: none;
-    border-left-color: var(--color-primary);
-  }
-
-  .nav-links a:hover {
-    border-bottom: none;
-    border-left-color: rgba(255, 107, 53, 0.3);
-  }
-  
-  .navbar-content {
-    padding: 0 16px;
-  }
+.nav-label {
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 </style>

@@ -3,9 +3,9 @@ import Navbar from './components/Navbar.vue'
 </script>
 
 <template>
-  <div id="app-wrapper">
+  <div id="app">
     <Navbar />
-    <main>
+    <main class="main-content">
       <router-view v-slot="{ Component }">
         <transition name="page" mode="out-in">
           <component :is="Component" />
@@ -16,23 +16,24 @@ import Navbar from './components/Navbar.vue'
 </template>
 
 <style scoped>
-main {
-  min-height: calc(100vh - 52px);
+.main-content {
+  min-height: 100vh;
+  padding-top: 60px; /* Top bar height */
 }
 
 /* Page transition animations */
 .page-enter-active,
 .page-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .page-enter-from {
   opacity: 0;
-  transform: translateY(12px);
+  transform: translateY(8px);
 }
 
 .page-leave-to {
   opacity: 0;
-  transform: translateY(-12px);
+  transform: translateY(-8px);
 }
 </style>
