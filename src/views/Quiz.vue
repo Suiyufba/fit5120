@@ -9,51 +9,55 @@ const score = ref(0)
 const questions = [
   {
     id: 1,
-    question: '澳大利亚最大的可再生能源来源是什么？',
-    options: ['太阳能', '风能', '水力发电', '天然气'],
+    question: 'What is the largest renewable energy source currently expanding in Australia?',
+    options: ['Solar power', 'Wind energy', 'Hydroelectricity', 'Natural gas'],
     correct: 0,
-    explanation: '太阳能是澳大利亚增长最快的可再生能源，2023年占全国发电量的15%。'
+    explanation: 'Solar power is Australia\'s fastest-growing renewable energy source, accounting for over 15% of the nation\'s electricity generation, thanks to some of the highest solar irradiance levels on Earth.',
+    topic: 'Energy'
   },
   {
     id: 2,
-    question: '考拉的主要食物来源是什么？',
-    options: ['竹子', '桉树叶', '松针', '橡树叶'],
+    question: 'What do koalas primarily feed on?',
+    options: ['Bamboo leaves', 'Eucalyptus leaves', 'Pine needles', 'Oak leaves'],
     correct: 1,
-    explanation: '考拉主要以桉树叶为食，每天需要吃200-500克桉树叶。'
+    explanation: 'Koalas exclusively eat eucalyptus leaves, consuming 200–500 grams daily. They are highly selective, preferring specific eucalyptus species from the 700+ found across Australia.',
+    topic: 'Wildlife'
   },
   {
     id: 3,
-    question: '大堡礁位于澳大利亚哪个州的海域？',
-    options: ['新南威尔士州', '维多利亚州', '昆士兰州', '西澳大利亚州'],
+    question: 'In which Australian state is the Great Barrier Reef located?',
+    options: ['New South Wales', 'Victoria', 'Queensland', 'Western Australia'],
     correct: 2,
-    explanation: '大堡礁位于昆士兰州海岸，是世界上最大的珊瑚礁系统。'
+    explanation: 'The Great Barrier Reef stretches over 2,300 km along the Queensland coast. It\'s the world\'s largest coral reef system, visible from space, and home to over 1,500 species of fish.',
+    topic: 'Marine'
   },
   {
     id: 4,
-    question: '澳大利亚每年大约有多少吨塑料进入海洋？',
-    options: ['约1000吨', '约5000吨', '约10000吨', '约20000吨'],
+    question: 'Approximately how much plastic enters Australian oceans each year?',
+    options: ['~1,000 tonnes', '~5,000 tonnes', '~10,000 tonnes', '~20,000 tonnes'],
     correct: 2,
-    explanation: '据统计，澳大利亚每年约有10000吨塑料进入海洋，对海洋生物造成严重威胁。'
+    explanation: 'An estimated 10,000 tonnes of plastic enters Australian oceans annually, posing a severe threat to marine life including sea turtles, seabirds, and dolphins.',
+    topic: 'Pollution'
   },
   {
     id: 5,
-    question: '悉尼的哪个公园是世界上最大的市内公园之一？',
-    options: ['海德公园', '皇家植物园', '世纪公园', '悉尼公园'],
+    question: 'How many hectares were burned during Australia\'s 2019–2020 Black Summer bushfires?',
+    options: ['5 million', '10 million', '18.6 million', '25 million'],
     correct: 2,
-    explanation: '世纪公园(Centennial Park)占地189公顷，是世界上最大的市内公园之一。'
+    explanation: 'The Black Summer fires burned approximately 18.6 million hectares, destroyed over 3,000 homes, and killed an estimated 3 billion animals — one of the worst wildlife disasters in modern history.',
+    topic: 'Climate'
   }
 ]
 
 const currentQuestion = computed(() => questions[currentIndex.value])
 const progress = computed(() => ((currentIndex.value + 1) / questions.length) * 100)
 const isComplete = computed(() => currentIndex.value >= questions.length)
+const accuracy = computed(() => questions.length > 0 ? Math.round((score.value / 10) / questions.length * 100) : 0)
 
 function selectAnswer(index) {
   if (showFeedback.value) return
-  
   selectedAnswer.value = index
   showFeedback.value = true
-  
   if (index === currentQuestion.value.correct) {
     score.value += 10
   }
@@ -79,66 +83,128 @@ function restartQuiz() {
 
 <template>
   <div class="quiz-page">
-    <!-- Header -->
-    <header class="quiz-header">
-      <button class="back-btn" @click="$router.push('/')">←</button>
-      <span class="question-counter">{{ currentIndex + 1 }}/{{ questions.length }}</span>
-    </header>
-
-    <!-- Progress Bar -->
-    <div class="progress-container">
-      <div class="progress-bar" :style="{ width: progress + '%' }"></div>
-    </div>
-
-    <!-- Question Content -->
-    <div v-if="!isComplete" class="question-content">
-      <div class="topic-badge">🌿 气候变化专题</div>
-      
-      <h2 class="question-text">{{ currentQuestion.question }}</h2>
-      
-      <div class="options">
-        <button
-          v-for="(option, index) in currentQuestion.options"
-          :key="index"
-          class="option-btn"
-          :class="{ 
-            selected: selectedAnswer === index,
-            correct: showFeedback && index === currentQuestion.correct,
-            wrong: showFeedback && selectedAnswer === index && index !== currentQuestion.correct
-          }"
-          @click="selectAnswer(index)"
-        >
-          <span class="option-letter">{{ ['A', 'B', 'C', 'D'][index] }}</span>
-          <span class="option-text">{{ option }}</span>
+    <div class="quiz-wrapper">
+      <!-- Quiz Header -->
+      <header class="quiz-top">
+        <button class="back-link" @click="$router.push('/')">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M13 4l-6 6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Back
         </button>
-      </div>
-
-      <!-- Feedback -->
-      <div v-if="showFeedback" class="feedback" :class="{ success: selectedAnswer === currentQuestion.correct }">
-        <div class="feedback-header">
-          <span v-if="selectedAnswer === currentQuestion.correct">✅ 正确！</span>
-          <span v-else>❌ 错误</span>
-          <span class="points-earned">🎉 +{{ selectedAnswer === currentQuestion.correct ? 10 : 0 }} 积分</span>
+        <div class="quiz-progress-info" v-if="!isComplete">
+          <span class="progress-current">{{ currentIndex + 1 }}</span>
+          <span class="progress-sep">/</span>
+          <span class="progress-total">{{ questions.length }}</span>
         </div>
-        <p class="feedback-text">{{ currentQuestion.explanation }}</p>
-        <button class="next-btn" @click="nextQuestion">
-          {{ currentIndex < questions.length - 1 ? '下一题 →' : '查看结果' }}
-        </button>
-      </div>
-    </div>
+        <div class="score-live" v-if="!isComplete">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="6" fill="var(--color-primary)" opacity="0.2"/>
+            <circle cx="8" cy="8" r="3" fill="var(--color-primary)"/>
+          </svg>
+          {{ score }} pts
+        </div>
+      </header>
 
-    <!-- Results -->
-    <div v-else class="results">
-      <div class="results-icon">🎉</div>
-      <h2>答题完成！</h2>
-      <div class="score-card">
-        <div class="score-value">{{ score }}</div>
-        <div class="score-label">总积分</div>
+      <!-- Progress Bar -->
+      <div class="progress-track" v-if="!isComplete">
+        <div class="progress-fill" :style="{ width: progress + '%' }"></div>
       </div>
-      <p class="score-detail">你答对了 {{ score / 10 }}/{{ questions.length }} 题</p>
-      <div class="results-actions">
-        <button class="btn-primary" @click="restartQuiz">再答一次</button>
-        <button class="btn-secondary" @click="$router.push('/')">返回首页</button>
+
+      <!-- Question Content -->
+      <div v-if="!isComplete" class="question-area">
+        <div class="topic-pill">{{ currentQuestion.topic }}</div>
+        <h2 class="question-text">{{ currentQuestion.question }}</h2>
+
+        <div class="options-list">
+          <button
+            v-for="(option, index) in currentQuestion.options"
+            :key="index"
+            class="option-card"
+            :class="{
+              selected: selectedAnswer === index && !showFeedback,
+              correct: showFeedback && index === currentQuestion.correct,
+              wrong: showFeedback && selectedAnswer === index && index !== currentQuestion.correct
+            }"
+            @click="selectAnswer(index)"
+            :disabled="showFeedback"
+          >
+            <span class="option-key">{{ ['A', 'B', 'C', 'D'][index] }}</span>
+            <span class="option-label">{{ option }}</span>
+            <span class="option-indicator" v-if="showFeedback && index === currentQuestion.correct">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M4 9l3.5 3.5L14 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span class="option-indicator wrong-icon" v-if="showFeedback && selectedAnswer === index && index !== currentQuestion.correct">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M5 5l8 8M13 5l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+
+        <!-- Feedback Panel -->
+        <transition name="slide-up">
+          <div v-if="showFeedback" class="feedback-panel" :class="{ success: selectedAnswer === currentQuestion.correct }">
+            <div class="feedback-top">
+              <div class="feedback-result">
+                <span v-if="selectedAnswer === currentQuestion.correct" class="result-correct">Correct!</span>
+                <span v-else class="result-wrong">Not quite</span>
+              </div>
+              <div class="feedback-points">
+                +{{ selectedAnswer === currentQuestion.correct ? 10 : 0 }} pts
+              </div>
+            </div>
+            <p class="feedback-explanation">{{ currentQuestion.explanation }}</p>
+            <button class="btn-next" @click="nextQuestion">
+              {{ currentIndex < questions.length - 1 ? 'Next Question' : 'See Results' }}
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </transition>
+      </div>
+
+      <!-- Results Screen -->
+      <div v-else class="results-area">
+        <div class="results-header">
+          <div class="results-badge">Quiz Complete</div>
+          <h2 class="results-title">Great effort!</h2>
+          <p class="results-subtitle">Here's how you did on this quiz session.</p>
+        </div>
+
+        <div class="results-card">
+          <div class="results-score">
+            <span class="rs-number">{{ score }}</span>
+            <span class="rs-label">Points Earned</span>
+          </div>
+          <div class="results-divider"></div>
+          <div class="results-detail">
+            <div class="rd-row">
+              <span class="rd-key">Correct Answers</span>
+              <span class="rd-val">{{ score / 10 }} / {{ questions.length }}</span>
+            </div>
+            <div class="rd-row">
+              <span class="rd-key">Accuracy</span>
+              <span class="rd-val">{{ accuracy }}%</span>
+            </div>
+            <div class="rd-row">
+              <span class="rd-key">Topics Covered</span>
+              <span class="rd-val">{{ [...new Set(questions.map(q => q.topic))].length }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-actions">
+          <button class="btn-retry" @click="restartQuiz">
+            Try Again
+          </button>
+          <button class="btn-home" @click="$router.push('/')">
+            Back to Home
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -147,137 +213,263 @@ function restartQuiz() {
 <style scoped>
 .quiz-page {
   min-height: 100vh;
-  background: var(--color-bg, #f8fafc);
-  padding-bottom: 80px;
+  background: var(--color-bg);
 }
 
-.quiz-header {
+.quiz-wrapper {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.quiz-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
-  max-width: 480px;
-  margin: 0 auto;
+  padding: 20px 0;
 }
 
-.back-btn {
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: none;
   border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 8px;
-}
-
-.question-counter {
-  font-weight: 600;
-  color: var(--color-text-secondary, #64748b);
-}
-
-.progress-container {
-  background: rgba(0, 0, 0, 0.1);
-  height: 4px;
-}
-
-.progress-bar {
-  background: #4caf50;
-  height: 100%;
-  transition: width 0.3s ease;
-}
-
-.question-content {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 24px 16px;
-}
-
-.topic-badge {
-  display: inline-block;
-  background: rgba(76, 175, 80, 0.1);
-  color: #4caf50;
-  padding: 6px 12px;
-  border-radius: 100px;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   font-weight: 500;
-  margin-bottom: 16px;
+  color: var(--color-text-secondary);
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: var(--color-text);
+}
+
+.quiz-progress-info {
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+
+.progress-current {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.progress-sep {
+  color: var(--color-text-muted);
+  margin: 0 2px;
+}
+
+.progress-total {
+  color: var(--color-text-muted);
+}
+
+.score-live {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.progress-track {
+  height: 4px;
+  background: var(--color-border-light);
+  border-radius: 2px;
+  margin-bottom: 40px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+  border-radius: 2px;
+  transition: width 0.5s var(--ease-out-expo);
+}
+
+.question-area {
+  padding-bottom: 80px;
+}
+
+.topic-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-accent);
+  background: var(--color-accent-muted);
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  margin-bottom: 20px;
 }
 
 .question-text {
-  font-size: 1.25rem;
-  font-weight: 600;
-  line-height: 1.5;
-  color: var(--color-secondary, #1b4965);
-  margin-bottom: 24px;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--color-text);
+  margin-bottom: 32px;
 }
 
-.options {
+.options-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.option-btn {
+.option-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
-  padding: 16px;
-  background: var(--color-surface, #ffffff);
-  border: 2px solid transparent;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
+  padding: 18px 20px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
   text-align: left;
+  font-size: 1rem;
+  transition: all 0.25s var(--ease-out-expo);
 }
 
-.option-btn:hover {
-  border-color: #4caf50;
+.option-card:not(:disabled):hover {
+  border-color: var(--color-primary-light);
+  background: var(--color-primary-muted);
 }
 
-.option-btn.selected {
-  border-color: #4caf50;
-  background: rgba(76, 175, 80, 0.05);
+.option-card.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-muted);
 }
 
-.option-btn.correct {
-  border-color: #4caf50;
-  background: rgba(76, 175, 80, 0.1);
+.option-card.correct {
+  border-color: var(--color-success);
+  background: rgba(45, 122, 79, 0.06);
 }
 
-.option-btn.wrong {
-  border-color: #f44336;
-  background: rgba(244, 67, 54, 0.1);
+.option-card.wrong {
+  border-color: var(--color-error);
+  background: rgba(192, 57, 43, 0.04);
 }
 
-.option-letter {
+.option-key {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
-  font-weight: 600;
-  color: var(--color-text-secondary, #64748b);
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  background: var(--color-bg-warm);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
 }
 
-.option-text {
+.option-card.correct .option-key {
+  background: var(--color-success);
+  color: white;
+}
+
+.option-card.wrong .option-key {
+  background: var(--color-error);
+  color: white;
+}
+
+.option-label {
   flex: 1;
-  font-size: 1rem;
-  color: var(--color-text, #1e293b);
+  color: var(--color-text);
 }
 
-.feedback {
-  margin-top: 24px;
-  padding: 20px;
-  background: var(--color-surface, #ffffff);
-  border-radius: 12px;
-  animation: slideUp 0.3s ease;
+.option-indicator {
+  color: var(--color-success);
 }
 
-@keyframes slideUp {
+.option-indicator.wrong-icon {
+  color: var(--color-error);
+}
+
+/* Feedback */
+.feedback-panel {
+  margin-top: 28px;
+  padding: 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+}
+
+.feedback-panel.success {
+  border-color: rgba(45, 122, 79, 0.2);
+}
+
+.feedback-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.result-correct {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-success);
+}
+
+.result-wrong {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-error);
+}
+
+.feedback-points {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-muted);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+}
+
+.feedback-explanation {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+  margin-bottom: 20px;
+}
+
+.btn-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+  padding: 14px 24px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s var(--ease-out-expo);
+}
+
+.btn-next:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.slide-up-enter-active {
+  animation: slideUpIn 0.4s var(--ease-out-expo);
+}
+
+@keyframes slideUpIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -285,84 +477,94 @@ function restartQuiz() {
   }
 }
 
-.feedback-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.points-earned {
-  font-size: 0.875rem;
-  color: #4caf50;
-}
-
-.feedback-text {
-  color: var(--color-text-secondary, #64748b);
-  font-size: 0.9375rem;
-  line-height: 1.6;
-  margin-bottom: 16px;
-}
-
-.next-btn {
-  width: 100%;
-  padding: 14px;
-  background: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 100px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.next-btn:hover {
-  background: #388e3c;
-}
-
 /* Results */
-.results {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 48px 16px;
+.results-area {
+  padding: 48px 0 80px;
   text-align: center;
 }
 
-.results-icon {
-  font-size: 4rem;
-  margin-bottom: 16px;
+.results-header {
+  margin-bottom: 36px;
 }
 
-.results h2 {
-  font-size: 1.5rem;
-  color: var(--color-secondary, #1b4965);
-  margin-bottom: 24px;
-}
-
-.score-card {
-  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
-  color: white;
-  padding: 32px;
-  border-radius: 16px;
-  margin-bottom: 16px;
-}
-
-.score-value {
-  font-size: 3rem;
+.results-badge {
+  display: inline-block;
+  font-size: 0.72rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-primary);
+  background: var(--color-primary-muted);
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  margin-bottom: 16px;
 }
 
-.score-label {
+.results-title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.results-subtitle {
   font-size: 1rem;
-  opacity: 0.9;
+  color: var(--color-text-secondary);
 }
 
-.score-detail {
-  color: var(--color-text-secondary, #64748b);
+.results-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  padding: 36px;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.results-score {
   margin-bottom: 24px;
+}
+
+.rs-number {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.rs-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.results-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin-bottom: 24px;
+}
+
+.rd-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+
+.rd-key {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.rd-val {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text);
 }
 
 .results-actions {
@@ -371,25 +573,45 @@ function restartQuiz() {
   gap: 12px;
 }
 
-.btn-primary {
-  padding: 14px;
-  background: #4caf50;
+.btn-retry {
+  padding: 14px 24px;
+  background: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 100px;
-  font-size: 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.95rem;
   font-weight: 600;
-  cursor: pointer;
+  transition: all 0.3s var(--ease-out-expo);
 }
 
-.btn-secondary {
-  padding: 14px;
+.btn-retry:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.btn-home {
+  padding: 14px 24px;
   background: transparent;
-  color: var(--color-text-secondary, #64748b);
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  border-radius: 100px;
-  font-size: 1rem;
+  color: var(--color-text-secondary);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: 0.95rem;
   font-weight: 600;
-  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-home:hover {
+  border-color: var(--color-text-muted);
+  color: var(--color-text);
+}
+
+@media (max-width: 768px) {
+  .quiz-wrapper {
+    padding: 0 16px;
+  }
+
+  .question-text {
+    font-size: 1.25rem;
+  }
 }
 </style>
