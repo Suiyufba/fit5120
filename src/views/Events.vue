@@ -1,203 +1,233 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const activeCity = ref('all')
 const activeType = ref('all')
 
 const cities = [
-  { id: 'all', name: '全部' },
-  { id: 'sydney', name: '悉尼' },
-  { id: 'melbourne', name: '墨尔本' },
-  { id: 'brisbane', name: '布里斯班' },
+  { id: 'all', name: 'All Cities' },
+  { id: 'sydney', name: 'Sydney' },
+  { id: 'melbourne', name: 'Melbourne' },
+  { id: 'brisbane', name: 'Brisbane' },
+  { id: 'cairns', name: 'Cairns' },
 ]
 
 const types = [
-  { id: 'all', name: '全部' },
-  { id: 'cleanup', name: '清洁' },
-  { id: 'planting', name: '种植' },
-  { id: 'workshop', name: '讲座' },
-  { id: 'recycling', name: '回收' },
+  { id: 'all', name: 'All Types' },
+  { id: 'cleanup', name: 'Clean-Up' },
+  { id: 'planting', name: 'Planting' },
+  { id: 'workshop', name: 'Workshop' },
+  { id: 'recycling', name: 'Recycling' },
+  { id: 'conservation', name: 'Conservation' },
 ]
 
 const events = [
   {
     id: 1,
-    title: 'Bondi海滩清洁行动',
-    description: '加入我们，一起清理Bondi海滩的垃圾，保护海洋生物',
-    date: '2024年3月25日',
-    time: '09:00 - 12:00',
+    title: 'Bondi Beach Clean-Up Day',
+    description: 'Join volunteers to remove plastic waste and debris from one of Australia\'s most iconic beaches. Equipment and refreshments provided.',
+    date: 'April 5, 2026',
+    time: '9:00 AM – 12:00 PM',
     location: 'Bondi Beach, Sydney',
     city: 'sydney',
     type: 'cleanup',
     points: 50,
     spots: 12,
     totalSpots: 50,
-    image: '🏖️'
+    gradient: 'linear-gradient(135deg, #0f4c5c 0%, #1a7a8a 100%)',
   },
   {
     id: 2,
-    title: '社区植树日',
-    description: '在Royal Botanic Garden种植本土树木，为城市增添绿色',
-    date: '2024年3月28日',
-    time: '10:00 - 14:00',
-    location: 'Royal Botanic Garden, Melbourne',
+    title: 'Native Tree Planting Day',
+    description: 'Help plant 500 native eucalyptus and banksia trees at Royal Botanic Gardens to restore urban biodiversity and provide wildlife corridors.',
+    date: 'April 12, 2026',
+    time: '10:00 AM – 2:00 PM',
+    location: 'Royal Botanic Gardens, Melbourne',
     city: 'melbourne',
     type: 'planting',
     points: 60,
     spots: 30,
     totalSpots: 100,
-    image: '🌳'
+    gradient: 'linear-gradient(135deg, #1a5632 0%, #2d7a4f 100%)',
   },
   {
     id: 3,
-    title: '电子垃圾回收日',
-    description: '正确处理旧电子产品，防止有害物质污染环境',
-    date: '2024年4月2日',
-    time: '08:00 - 16:00',
-    location: 'South Bank, Brisbane',
+    title: 'E-Waste Recycling Drive',
+    description: 'Dispose of old electronics responsibly. Bring phones, laptops, batteries, and cables — all processed through certified recyclers.',
+    date: 'April 19, 2026',
+    time: '8:00 AM – 4:00 PM',
+    location: 'South Bank Parklands, Brisbane',
     city: 'brisbane',
     type: 'recycling',
     points: 40,
     spots: 50,
     totalSpots: 100,
-    image: '♻️'
+    gradient: 'linear-gradient(135deg, #b8860b 0%, #d4a52e 100%)',
   },
   {
     id: 4,
-    title: '气候变化讲座',
-    description: '了解澳大利亚气候变化的影响和应对策略',
-    date: '2024年4月5日',
-    time: '18:00 - 20:00',
-    location: 'Sydney Town Hall',
+    title: 'Climate Action Workshop',
+    description: 'Learn about Australia\'s climate challenges and discover actionable steps you can take. Featuring expert speakers and interactive sessions.',
+    date: 'April 26, 2026',
+    time: '6:00 PM – 8:30 PM',
+    location: 'Sydney Town Hall, Sydney',
     city: 'sydney',
     type: 'workshop',
     points: 30,
     spots: 80,
     totalSpots: 150,
-    image: '🎓'
+    gradient: 'linear-gradient(135deg, #c4652e 0%, #d4845f 100%)',
   },
   {
     id: 5,
-    title: '考拉栖息地保护',
-    description: '参与考拉栖息地的清理和保护工作',
-    date: '2024年4月10日',
-    time: '09:00 - 15:00',
-    location: 'Lone Pine Koala Sanctuary, Brisbane',
+    title: 'Koala Habitat Restoration',
+    description: 'Volunteer at Lone Pine Koala Sanctuary to help clear invasive plants and restore natural koala habitats in surrounding forests.',
+    date: 'May 3, 2026',
+    time: '9:00 AM – 3:00 PM',
+    location: 'Lone Pine Sanctuary, Brisbane',
     city: 'brisbane',
-    type: 'cleanup',
+    type: 'conservation',
     points: 70,
     spots: 20,
     totalSpots: 40,
-    image: '🐨'
+    gradient: 'linear-gradient(135deg, #2d7a4f 0%, #4a9968 100%)',
+  },
+  {
+    id: 6,
+    title: 'Reef Awareness Snorkel Day',
+    description: 'Guided snorkelling tour focused on coral reef health, followed by a talk on reef conservation efforts and how to help from home.',
+    date: 'May 10, 2026',
+    time: '7:00 AM – 1:00 PM',
+    location: 'Green Island, Cairns',
+    city: 'cairns',
+    type: 'workshop',
+    points: 55,
+    spots: 15,
+    totalSpots: 30,
+    gradient: 'linear-gradient(135deg, #0f4c5c 0%, #2d9aaa 100%)',
   },
 ]
 
-const filteredEvents = ref(events)
-
-function filterByCity(cityId) {
-  activeCity.value = cityId
-  applyFilters()
-}
-
-function filterByType(typeId) {
-  activeType.value = typeId
-  applyFilters()
-}
-
-function applyFilters() {
-  filteredEvents.value = events.filter(event => {
+const filteredEvents = computed(() => {
+  return events.filter(event => {
     const cityMatch = activeCity.value === 'all' || event.city === activeCity.value
     const typeMatch = activeType.value === 'all' || event.type === activeType.value
     return cityMatch && typeMatch
   })
+})
+
+function resetFilters() {
+  activeCity.value = 'all'
+  activeType.value = 'all'
 }
 </script>
 
 <template>
   <div class="events-page">
-    <!-- Header -->
-    <header class="page-header">
-      <h1>活动中心</h1>
-      <p>参与环保活动，赚取积分</p>
-    </header>
-
-    <!-- Filters -->
-    <div class="filters">
-      <div class="filter-section">
-        <div class="filter-label">城市</div>
-        <div class="filter-chips">
-          <button
-            v-for="city in cities"
-            :key="city.id"
-            class="chip"
-            :class="{ active: activeCity === city.id }"
-            @click="filterByCity(city.id)"
-          >
-            {{ city.name }}
-          </button>
-        </div>
-      </div>
-      <div class="filter-section">
-        <div class="filter-label">类型</div>
-        <div class="filter-chips">
-          <button
-            v-for="type in types"
-            :key="type.id"
-            class="chip"
-            :class="{ active: activeType === type.id }"
-            @click="filterByType(type.id)"
-          >
-            {{ type.name }}
-          </button>
-        </div>
+    <!-- Page Header -->
+    <div class="page-hero">
+      <div class="page-hero-bg"></div>
+      <div class="page-hero-content">
+        <span class="page-tag">Community Action</span>
+        <h1>Green Activities</h1>
+        <p>Join environmental events across Australia. Earn eco-points while making a real difference for our planet.</p>
       </div>
     </div>
 
-    <!-- Events List -->
-    <div class="events-list">
-      <div v-for="event in filteredEvents" :key="event.id" class="event-card">
-        <div class="event-image">
-          <span class="event-icon">{{ event.image }}</span>
-        </div>
-        <div class="event-details">
-          <div class="event-header">
-            <h3>{{ event.title }}</h3>
-            <span class="points-badge">+{{ event.points }} 积分</span>
-          </div>
-          <p class="event-description">{{ event.description }}</p>
-          <div class="event-meta">
-            <div class="meta-item">
-              <span class="meta-icon">📅</span>
-              <span>{{ event.date }}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-icon">⏰</span>
-              <span>{{ event.time }}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-icon">📍</span>
-              <span>{{ event.location }}</span>
-            </div>
-          </div>
-          <div class="event-footer">
-            <div class="spots-info">
-              <div class="spots-bar">
-                <div class="spots-fill" :style="{ width: ((event.totalSpots - event.spots) / event.totalSpots * 100) + '%' }"></div>
-              </div>
-              <span class="spots-text">剩余 {{ event.spots }} 个名额</span>
-            </div>
-            <button class="register-btn">报名</button>
+    <div class="events-body">
+      <!-- Filters -->
+      <aside class="filters-panel">
+        <div class="filter-group">
+          <h3>City</h3>
+          <div class="filter-options">
+            <button
+              v-for="city in cities"
+              :key="city.id"
+              class="filter-chip"
+              :class="{ active: activeCity === city.id }"
+              @click="activeCity = city.id"
+            >
+              {{ city.name }}
+            </button>
           </div>
         </div>
-      </div>
+        <div class="filter-group">
+          <h3>Activity Type</h3>
+          <div class="filter-options">
+            <button
+              v-for="type in types"
+              :key="type.id"
+              class="filter-chip"
+              :class="{ active: activeType === type.id }"
+              @click="activeType = type.id"
+            >
+              {{ type.name }}
+            </button>
+          </div>
+        </div>
+      </aside>
 
-      <!-- Empty State -->
-      <div v-if="filteredEvents.length === 0" class="empty-state">
-        <span class="empty-icon">🔍</span>
-        <p>没有找到符合条件的活动</p>
-        <button class="reset-btn" @click="activeCity = 'all'; activeType = 'all'; applyFilters()">
-          重置筛选
-        </button>
+      <!-- Events Grid -->
+      <div class="events-main">
+        <div class="events-count">
+          {{ filteredEvents.length }} activit{{ filteredEvents.length === 1 ? 'y' : 'ies' }} found
+        </div>
+
+        <div class="events-grid">
+          <article v-for="event in filteredEvents" :key="event.id" class="event-card">
+            <div class="event-visual" :style="{ background: event.gradient }">
+              <span class="event-type-tag">{{ types.find(t => t.id === event.type)?.name }}</span>
+              <div class="event-points-tag">+{{ event.points }} pts</div>
+            </div>
+            <div class="event-content">
+              <h3>{{ event.title }}</h3>
+              <p class="event-desc">{{ event.description }}</p>
+              <div class="event-details">
+                <div class="event-detail">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.2"/>
+                    <path d="M2 7h12M5 1v4M11 1v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                  </svg>
+                  <span>{{ event.date }}</span>
+                </div>
+                <div class="event-detail">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/>
+                    <path d="M8 5v3l2.5 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span>{{ event.time }}</span>
+                </div>
+                <div class="event-detail">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5s4.5-5 4.5-8.5c0-2.5-2-4.5-4.5-4.5z" stroke="currentColor" stroke-width="1.2"/>
+                    <circle cx="8" cy="6" r="1.5" stroke="currentColor" stroke-width="1.2"/>
+                  </svg>
+                  <span>{{ event.location }}</span>
+                </div>
+              </div>
+              <div class="event-bottom">
+                <div class="spots-meter">
+                  <div class="spots-bar">
+                    <div class="spots-fill" :style="{ width: ((event.totalSpots - event.spots) / event.totalSpots * 100) + '%' }"></div>
+                  </div>
+                  <span class="spots-label">{{ event.spots }} spots remaining</span>
+                </div>
+                <button class="btn-register">Register</button>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <!-- Empty State -->
+        <div v-if="filteredEvents.length === 0" class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="20" stroke="var(--color-text-muted)" stroke-width="1.5"/>
+            <path d="M18 30s2-3 6-3 6 3 6 3M17 19h2M29 19h2" stroke="var(--color-text-muted)" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <h3>No activities found</h3>
+          <p>Try adjusting your filters to discover more events.</p>
+          <button class="btn-reset" @click="resetFilters">Reset Filters</button>
+        </div>
       </div>
     </div>
   </div>
@@ -206,228 +236,342 @@ function applyFilters() {
 <style scoped>
 .events-page {
   min-height: 100vh;
-  background: var(--color-bg, #f8fafc);
-  padding-bottom: 80px;
+  background: var(--color-bg);
 }
 
-.page-header {
-  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
-  color: white;
-  padding: 32px 16px;
+/* Page Hero */
+.page-hero {
+  position: relative;
+  padding: 80px 24px 56px;
   text-align: center;
+  overflow: hidden;
 }
 
-.page-header h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 8px;
+.page-hero-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--color-primary-muted) 0%, var(--color-bg) 100%);
 }
 
-.page-header p {
-  opacity: 0.9;
-  font-size: 0.9375rem;
-}
-
-.filters {
-  background: var(--color-surface, #ffffff);
-  padding: 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.filter-section {
-  margin-bottom: 12px;
-}
-
-.filter-section:last-child {
-  margin-bottom: 0;
-}
-
-.filter-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-secondary, #64748b);
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.filter-chips {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-
-.chip {
-  flex-shrink: 0;
-  padding: 8px 16px;
-  background: rgba(0, 0, 0, 0.05);
-  border: none;
-  border-radius: 100px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text-secondary, #64748b);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.chip.active {
-  background: #4caf50;
-  color: white;
-}
-
-.events-list {
-  padding: 16px;
-  max-width: 480px;
+.page-hero-content {
+  position: relative;
+  max-width: 600px;
   margin: 0 auto;
 }
 
-.event-card {
-  background: var(--color-surface, #ffffff);
-  border-radius: 16px;
-  overflow: hidden;
+.page-tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
   margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.event-image {
-  height: 120px;
-  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.event-icon {
-  font-size: 4rem;
-}
-
-.event-details {
-  padding: 16px;
-}
-
-.event-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
-}
-
-.event-header h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-secondary, #1b4965);
-  flex: 1;
-}
-
-.points-badge {
-  flex-shrink: 0;
-  background: rgba(76, 175, 80, 0.1);
-  color: #4caf50;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 100px;
-  margin-left: 8px;
-}
-
-.event-description {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary, #64748b);
-  line-height: 1.5;
+.page-hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  color: var(--color-text);
   margin-bottom: 12px;
 }
 
-.event-meta {
+.page-hero p {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+
+/* Layout */
+.events-body {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+  display: flex;
+  gap: 32px;
+}
+
+.filters-panel {
+  width: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
+  align-self: flex-start;
+}
+
+.filter-group {
+  margin-bottom: 28px;
+}
+
+.filter-group h3 {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+}
+
+.filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter-chip {
+  padding: 7px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: all 0.2s;
+}
+
+.filter-chip:hover {
+  border-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.filter-chip.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* Events Main */
+.events-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.events-count {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-bottom: 20px;
+}
+
+.events-grid {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 20px;
+}
+
+.event-card {
+  display: flex;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  transition: all 0.4s var(--ease-out-expo);
+}
+
+.event-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
+}
+
+.event-visual {
+  width: 200px;
+  min-height: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+  position: relative;
+}
+
+.event-type-tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  align-self: flex-start;
+}
+
+.event-points-tag {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: white;
+  align-self: flex-end;
+}
+
+.event-content {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.event-content h3 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.event-desc {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
   margin-bottom: 16px;
 }
 
-.meta-item {
+.event-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.event-detail {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.8125rem;
-  color: var(--color-text-secondary, #64748b);
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
 }
 
-.meta-icon {
-  font-size: 1rem;
+.event-detail svg {
+  flex-shrink: 0;
 }
 
-.event-footer {
+.event-bottom {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 12px;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border-light);
 }
 
-.spots-info {
+.spots-meter {
   flex: 1;
 }
 
 .spots-bar {
-  height: 6px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 3px;
+  height: 4px;
+  background: var(--color-border-light);
+  border-radius: 2px;
   margin-bottom: 4px;
   overflow: hidden;
 }
 
 .spots-fill {
   height: 100%;
-  background: #4caf50;
-  border-radius: 3px;
+  background: var(--color-primary);
+  border-radius: 2px;
+  transition: width 0.4s var(--ease-out-expo);
 }
 
-.spots-text {
-  font-size: 0.75rem;
-  color: var(--color-text-secondary, #64748b);
+.spots-label {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
 }
 
-.register-btn {
+.btn-register {
   padding: 10px 24px;
-  background: #4caf50;
+  background: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 100px;
-  font-size: 0.875rem;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.3s var(--ease-out-expo);
+  margin-left: 16px;
 }
 
-.register-btn:hover {
-  background: #388e3c;
+.btn-register:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
 }
 
+/* Empty */
 .empty-state {
   text-align: center;
-  padding: 48px 16px;
+  padding: 64px 24px;
 }
 
-.empty-icon {
-  font-size: 3rem;
+.empty-state svg {
   margin-bottom: 16px;
-  display: block;
+}
+
+.empty-state h3 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--color-text);
+  margin-bottom: 8px;
 }
 
 .empty-state p {
-  color: var(--color-text-secondary, #64748b);
-  margin-bottom: 16px;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin-bottom: 20px;
 }
 
-.reset-btn {
+.btn-reset {
   padding: 10px 24px;
-  background: rgba(0, 0, 0, 0.05);
-  border: none;
-  border-radius: 100px;
-  font-size: 0.875rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
   font-weight: 500;
-  color: var(--color-text-secondary, #64748b);
-  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: all 0.2s;
+}
+
+.btn-reset:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+@media (max-width: 768px) {
+  .events-body {
+    flex-direction: column;
+    padding: 0 16px 64px;
+  }
+
+  .filters-panel {
+    width: 100%;
+    position: static;
+  }
+
+  .filter-options {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+  }
+
+  .filter-chip {
+    flex-shrink: 0;
+  }
+
+  .event-card {
+    flex-direction: column;
+  }
+
+  .event-visual {
+    width: 100%;
+    min-height: 140px;
+  }
+
+  .page-hero {
+    padding: 48px 16px 40px;
+  }
 }
 </style>

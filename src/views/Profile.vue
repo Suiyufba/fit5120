@@ -2,193 +2,255 @@
 import { ref } from 'vue'
 
 const user = ref({
-  name: 'Alex',
-  avatar: '🧑‍💻',
+  name: 'Alex Chen',
+  initials: 'AC',
   points: 120,
   streak: 7,
   rank: 42,
   quizzes: 45,
-  events: 3
+  events: 3,
+  joinDate: 'Feb 2026'
 })
 
 const achievements = [
-  { id: 1, name: '初学者', icon: '🌱', desc: '完成第一次问答', unlocked: true },
-  { id: 2, name: '坚持者', icon: '🔥', desc: '连续学习7天', unlocked: true },
-  { id: 3, name: '环保达人', icon: '🌿', desc: '累计获得500积分', unlocked: false },
-  { id: 4, name: '活动家', icon: '🏆', desc: '参加5次活动', unlocked: false },
-  { id: 5, name: '知识王', icon: '👑', desc: '答对100道题', unlocked: false },
-  { id: 6, name: '排行榜达人', icon: '⭐', desc: '进入周榜前10', unlocked: false },
+  { id: 1, name: 'First Steps', desc: 'Completed your first quiz', unlocked: true, icon: '🌱' },
+  { id: 2, name: 'Streak Keeper', desc: '7-day learning streak', unlocked: true, icon: '🔥' },
+  { id: 3, name: 'Eco Enthusiast', desc: 'Earned 500 eco-points', unlocked: false, icon: '🌿' },
+  { id: 4, name: 'Activist', desc: 'Attended 5 events', unlocked: false, icon: '🏆' },
+  { id: 5, name: 'Quiz Master', desc: '100 correct answers', unlocked: false, icon: '👑' },
+  { id: 6, name: 'Top Ranker', desc: 'Reached weekly top 10', unlocked: false, icon: '⭐' },
 ]
 
 const stats = [
-  { label: '答题总数', value: user.value.quizzes, icon: '📝' },
-  { label: '正确率', value: '78%', icon: '✅' },
-  { label: '参与活动', value: user.value.events, icon: '📅' },
-  { label: '总积分', value: user.value.points, icon: '🌱' },
+  { label: 'Quizzes Taken', value: user.value.quizzes },
+  { label: 'Accuracy', value: '78%' },
+  { label: 'Events Joined', value: user.value.events },
+  { label: 'Total Points', value: user.value.points },
+]
+
+const menuItems = [
+  { label: 'Edit Profile', icon: 'user' },
+  { label: 'Notification Settings', icon: 'bell' },
+  { label: 'Appearance', icon: 'moon' },
+  { label: 'Help & Feedback', icon: 'help' },
+  { label: 'About EcoAware', icon: 'info' },
 ]
 </script>
 
 <template>
   <div class="profile-page">
     <!-- Profile Header -->
-    <header class="profile-header">
-      <div class="avatar">{{ user.avatar }}</div>
-      <h1>{{ user.name }}</h1>
-      <div class="streak-badge">
-        <span class="streak-icon">🔥</span>
-        连续学习 {{ user.streak }} 天
+    <div class="profile-hero">
+      <div class="profile-hero-bg"></div>
+      <div class="profile-hero-content">
+        <div class="avatar-ring">
+          <div class="avatar">{{ user.initials }}</div>
+        </div>
+        <h1>{{ user.name }}</h1>
+        <div class="member-info">
+          <span class="member-since">Member since {{ user.joinDate }}</span>
+          <span class="member-dot">&middot;</span>
+          <span class="streak-label">{{ user.streak }}-day streak 🔥</span>
+        </div>
       </div>
-    </header>
+    </div>
 
-    <!-- Stats Grid -->
-    <section class="stats-section">
-      <div class="stats-grid">
-        <div v-for="stat in stats" :key="stat.label" class="stat-card">
-          <span class="stat-icon">{{ stat.icon }}</span>
-          <div class="stat-value">{{ stat.value }}</div>
-          <div class="stat-label">{{ stat.label }}</div>
+    <div class="profile-body">
+      <!-- Stats -->
+      <section class="stats-section">
+        <div class="stats-row">
+          <div v-for="stat in stats" :key="stat.label" class="stat-item">
+            <div class="stat-val">{{ stat.value }}</div>
+            <div class="stat-key">{{ stat.label }}</div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Achievements -->
-    <section class="achievements-section">
-      <h2>🏆 成就徽章</h2>
-      <div class="achievements-grid">
-        <div 
-          v-for="achievement in achievements" 
-          :key="achievement.id" 
-          class="achievement-card"
-          :class="{ locked: !achievement.unlocked }"
-        >
-          <div class="achievement-icon">{{ achievement.icon }}</div>
-          <div class="achievement-name">{{ achievement.name }}</div>
-          <div class="achievement-desc">{{ achievement.desc }}</div>
+      <!-- Achievements -->
+      <section class="achievements-section">
+        <h2>Achievements</h2>
+        <div class="achievements-grid">
+          <div
+            v-for="badge in achievements"
+            :key="badge.id"
+            class="badge-card"
+            :class="{ locked: !badge.unlocked }"
+          >
+            <span class="badge-icon">{{ badge.icon }}</span>
+            <div class="badge-name">{{ badge.name }}</div>
+            <div class="badge-desc">{{ badge.desc }}</div>
+            <div class="badge-status" v-if="badge.unlocked">Unlocked</div>
+            <div class="badge-status locked-status" v-else>Locked</div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Settings -->
-    <section class="settings-section">
-      <h2>⚙️ 设置</h2>
-      <div class="settings-list">
-        <div class="setting-item">
-          <span class="setting-icon">👤</span>
-          <span class="setting-name">编辑资料</span>
-          <span class="setting-arrow">→</span>
+      <!-- Settings Menu -->
+      <section class="settings-section">
+        <h2>Settings</h2>
+        <div class="settings-list">
+          <button v-for="item in menuItems" :key="item.label" class="setting-row">
+            <svg v-if="item.icon === 'user'" width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <circle cx="9" cy="6" r="3" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M3 16c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            <svg v-else-if="item.icon === 'bell'" width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M7 14a2 2 0 004 0M9 2a5 5 0 00-5 5c0 2-1 4-2 5h14c-1-1-2-3-2-5a5 5 0 00-5-5z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <svg v-else-if="item.icon === 'moon'" width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M15.1 10.4A7 7 0 017.6 2.9 7 7 0 1015.1 10.4z" stroke="currentColor" stroke-width="1.2"/>
+            </svg>
+            <svg v-else-if="item.icon === 'help'" width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M7 7a2 2 0 013.5 1.5c0 1.5-2 1.5-2 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+              <circle cx="9" cy="13.5" r="0.5" fill="currentColor"/>
+            </svg>
+            <svg v-else width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M9 6v4M9 12h.01" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            <span class="setting-label">{{ item.label }}</span>
+            <svg class="setting-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
-        <div class="setting-item">
-          <span class="setting-icon">🔔</span>
-          <span class="setting-name">通知设置</span>
-          <span class="setting-arrow">→</span>
-        </div>
-        <div class="setting-item">
-          <span class="setting-icon">🌙</span>
-          <span class="setting-name">深色模式</span>
-          <span class="setting-arrow">→</span>
-        </div>
-        <div class="setting-item">
-          <span class="setting-icon">❓</span>
-          <span class="setting-name">帮助与反馈</span>
-          <span class="setting-arrow">→</span>
-        </div>
-        <div class="setting-item">
-          <span class="setting-icon">📜</span>
-          <span class="setting-name">关于我们</span>
-          <span class="setting-arrow">→</span>
-        </div>
-      </div>
-    </section>
+      </section>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .profile-page {
   min-height: 100vh;
-  background: var(--color-bg, #f8fafc);
-  padding-bottom: 80px;
+  background: var(--color-bg);
 }
 
-.profile-header {
-  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
-  padding: 48px 16px 32px;
+/* Hero */
+.profile-hero {
+  position: relative;
+  padding: 80px 24px 48px;
   text-align: center;
-  color: white;
+  overflow: hidden;
+}
+
+.profile-hero-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--color-primary-muted) 0%, var(--color-bg) 100%);
+}
+
+.profile-hero-content {
+  position: relative;
+}
+
+.avatar-ring {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  margin-bottom: 16px;
 }
 
 .avatar {
-  font-size: 4rem;
-  margin-bottom: 12px;
-}
-
-.profile-header h1 {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 12px;
+  color: var(--color-primary);
 }
 
-.streak-badge {
-  display: inline-flex;
+.profile-hero h1 {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.member-info {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 8px 16px;
-  border-radius: 100px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
 }
 
-.streak-icon {
-  font-size: 1rem;
+.member-dot {
+  opacity: 0.4;
 }
 
+.streak-label {
+  color: var(--color-secondary);
+  font-weight: 600;
+}
+
+/* Body */
+.profile-body {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+/* Stats */
 .stats-section {
-  padding: 16px;
-  margin-top: -16px;
+  margin-bottom: 40px;
 }
 
-.stats-grid {
+.stats-row {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
 
-.stat-card {
-  background: var(--color-surface, #ffffff);
-  border-radius: 12px;
-  padding: 16px;
+.stat-item {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: 20px 16px;
   text-align: center;
+  transition: all 0.3s var(--ease-out-expo);
 }
 
-.stat-icon {
-  font-size: 1.5rem;
-  margin-bottom: 8px;
-  display: block;
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-secondary, #1b4965);
+.stat-val {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin-bottom: 2px;
 }
 
-.stat-label {
-  font-size: 0.75rem;
-  color: var(--color-text-secondary, #64748b);
-  margin-top: 4px;
+.stat-key {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
 }
 
+/* Achievements */
 .achievements-section {
-  padding: 16px;
-  max-width: 480px;
-  margin: 0 auto;
+  margin-bottom: 40px;
 }
 
 .achievements-section h2 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-secondary, #1b4965);
-  margin-bottom: 16px;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 20px;
 }
 
 .achievements-grid {
@@ -197,78 +259,136 @@ const stats = [
   gap: 12px;
 }
 
-.achievement-card {
-  background: var(--color-surface, #ffffff);
-  border-radius: 12px;
-  padding: 12px;
+.badge-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: 20px 16px;
   text-align: center;
+  transition: all 0.3s var(--ease-out-expo);
 }
 
-.achievement-card.locked {
-  opacity: 0.4;
+.badge-card:hover:not(.locked) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
-.achievement-icon {
+.badge-card.locked {
+  opacity: 0.45;
+}
+
+.badge-icon {
   font-size: 2rem;
-  margin-bottom: 8px;
+  display: block;
+  margin-bottom: 10px;
 }
 
-.achievement-name {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--color-secondary, #1b4965);
+.badge-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--color-text);
   margin-bottom: 4px;
 }
 
-.achievement-desc {
-  font-size: 0.6875rem;
-  color: var(--color-text-secondary, #64748b);
-  line-height: 1.3;
+.badge-desc {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  margin-bottom: 10px;
 }
 
-.settings-section {
-  padding: 16px;
-  max-width: 480px;
-  margin: 0 auto;
+.badge-status {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-success);
 }
 
+.locked-status {
+  color: var(--color-text-muted);
+}
+
+/* Settings */
 .settings-section h2 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-secondary, #1b4965);
-  margin-bottom: 16px;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 20px;
 }
 
 .settings-list {
-  background: var(--color-surface, #ffffff);
-  border-radius: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
   overflow: hidden;
 }
 
-.setting-item {
+.setting-row {
   display: flex;
   align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  cursor: pointer;
+  gap: 14px;
+  width: 100%;
+  padding: 18px 24px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: 0.92rem;
+  color: var(--color-text-secondary);
+  text-align: left;
+  transition: all 0.15s;
 }
 
-.setting-item:last-child {
+.setting-row:last-child {
   border-bottom: none;
 }
 
-.setting-icon {
-  font-size: 1.25rem;
-  margin-right: 12px;
+.setting-row:hover {
+  background: var(--color-bg-warm);
+  color: var(--color-text);
 }
 
-.setting-name {
+.setting-row svg:first-child {
+  flex-shrink: 0;
+}
+
+.setting-label {
   flex: 1;
-  font-size: 0.9375rem;
-  color: var(--color-text, #1e293b);
+  color: var(--color-text);
 }
 
 .setting-arrow {
-  color: var(--color-text-secondary, #64748b);
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .profile-body {
+    padding: 0 16px 64px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .achievements-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .profile-hero {
+    padding: 48px 16px 36px;
+  }
+
+  .setting-row {
+    padding: 16px 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .achievements-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 </style>
