@@ -246,19 +246,22 @@ const upcomingEvents = [
         </div>
         <div class="events-list">
           <div v-for="(event, i) in upcomingEvents" :key="i" class="event-row">
-            <div class="event-date-block">
-              <span class="event-day">{{ event.date.split(' ')[1].replace(',', '') }}</span>
-              <span class="event-month">{{ event.date.split(' ')[0] }}</span>
-            </div>
-            <div class="event-info">
-              <h4>{{ event.title }}</h4>
-              <div class="event-meta-row">
-                <span class="event-location">{{ event.location }}</span>
-                <span class="event-divider">&middot;</span>
-                <span class="event-spots">{{ event.spots }} spots left</span>
+            <div class="event-top-row">
+              <div class="event-date-block">
+                <span class="event-day">{{ event.date.split(' ')[1].replace(',', '') }}</span>
+                <span class="event-month">{{ event.date.split(' ')[0] }}</span>
+              </div>
+              <div class="event-info">
+                <h4>{{ event.title }}</h4>
+                <div class="event-meta-row">
+                  <span class="event-location">{{ event.location }}</span>
+                </div>
               </div>
             </div>
-            <div class="event-points-badge">+{{ event.points }} pts</div>
+            <div class="event-card-bottom">
+              <span class="event-spots">{{ event.spots }} spots left</span>
+              <div class="event-points-badge">+{{ event.points }} pts</div>
+            </div>
           </div>
         </div>
       </div>
@@ -287,9 +290,9 @@ const upcomingEvents = [
 }
 
 .section-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 40px;
 }
 
 /* ---- Hero ---- */
@@ -299,10 +302,10 @@ const upcomingEvents = [
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 48px;
-  max-width: 1200px;
+  gap: 80px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 80px 24px 64px;
+  padding: 100px 40px 80px;
 }
 
 .hero-bg {
@@ -344,7 +347,7 @@ const upcomingEvents = [
 
 .hero-content {
   flex: 1;
-  max-width: 600px;
+  max-width: 640px;
 }
 
 .hero-label {
@@ -468,8 +471,8 @@ const upcomingEvents = [
 /* Hero floating cards */
 .hero-visual {
   position: relative;
-  width: 360px;
-  height: 420px;
+  width: 440px;
+  height: 480px;
   flex-shrink: 0;
 }
 
@@ -793,37 +796,38 @@ const upcomingEvents = [
 }
 
 .events-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
 }
 
 .event-row {
   display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 20px 24px;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   transition: all 0.3s var(--ease-out-expo);
   cursor: pointer;
 }
 
 .event-row:hover {
   border-color: var(--color-primary-light);
-  box-shadow: var(--shadow-md);
-  transform: translateX(4px);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
 }
 
 .event-date-block {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 52px;
-  padding: 10px 8px;
+  width: 60px;
+  padding: 12px 8px;
   background: var(--color-primary-muted);
   border-radius: var(--radius-md);
+  flex-shrink: 0;
 }
 
 .event-day {
@@ -863,27 +867,43 @@ const upcomingEvents = [
   color: var(--color-text-muted);
 }
 
-.event-divider {
-  opacity: 0.4;
+.event-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.event-spots {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.event-top-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .event-points-badge {
-  flex-shrink: 0;
+  display: inline-block;
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--color-primary);
   background: var(--color-primary-muted);
   padding: 6px 14px;
   border-radius: var(--radius-full);
+  margin-top: 4px;
 }
 
 /* ---- CTA ---- */
 .cta-section {
-  padding: 40px 24px 0;
+  padding: 40px 40px 0;
 }
 
 .cta-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   position: relative;
   border-radius: var(--radius-xl);
@@ -970,8 +990,50 @@ const upcomingEvents = [
   background: rgba(255, 255, 255, 0.1);
 }
 
+/* ---- Desktop Large (1440+) ---- */
+@media (min-width: 1440px) {
+  .hero {
+    gap: 100px;
+  }
+
+  .hero-visual {
+    width: 500px;
+    height: 520px;
+  }
+
+  .stat-card {
+    padding: 40px 28px;
+  }
+
+  .stat-value {
+    font-size: 2.4rem;
+  }
+
+  .highlight-visual {
+    height: 240px;
+  }
+
+  .feature-card {
+    padding: 44px 36px;
+  }
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 1024px) {
+  .section-container {
+    padding: 0 24px;
+  }
+
+  .hero {
+    gap: 48px;
+    padding: 80px 24px 64px;
+  }
+
+  .hero-visual {
+    width: 340px;
+    height: 400px;
+  }
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -984,9 +1046,15 @@ const upcomingEvents = [
     grid-column: span 2;
   }
 
+  .events-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
   .features-grid {
     grid-template-columns: 1fr;
-    max-width: 500px;
+    max-width: 520px;
     margin: 0 auto;
   }
 }
@@ -1038,6 +1106,10 @@ const upcomingEvents = [
 
   .highlights-grid .highlight-card:last-child {
     grid-column: span 1;
+  }
+
+  .events-list {
+    grid-template-columns: 1fr;
   }
 
   .section-header-row {

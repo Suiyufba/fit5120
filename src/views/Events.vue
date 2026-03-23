@@ -288,15 +288,15 @@ function resetFilters() {
 
 /* Layout */
 .events-body {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 24px 80px;
+  padding: 0 40px 80px;
   display: flex;
-  gap: 32px;
+  gap: 36px;
 }
 
 .filters-panel {
-  width: 220px;
+  width: 240px;
   flex-shrink: 0;
   position: sticky;
   top: 80px;
@@ -359,13 +359,14 @@ function resetFilters() {
 }
 
 .events-grid {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 }
 
 .event-card {
   display: flex;
+  flex-direction: column;
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-xl);
@@ -375,12 +376,12 @@ function resetFilters() {
 
 .event-card:hover {
   box-shadow: var(--shadow-lg);
-  transform: translateY(-3px);
+  transform: translateY(-4px);
 }
 
 .event-visual {
-  width: 200px;
-  min-height: 220px;
+  width: 100%;
+  height: 160px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -540,6 +541,32 @@ function resetFilters() {
   color: var(--color-primary);
 }
 
+@media (min-width: 1200px) {
+  .events-grid {
+    gap: 24px;
+  }
+
+  .event-visual {
+    height: 180px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .events-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .event-card {
+    flex-direction: row;
+  }
+
+  .event-visual {
+    width: 200px;
+    height: auto;
+    min-height: 200px;
+  }
+}
+
 @media (max-width: 768px) {
   .events-body {
     flex-direction: column;
@@ -567,7 +594,7 @@ function resetFilters() {
 
   .event-visual {
     width: 100%;
-    min-height: 140px;
+    height: 140px;
   }
 
   .page-hero {

@@ -83,7 +83,7 @@ function restartQuiz() {
 
 <template>
   <div class="quiz-page">
-    <div class="quiz-wrapper">
+    <div class="quiz-outer">
       <!-- Quiz Header -->
       <header class="quiz-top">
         <button class="back-link" @click="$router.push('/')">
@@ -111,60 +111,101 @@ function restartQuiz() {
         <div class="progress-fill" :style="{ width: progress + '%' }"></div>
       </div>
 
-      <!-- Question Content -->
-      <div v-if="!isComplete" class="question-area">
-        <div class="topic-pill">{{ currentQuestion.topic }}</div>
-        <h2 class="question-text">{{ currentQuestion.question }}</h2>
+      <!-- Desktop two-panel layout -->
+      <div v-if="!isComplete" class="quiz-desktop-layout">
+        <!-- Main question area -->
+        <div class="question-area">
+          <div class="topic-pill">{{ currentQuestion.topic }}</div>
+          <h2 class="question-text">{{ currentQuestion.question }}</h2>
 
-        <div class="options-list">
-          <button
-            v-for="(option, index) in currentQuestion.options"
-            :key="index"
-            class="option-card"
-            :class="{
-              selected: selectedAnswer === index && !showFeedback,
-              correct: showFeedback && index === currentQuestion.correct,
-              wrong: showFeedback && selectedAnswer === index && index !== currentQuestion.correct
-            }"
-            @click="selectAnswer(index)"
-            :disabled="showFeedback"
-          >
-            <span class="option-key">{{ ['A', 'B', 'C', 'D'][index] }}</span>
-            <span class="option-label">{{ option }}</span>
-            <span class="option-indicator" v-if="showFeedback && index === currentQuestion.correct">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M4 9l3.5 3.5L14 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </span>
-            <span class="option-indicator wrong-icon" v-if="showFeedback && selectedAnswer === index && index !== currentQuestion.correct">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M5 5l8 8M13 5l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </span>
-          </button>
-        </div>
-
-        <!-- Feedback Panel -->
-        <transition name="slide-up">
-          <div v-if="showFeedback" class="feedback-panel" :class="{ success: selectedAnswer === currentQuestion.correct }">
-            <div class="feedback-top">
-              <div class="feedback-result">
-                <span v-if="selectedAnswer === currentQuestion.correct" class="result-correct">Correct!</span>
-                <span v-else class="result-wrong">Not quite</span>
-              </div>
-              <div class="feedback-points">
-                +{{ selectedAnswer === currentQuestion.correct ? 10 : 0 }} pts
-              </div>
-            </div>
-            <p class="feedback-explanation">{{ currentQuestion.explanation }}</p>
-            <button class="btn-next" @click="nextQuestion">
-              {{ currentIndex < questions.length - 1 ? 'Next Question' : 'See Results' }}
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+          <div class="options-list">
+            <button
+              v-for="(option, index) in currentQuestion.options"
+              :key="index"
+              class="option-card"
+              :class="{
+                selected: selectedAnswer === index && !showFeedback,
+                correct: showFeedback && index === currentQuestion.correct,
+                wrong: showFeedback && selectedAnswer === index && index !== currentQuestion.correct
+              }"
+              @click="selectAnswer(index)"
+              :disabled="showFeedback"
+            >
+              <span class="option-key">{{ ['A', 'B', 'C', 'D'][index] }}</span>
+              <span class="option-label">{{ option }}</span>
+              <span class="option-indicator" v-if="showFeedback && index === currentQuestion.correct">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M4 9l3.5 3.5L14 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span class="option-indicator wrong-icon" v-if="showFeedback && selectedAnswer === index && index !== currentQuestion.correct">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M5 5l8 8M13 5l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </span>
             </button>
           </div>
-        </transition>
+
+          <!-- Feedback Panel -->
+          <transition name="slide-up">
+            <div v-if="showFeedback" class="feedback-panel" :class="{ success: selectedAnswer === currentQuestion.correct }">
+              <div class="feedback-top">
+                <div class="feedback-result">
+                  <span v-if="selectedAnswer === currentQuestion.correct" class="result-correct">Correct!</span>
+                  <span v-else class="result-wrong">Not quite</span>
+                </div>
+                <div class="feedback-points">
+                  +{{ selectedAnswer === currentQuestion.correct ? 10 : 0 }} pts
+                </div>
+              </div>
+              <p class="feedback-explanation">{{ currentQuestion.explanation }}</p>
+              <button class="btn-next" @click="nextQuestion">
+                {{ currentIndex < questions.length - 1 ? 'Next Question' : 'See Results' }}
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </transition>
+        </div>
+
+        <!-- Sidebar with quiz info (desktop only) -->
+        <aside class="quiz-sidebar">
+          <div class="sidebar-card">
+            <h3>Quiz Progress</h3>
+            <div class="sidebar-progress-ring">
+              <svg viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-border-light)" stroke-width="5"/>
+                <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-primary)" stroke-width="5"
+                  stroke-linecap="round"
+                  :stroke-dasharray="2 * Math.PI * 34"
+                  :stroke-dashoffset="2 * Math.PI * 34 * (1 - progress / 100)"
+                  transform="rotate(-90 40 40)"
+                  style="transition: stroke-dashoffset 0.5s ease"/>
+              </svg>
+              <span class="ring-label">{{ Math.round(progress) }}%</span>
+            </div>
+          </div>
+
+          <div class="sidebar-card">
+            <h3>Current Score</h3>
+            <div class="sidebar-score">{{ score }} <span>pts</span></div>
+          </div>
+
+          <div class="sidebar-card">
+            <h3>Question Map</h3>
+            <div class="question-dots">
+              <span v-for="(q, i) in questions" :key="i"
+                class="q-dot"
+                :class="{
+                  current: i === currentIndex,
+                  done: i < currentIndex,
+                  future: i > currentIndex
+                }"
+              >{{ i + 1 }}</span>
+            </div>
+          </div>
+        </aside>
       </div>
 
       <!-- Results Screen -->
@@ -175,24 +216,26 @@ function restartQuiz() {
           <p class="results-subtitle">Here's how you did on this quiz session.</p>
         </div>
 
-        <div class="results-card">
-          <div class="results-score">
-            <span class="rs-number">{{ score }}</span>
-            <span class="rs-label">Points Earned</span>
-          </div>
-          <div class="results-divider"></div>
-          <div class="results-detail">
-            <div class="rd-row">
-              <span class="rd-key">Correct Answers</span>
-              <span class="rd-val">{{ score / 10 }} / {{ questions.length }}</span>
+        <div class="results-grid">
+          <div class="results-card">
+            <div class="results-score">
+              <span class="rs-number">{{ score }}</span>
+              <span class="rs-label">Points Earned</span>
             </div>
-            <div class="rd-row">
-              <span class="rd-key">Accuracy</span>
-              <span class="rd-val">{{ accuracy }}%</span>
-            </div>
-            <div class="rd-row">
-              <span class="rd-key">Topics Covered</span>
-              <span class="rd-val">{{ [...new Set(questions.map(q => q.topic))].length }}</span>
+            <div class="results-divider"></div>
+            <div class="results-detail">
+              <div class="rd-row">
+                <span class="rd-key">Correct Answers</span>
+                <span class="rd-val">{{ score / 10 }} / {{ questions.length }}</span>
+              </div>
+              <div class="rd-row">
+                <span class="rd-key">Accuracy</span>
+                <span class="rd-val">{{ accuracy }}%</span>
+              </div>
+              <div class="rd-row">
+                <span class="rd-key">Topics Covered</span>
+                <span class="rd-val">{{ [...new Set(questions.map(q => q.topic))].length }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -216,10 +259,120 @@ function restartQuiz() {
   background: var(--color-bg);
 }
 
-.quiz-wrapper {
-  max-width: 640px;
+.quiz-outer {
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 40px;
+}
+
+.quiz-desktop-layout {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+.quiz-desktop-layout .question-area {
+  flex: 1;
+  min-width: 0;
+  max-width: 680px;
+}
+
+.quiz-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sidebar-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+}
+
+.sidebar-card h3 {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+  margin-bottom: 16px;
+}
+
+.sidebar-progress-ring {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+}
+
+.sidebar-progress-ring svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.sidebar-score {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  text-align: center;
+}
+
+.sidebar-score span {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.question-dots {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.q-dot {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  font-size: 0.78rem;
+  font-weight: 700;
+  transition: all 0.25s var(--ease-out-expo);
+}
+
+.q-dot.current {
+  background: var(--color-primary);
+  color: white;
+}
+
+.q-dot.done {
+  background: var(--color-primary-muted);
+  color: var(--color-primary);
+}
+
+.q-dot.future {
+  background: var(--color-bg-warm);
+  color: var(--color-text-muted);
 }
 
 .quiz-top {
@@ -481,6 +634,8 @@ function restartQuiz() {
 .results-area {
   padding: 48px 0 80px;
   text-align: center;
+  max-width: 640px;
+  margin: 0 auto;
 }
 
 .results-header {
@@ -567,10 +722,17 @@ function restartQuiz() {
   color: var(--color-text);
 }
 
+.results-grid {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
 .results-actions {
   display: flex;
-  flex-direction: column;
   gap: 12px;
+  justify-content: center;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 .btn-retry {
@@ -605,13 +767,31 @@ function restartQuiz() {
   color: var(--color-text);
 }
 
+@media (max-width: 900px) {
+  .quiz-sidebar {
+    display: none;
+  }
+
+  .quiz-desktop-layout {
+    display: block;
+  }
+
+  .quiz-desktop-layout .question-area {
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
-  .quiz-wrapper {
+  .quiz-outer {
     padding: 0 16px;
   }
 
   .question-text {
     font-size: 1.25rem;
+  }
+
+  .results-actions {
+    flex-direction: column;
   }
 }
 </style>

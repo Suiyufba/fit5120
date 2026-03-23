@@ -81,62 +81,67 @@ function exchange(reward) {
         </div>
       </div>
 
-      <!-- Rewards Grid -->
-      <section class="store-section">
-        <div class="store-header">
-          <h2>Rewards Store</h2>
-          <p>{{ rewards.length }} items available</p>
-        </div>
-        <div class="rewards-grid">
-          <div
-            v-for="reward in rewards"
-            :key="reward.id"
-            class="reward-card"
-            :class="{ locked: !canAfford(reward.points) }"
-          >
-            <div class="reward-icon-area">
-              <span class="reward-emoji">{{ reward.icon }}</span>
+      <!-- Two-column layout: Store + History -->
+      <div class="rewards-two-col">
+        <div class="rewards-main">
+          <section class="store-section">
+            <div class="store-header">
+              <h2>Rewards Store</h2>
+              <p>{{ rewards.length }} items available</p>
             </div>
-            <div class="reward-info">
-              <span class="reward-category">{{ reward.category }}</span>
-              <h4>{{ reward.name }}</h4>
-              <div class="reward-bottom">
-                <span class="reward-cost">
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                    <circle cx="8" cy="8" r="6" fill="currentColor" opacity="0.2"/>
-                    <circle cx="8" cy="8" r="3" fill="currentColor"/>
-                  </svg>
-                  {{ reward.points }} pts
-                </span>
-                <button
-                  class="btn-redeem"
-                  :disabled="!canAfford(reward.points)"
-                  @click="exchange(reward)"
-                >
-                  Redeem
-                </button>
+            <div class="rewards-grid">
+              <div
+                v-for="reward in rewards"
+                :key="reward.id"
+                class="reward-card"
+                :class="{ locked: !canAfford(reward.points) }"
+              >
+                <div class="reward-icon-area">
+                  <span class="reward-emoji">{{ reward.icon }}</span>
+                </div>
+                <div class="reward-info">
+                  <span class="reward-category">{{ reward.category }}</span>
+                  <h4>{{ reward.name }}</h4>
+                  <div class="reward-bottom">
+                    <span class="reward-cost">
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                        <circle cx="8" cy="8" r="6" fill="currentColor" opacity="0.2"/>
+                        <circle cx="8" cy="8" r="3" fill="currentColor"/>
+                      </svg>
+                      {{ reward.points }} pts
+                    </span>
+                    <button
+                      class="btn-redeem"
+                      :disabled="!canAfford(reward.points)"
+                      @click="exchange(reward)"
+                    >
+                      Redeem
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          </section>
         </div>
-      </section>
 
-      <!-- History -->
-      <section class="history-section">
-        <h2>Recent Activity</h2>
-        <div class="history-list">
-          <div v-for="item in history" :key="item.id" class="history-row">
-            <div class="history-indicator" :class="item.type"></div>
-            <div class="history-info">
-              <span class="history-desc">{{ item.desc }}</span>
-              <span class="history-date">{{ item.date }}</span>
+        <aside class="rewards-aside">
+          <section class="history-section">
+            <h2>Recent Activity</h2>
+            <div class="history-list">
+              <div v-for="item in history" :key="item.id" class="history-row">
+                <div class="history-indicator" :class="item.type"></div>
+                <div class="history-info">
+                  <span class="history-desc">{{ item.desc }}</span>
+                  <span class="history-date">{{ item.date }}</span>
+                </div>
+                <span class="history-amount" :class="item.type">
+                  {{ item.points > 0 ? '+' : '' }}{{ item.points }} pts
+                </span>
+              </div>
             </div>
-            <span class="history-amount" :class="item.type">
-              {{ item.points > 0 ? '+' : '' }}{{ item.points }} pts
-            </span>
-          </div>
-        </div>
-      </section>
+          </section>
+        </aside>
+      </div>
     </div>
   </div>
 </template>
@@ -196,9 +201,27 @@ function exchange(reward) {
 
 /* Body */
 .rewards-body {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 24px 80px;
+  padding: 0 40px 80px;
+}
+
+.rewards-two-col {
+  display: flex;
+  gap: 36px;
+  align-items: flex-start;
+}
+
+.rewards-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.rewards-aside {
+  width: 360px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
 }
 
 /* Points Overview */
@@ -302,7 +325,7 @@ function exchange(reward) {
 
 .rewards-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
@@ -468,6 +491,21 @@ function exchange(reward) {
 
 .history-amount.spend {
   color: var(--color-secondary);
+}
+
+@media (max-width: 1024px) {
+  .rewards-two-col {
+    flex-direction: column;
+  }
+
+  .rewards-aside {
+    width: 100%;
+    position: static;
+  }
+
+  .rewards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
