@@ -32,7 +32,8 @@ const summary = computed(() => {
     difficulty: route.difficulty,
     risk: `${route.riskLevel} (${route.riskScore.toFixed(1)})`,
     goNoGo: route.goNoGo,
-    explanation: route.explanation
+    explanation: route.explanation,
+    zoneSummary: route.zoneSummary || { level1Count: 0, level2Count: 0, level3Count: 0 }
   }
 })
 
@@ -233,6 +234,11 @@ onUnmounted(() => {
         <div class="go-tag" :class="{ 'go-tag--danger': summary.goNoGo === 'No-Go' }">
           {{ summary.goNoGo }}
         </div>
+        <p class="zone-inline">
+          Route crosses zones: L1 {{ summary.zoneSummary.level1Count }} ·
+          L2 {{ summary.zoneSummary.level2Count }} ·
+          L3 {{ summary.zoneSummary.level3Count }}
+        </p>
         <p class="summary-explain">{{ summary.explanation }}</p>
         <button class="primary-btn" @click="goToDetails">View Route Details</button>
       </section>
@@ -412,6 +418,16 @@ h1 {
   color: #3f5a54;
   font-size: 0.84rem;
   line-height: 1.45;
+}
+
+.zone-inline {
+  color: #21473d;
+  background: #edf7f2;
+  border: 1px solid #d2e6db;
+  border-radius: 0.55rem;
+  padding: 0.42rem 0.52rem;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .planner-map-wrap {

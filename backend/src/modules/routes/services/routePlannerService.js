@@ -96,6 +96,7 @@ export async function planSaferRoute({ userId, start, end }) {
       goNoGo: recommendedRoute.goNoGo,
       explanation: recommendedRoute.explanation,
       keyRisks: recommendedRoute.keyRisks,
+      zoneSummary: recommendedRoute.zoneSummary,
       suggestedPrep: recommendedRoute.suggestedPrep
     },
     alternatives,

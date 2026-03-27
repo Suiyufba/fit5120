@@ -76,6 +76,20 @@ function distanceFactor(distanceKm) {
   return 0;
 }
 
+function zoneLevelByDistance(distanceKm) {
+  if (distanceKm <= 1) return 1;
+  if (distanceKm <= 3) return 2;
+  if (distanceKm <= 5) return 3;
+  return 0;
+}
+
+function zoneLabel(level) {
+  if (level === 1) return 'Level 1 Core Risk Zone';
+  if (level === 2) return 'Level 2 Buffer Risk Zone';
+  if (level === 3) return 'Level 3 Watch Risk Zone';
+  return 'Outside Risk Zone';
+}
+
 function toHazardImpact(hazard, distanceKm) {
   const base = SEVERITY_BASE[hazard.severity] ?? 20;
   const factor = TYPE_FACTOR[hazard.type] ?? TYPE_FACTOR.other;
@@ -110,6 +124,26 @@ function topImpactAverage(hazards, geometry, filterFn) {
     score: clamp(avg),
     impacts
   };
+}
+
+function collectCoverageImpacts(hazards, geometry, filterFn = () => true) {
+  return hazards
+    .filter(filterFn)
+    .map((hazard) => {
+      const distanceKm = distanceToRouteKm(hazard.coordinates, geometry);
+      const zoneLevel = zoneLevelByDistance(distanceKm);
+      return {
+        hazard,
+        distanceKm,
+        zoneLevel,
+        impact: toHazardImpact(hazard, distanceKm)
+      };
+    })
+    .filter((item) => Number.isFinite(item.distanceKm) && item.zoneLevel > 0)
+    .sort((a, b) => {
+      if (a.zoneLevel !== b.zoneLevel) return a.zoneLevel - b.zoneLevel;
+      return b.impact - a.impact;
+    });
 }
 
 function difficultyScore(distanceKm, durationMin) {
@@ -158,7 +192,8 @@ function buildExplanation({ chosenRoute, fastestRoute, topHazards, goNoGo }) {
   }
 
   const first = topHazards[0];
-  const reason = `${first.hazard.type} risk is near the route (${first.distanceKm.toFixed(1)} km)`;
+  const level = zoneLevelByDistance(first.distanceKm);
+  const reason = `${first.hazard.type} risk enters ${zoneLabel(level)} (${first.distanceKm.toFixed(1)} km from path)`;
   const detourMinutes = Math.max(0, Math.round(chosenRoute.durationMin - fastestRoute.durationMin));
   if (detourMinutes > 0) {
     return `This route is recommended because it reduces exposure where ${reason}. It adds about ${detourMinutes} minutes for safer conditions.`;
@@ -173,7 +208,8 @@ function levelNoun(userLevel) {
 }
 
 function riskAdviceByType({ type, severity, distanceKm, userLevel }) {
-  const prefix = `${severity} ${type} risk ~${distanceKm.toFixed(1)} km from route`;
+  const level = zoneLevelByDistance(distanceKm);
+  const prefix = `${severity} ${type} risk in ${zoneLabel(level)} (~${distanceKm.toFixed(1)} km from route)`;
   if (type === 'fire') {
     return `${prefix}. As a ${levelNoun(userLevel)}, keep a hard turnaround trigger if alert level increases.`;
   }
@@ -233,6 +269,7 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute })
   const geometry = route.geometry || [];
   const hazardAgg = topImpactAverage(hazards, geometry, () => true);
   const weatherAgg = topImpactAverage(hazards, geometry, (hazard) => isOpenWeatherHazard(hazard));
+  const coverageImpacts = collectCoverageImpacts(hazards, geometry);
 
   const routeDifficultyScore = difficultyScore(route.distanceKm, route.durationMin);
   const weightedTotal = clamp(
@@ -246,13 +283,15 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute })
     impacts: hazardAgg.impacts
   });
 
-  const keyRisks = hazardAgg.impacts.slice(0, 3).map((item) => ({
+  const keyRisks = coverageImpacts.slice(0, 3).map((item) => ({
     id: item.hazard.id,
     title: item.hazard.title,
     type: item.hazard.type,
     severity: item.hazard.severity,
     distanceKm: Number(item.distanceKm.toFixed(2)),
     source: item.hazard.source,
+    zoneLevel: item.zoneLevel,
+    zoneLabel: zoneLabel(item.zoneLevel),
     advice: riskAdviceByType({
       type: item.hazard.type,
       severity: item.hazard.severity,
@@ -276,6 +315,11 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute })
     goNoGo,
     explanation,
     keyRisks,
+    zoneSummary: {
+      level1Count: coverageImpacts.filter((item) => item.zoneLevel === 1).length,
+      level2Count: coverageImpacts.filter((item) => item.zoneLevel === 2).length,
+      level3Count: coverageImpacts.filter((item) => item.zoneLevel === 3).length
+    },
     suggestedPrep: buildSuggestedPrep({
       route,
       userLevel,

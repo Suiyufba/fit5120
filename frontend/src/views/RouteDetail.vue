@@ -94,12 +94,18 @@ onUnmounted(() => {
           {{ recommended.goNoGo }}
         </div>
         <p class="detail-explain">{{ recommended.explanation }}</p>
+        <p class="zone-summary">
+          Coverage zones crossed:
+          L1 {{ recommended.zoneSummary?.level1Count || 0 }} ·
+          L2 {{ recommended.zoneSummary?.level2Count || 0 }} ·
+          L3 {{ recommended.zoneSummary?.level3Count || 0 }}
+        </p>
 
         <section class="risk-block">
           <h2>Key Risk Sections</h2>
           <article v-for="risk in recommended.keyRisks" :key="risk.id" class="risk-item">
             <strong>{{ risk.title }}</strong>
-            <p>{{ risk.type }} · {{ risk.severity }} · {{ risk.distanceKm }} km away</p>
+            <p>{{ risk.type }} · {{ risk.severity }} · {{ risk.zoneLabel }} · {{ risk.distanceKm }} km away</p>
             <p class="risk-advice">{{ risk.advice }}</p>
             <small>Source: {{ risk.source }}</small>
           </article>
@@ -208,6 +214,16 @@ h1 {
   color: #43605a;
   line-height: 1.45;
   font-size: 0.9rem;
+}
+
+.zone-summary {
+  color: #25473f;
+  font-size: 0.83rem;
+  font-weight: 700;
+  background: #edf7f2;
+  border: 1px solid #d2e6db;
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.6rem;
 }
 
 .risk-block h2 {
