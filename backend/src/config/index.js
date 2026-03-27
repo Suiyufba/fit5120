@@ -21,6 +21,7 @@ export const config = {
   redisUrl: process.env.REDIS_URL || '',
   redisTtlSeconds: toInt(process.env.REDIS_TTL_SECONDS, 90),
   vicroadsApiUrl: process.env.VICROADS_API_URL || '',
+  vicroadsApiKey: process.env.VICROADS_API_KEY || '',
   bomFeedUrl: process.env.BOM_FEED_URL || '',
   vicEmergencyFeedUrl: process.env.VIC_EMERGENCY_FEED_URL || '',
   vicEmergencyApiKey: process.env.VIC_EMERGENCY_API_KEY || ''

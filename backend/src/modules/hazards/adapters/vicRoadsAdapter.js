@@ -13,7 +13,19 @@ const toCoords = (record) => {
 export async function fetchVicRoadsHazards() {
   if (!config.vicroadsApiUrl) return [];
 
-  const payload = await fetchJson(config.vicroadsApiUrl);
+  const headers = config.vicroadsApiKey
+    ? {
+        'Ocp-Apim-Subscription-Key': config.vicroadsApiKey,
+        KeyID: config.vicroadsApiKey
+      }
+    : {};
+
+  const url = new URL(config.vicroadsApiUrl);
+  if (config.vicroadsApiKey && !url.searchParams.has('subscription-key')) {
+    url.searchParams.set('subscription-key', config.vicroadsApiKey);
+  }
+
+  const payload = await fetchJson(url.toString(), { headers });
   const records = payload?.result?.records || payload?.records || [];
 
   return records

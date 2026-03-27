@@ -107,6 +107,7 @@ npm run dev
 可选（建议逐步接入官方源）：
 
 - `VICROADS_API_URL=...`（DataVic Unplanned Disruption API）
+- `VICROADS_API_KEY=...`（Transport Victoria Open Data Portal 账号生成）
 - `BOM_FEED_URL=...`（你申请/确认可用的 BoM 警报 feed）
 - `VIC_EMERGENCY_FEED_URL=...`（你申请/确认可用的 VicEmergency feed）
 - `VIC_EMERGENCY_API_KEY=...`（如果源要求鉴权）
