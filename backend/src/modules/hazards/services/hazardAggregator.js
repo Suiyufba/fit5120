@@ -2,16 +2,15 @@ import { config } from '../../../config/index.js';
 import { fetchBomHazards } from '../adapters/bomAdapter.js';
 import { fetchVicEmergencyHazards } from '../adapters/vicEmergencyAdapter.js';
 import { fetchVicRoadsHazards } from '../adapters/vicRoadsAdapter.js';
-import { fallbackHazards } from '../data/fallbackHazards.js';
 import { getLatestHazardSnapshot, saveLatestHazardSnapshot } from '../../../infrastructure/db/hazardSnapshotRepository.js';
 import { inBbox, parseBbox, parseLayers, sanitizeHazard } from '../domain/hazardUtils.js';
 
 let latestSnapshot = {
-  hazards: fallbackHazards,
+  hazards: [],
   fetchedAt: new Date().toISOString(),
-  fromFallback: true,
+  fromFallback: false,
   sourceStatus: [],
-  lastError: null
+  lastError: 'No successful upstream snapshot yet'
 };
 
 async function pullProviders() {
@@ -52,11 +51,11 @@ async function pullProviders() {
     return arr.findIndex((h) => `${h.id}|${h.type}|${h.coordinates[0]}|${h.coordinates[1]}` === key) === index;
   });
 
-  if (!hazards.length) {
+  if (!dedupedHazards.length) {
     return {
-      hazards: fallbackHazards.map(sanitizeHazard),
+      hazards: [],
       fetchedAt: new Date().toISOString(),
-      fromFallback: true,
+      fromFallback: false,
       sourceStatus,
       lastError: 'All providers unavailable or returned empty payloads'
     };

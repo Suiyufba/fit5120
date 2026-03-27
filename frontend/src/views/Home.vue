@@ -20,12 +20,6 @@ const severityMeta = {
   low: { label: 'Low', dot: 'bg-emerald-500', pill: 'bg-emerald-100 text-emerald-700' },
 }
 
-const fallbackPreview = [
-  { id: 'home-fallback-1', title: 'Smoke near Apollo Bay', severity: 'high', type: 'fire', source: 'Victorian Safety Snapshot', coordinates: [-38.754, 143.669] },
-  { id: 'home-fallback-2', title: 'Flood watch in Gippsland', severity: 'moderate', type: 'flood', source: 'Victorian Safety Snapshot', coordinates: [-38.11, 147.07] },
-  { id: 'home-fallback-3', title: 'Strong wind warning in Melbourne', severity: 'moderate', type: 'storm', source: 'Victorian Safety Snapshot', coordinates: [-37.814, 144.963] },
-]
-
 const topPreviewHazards = computed(() => {
   return [...previewHazards.value]
     .sort((a, b) => (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0))
@@ -80,11 +74,10 @@ async function loadHomePreview() {
     const payload = await fetchRealtimeHazards({
       layers: ['fire', 'flood', 'storm', 'heat', 'other'],
     })
-    previewHazards.value = payload.hazards.length ? payload.hazards : fallbackPreview
+    previewHazards.value = payload.hazards
     previewUpdatedAt.value = payload.fetchedAt || new Date()
   } catch (_error) {
-    previewHazards.value = fallbackPreview
-    previewUpdatedAt.value = new Date()
+    previewHazards.value = []
   } finally {
     previewLoading.value = false
   }
@@ -162,7 +155,7 @@ onUnmounted(() => {
             <HomeRiskPreviewMap :hazards="previewHazards" />
             <div class="absolute inset-x-4 bottom-4 bg-white/90 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/70">
               <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-[#31544a] mb-2">Top Active Hazards</p>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div v-if="topPreviewHazards.length" class="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div
                   v-for="hazard in topPreviewHazards"
                   :key="hazard.id"
@@ -180,6 +173,7 @@ onUnmounted(() => {
                   </span>
                 </div>
               </div>
+              <p v-else class="text-xs text-slate-500">No active hazards available from upstream sources right now.</p>
             </div>
           </div>
           <div class="flex gap-4 px-4 pb-2 overflow-x-auto">
