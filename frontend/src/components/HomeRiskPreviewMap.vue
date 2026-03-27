@@ -102,5 +102,16 @@ watch(
 .home-preview-map {
   width: 100%;
   height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.home-preview-map :deep(.leaflet-pane) {
+  z-index: 10;
+}
+
+.home-preview-map :deep(.leaflet-top),
+.home-preview-map :deep(.leaflet-bottom) {
+  z-index: 20;
 }
 </style>

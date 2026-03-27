@@ -40,7 +40,7 @@ function goAccount() {
 </script>
 
 <template>
-  <header class="bg-white/80 backdrop-blur-xl sticky top-0 z-50 shadow-sm bg-surface-container-low">
+  <header class="bg-white/80 backdrop-blur-xl sticky top-0 z-[3000] shadow-sm bg-surface-container-low">
     <nav class="flex justify-between items-center px-8 py-4 max-w-full mx-auto">
       <router-link to="/" class="text-2xl font-black text-[#4A6741] italic font-headline tracking-tight">
         HikeShield Victoria
