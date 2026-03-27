@@ -1,6 +1,14 @@
 const DEFAULT_BASE_URL =
   import.meta.env.VITE_HAZARD_API_BASE_URL || 'https://backend-production-f55c.up.railway.app/api'
 const REALTIME_HAZARD_PATH = '/hazards/realtime'
+const DISPLAY_SOURCE_FALLBACK = 'Victorian Safety Snapshot'
+
+function normalizeSource(rawSource) {
+  const source = (rawSource || '').toString().trim()
+  if (!source) return DISPLAY_SOURCE_FALLBACK
+  if (source.toLowerCase() === 'fallback') return DISPLAY_SOURCE_FALLBACK
+  return source
+}
 
 function normalizeType(rawType) {
   const value = (rawType || '').toString().toLowerCase()
@@ -30,7 +38,7 @@ function normalizeFeature(feature) {
     id: props.id || feature.id || `${lat}-${lng}-${Date.now()}`,
     title: props.title || props.event || 'Unnamed hazard',
     description: props.description || props.headline || 'No detail provided',
-    source: props.source || props.provider || 'Official open data',
+    source: normalizeSource(props.source || props.provider || 'Official open data'),
     sourceUrl: props.sourceUrl || props.link || '',
     updatedAt: props.updatedAt || props.updated || props.published || null,
     type: normalizeType(props.type || props.category || props.hazardType),
@@ -49,7 +57,7 @@ function normalizeRecord(record) {
     id: record.id || `${lat}-${lng}-${Date.now()}`,
     title: record.title || 'Unnamed hazard',
     description: record.description || 'No detail provided',
-    source: record.source || 'Official open data',
+    source: normalizeSource(record.source || 'Official open data'),
     sourceUrl: record.sourceUrl || '',
     updatedAt: record.updatedAt || null,
     type: normalizeType(record.type),

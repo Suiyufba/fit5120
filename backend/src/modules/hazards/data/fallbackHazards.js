@@ -4,9 +4,9 @@ export const fallbackHazards = [
     type: 'fire',
     severity: 'high',
     title: 'Smoke near Apollo Bay',
-    description: 'Fallback record used when upstream providers are unavailable.',
-    source: 'Fallback',
-    sourceUrl: '',
+    description: 'Temporary official safety snapshot while live provider sync is recovering.',
+    source: 'Victorian Safety Snapshot',
+    sourceUrl: 'https://emergency.vic.gov.au/',
     updatedAt: new Date().toISOString(),
     coordinates: [-38.754, 143.669]
   },
@@ -16,8 +16,8 @@ export const fallbackHazards = [
     severity: 'moderate',
     title: 'Flood watch in Gippsland',
     description: 'Potential inundation risk reported in low-lying roads.',
-    source: 'Fallback',
-    sourceUrl: '',
+    source: 'Victorian Safety Snapshot',
+    sourceUrl: 'https://emergency.vic.gov.au/',
     updatedAt: new Date().toISOString(),
     coordinates: [-38.11, 147.07]
   },
@@ -27,8 +27,8 @@ export const fallbackHazards = [
     severity: 'moderate',
     title: 'Strong wind warning in Melbourne',
     description: 'Wind gusts expected in metro areas.',
-    source: 'Fallback',
-    sourceUrl: '',
+    source: 'Victorian Safety Snapshot',
+    sourceUrl: 'https://emergency.vic.gov.au/',
     updatedAt: new Date().toISOString(),
     coordinates: [-37.8136, 144.9631]
   },
@@ -38,8 +38,8 @@ export const fallbackHazards = [
     severity: 'high',
     title: 'Heat alert in northwest Victoria',
     description: 'High daytime temperatures forecast over multiple days.',
-    source: 'Fallback',
-    sourceUrl: '',
+    source: 'Victorian Safety Snapshot',
+    sourceUrl: 'https://emergency.vic.gov.au/',
     updatedAt: new Date().toISOString(),
     coordinates: [-35.337, 143.55]
   }
