@@ -47,7 +47,7 @@ function rowToArticle(row, index) {
 }
 
 async function findArticleTableName(pool) {
-  const result = await pool.query(
+  const directMatch = await pool.query(
     `
     SELECT table_name
     FROM information_schema.tables
@@ -57,9 +57,44 @@ async function findArticleTableName(pool) {
     [CANDIDATE_TABLES]
   );
 
-  if (!result.rowCount) return null;
-  const existing = new Set(result.rows.map((row) => row.table_name));
-  return CANDIDATE_TABLES.find((name) => existing.has(name)) || null;
+  if (directMatch.rowCount) {
+    const existing = new Set(directMatch.rows.map((row) => row.table_name));
+    const preferred = CANDIDATE_TABLES.find((name) => existing.has(name));
+    if (preferred) return preferred;
+  }
+
+  const columnsResult = await pool.query(
+    `
+    SELECT table_name, column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+    ORDER BY table_name
+    `
+  );
+
+  const byTable = new Map();
+  columnsResult.rows.forEach((row) => {
+    const current = byTable.get(row.table_name) || new Set();
+    current.add(row.column_name);
+    byTable.set(row.table_name, current);
+  });
+
+  const titleColumns = ['title', 'headline', 'name'];
+  const contentColumns = ['content', 'body', 'article_text', 'description', 'summary', 'excerpt'];
+  const imageColumns = ['image_url', 'cover_image', 'thumbnail_url', 'image'];
+  const excluded = new Set(['app_users', 'hazard_latest_snapshot']);
+
+  for (const [tableName, columns] of byTable.entries()) {
+    if (excluded.has(tableName)) continue;
+    const hasTitle = titleColumns.some((col) => columns.has(col));
+    const hasContent = contentColumns.some((col) => columns.has(col));
+    const hasImageOrTopic = imageColumns.some((col) => columns.has(col)) || columns.has('topic') || columns.has('category');
+    if (hasTitle && hasContent && hasImageOrTopic) {
+      return tableName;
+    }
+  }
+
+  return null;
 }
 
 export async function fetchKnowledgeArticles({ topic }) {
