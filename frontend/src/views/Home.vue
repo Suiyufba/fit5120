@@ -1,8 +1,95 @@
 <script setup>
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import SiteFooter from '../components/SiteFooter.vue'
+import { fetchRealtimeHazards } from '../services/hazardApi'
 
 const router = useRouter()
+const previewLoading = ref(false)
+const previewUpdatedAt = ref(null)
+const previewHazards = ref([])
+
+const severityRank = { extreme: 4, high: 3, moderate: 2, low: 1 }
+const severityMeta = {
+  extreme: { label: 'Extreme', dot: 'bg-red-600', pill: 'bg-red-100 text-red-700' },
+  high: { label: 'High', dot: 'bg-orange-500', pill: 'bg-orange-100 text-orange-700' },
+  moderate: { label: 'Moderate', dot: 'bg-yellow-500', pill: 'bg-yellow-100 text-yellow-700' },
+  low: { label: 'Low', dot: 'bg-emerald-500', pill: 'bg-emerald-100 text-emerald-700' },
+}
+
+const fallbackPreview = [
+  { id: 'home-fallback-1', title: 'Smoke near Apollo Bay', severity: 'high', type: 'fire', source: 'Victorian Safety Snapshot', coordinates: [-38.754, 143.669] },
+  { id: 'home-fallback-2', title: 'Flood watch in Gippsland', severity: 'moderate', type: 'flood', source: 'Victorian Safety Snapshot', coordinates: [-38.11, 147.07] },
+  { id: 'home-fallback-3', title: 'Strong wind warning in Melbourne', severity: 'moderate', type: 'storm', source: 'Victorian Safety Snapshot', coordinates: [-37.814, 144.963] },
+]
+
+const topPreviewHazards = computed(() => {
+  return [...previewHazards.value]
+    .sort((a, b) => (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0))
+    .slice(0, 4)
+})
+
+const previewTypeSummary = computed(() => {
+  const summary = { fire: 0, flood: 0, storm: 0, heat: 0, other: 0 }
+  previewHazards.value.forEach((hazard) => {
+    if (summary[hazard.type] !== undefined) summary[hazard.type] += 1
+    else summary.other += 1
+  })
+  return summary
+})
+
+const communityAlerts = ref([
+  {
+    id: 'c-1',
+    title: 'Boardwalk section is slippery after overnight rain',
+    severity: 'high',
+    location: 'Sherbrooke Forest, Dandenong Ranges',
+    timeAgo: '32 MIN AGO',
+    details: 'Multiple hikers reported moss buildup and low visibility near bridge turns. Trekking poles are strongly recommended.',
+    status: 'Verified by 3 hikers',
+    replies: 6,
+  },
+  {
+    id: 'c-2',
+    title: 'Trail marker missing at west junction',
+    severity: 'moderate',
+    location: 'Grampians Peak Trail',
+    timeAgo: '1 HOUR AGO',
+    details: 'The yellow route marker at split point B-14 appears damaged. New hikers may drift into a service track.',
+    status: 'Pending ranger review',
+    replies: 4,
+  },
+  {
+    id: 'c-3',
+    title: 'Sudden wind gust pocket near ridge crossing',
+    severity: 'high',
+    location: 'Mount Buller Alpine Trail',
+    timeAgo: '2 HOURS AGO',
+    details: 'Strong lateral gusts reported between 2:30 PM and 3:00 PM. Avoid exposed crossings if carrying heavy packs.',
+    status: 'Confirmed by route leader',
+    replies: 9,
+  },
+])
+
+async function loadHomePreview() {
+  previewLoading.value = true
+  try {
+    const payload = await fetchRealtimeHazards({
+      layers: ['fire', 'flood', 'storm', 'heat', 'other'],
+    })
+    previewHazards.value = payload.hazards.length ? payload.hazards : fallbackPreview
+    previewUpdatedAt.value = payload.fetchedAt || new Date()
+  } catch (_error) {
+    previewHazards.value = fallbackPreview
+    previewUpdatedAt.value = new Date()
+  } finally {
+    previewLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadHomePreview()
+})
 </script>
 
 <template>
@@ -53,12 +140,17 @@ const router = useRouter()
     <!-- Risk Map Preview & Hazard Bento -->
     <section class="px-8 max-w-7xl mx-auto">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div class="md:col-span-8 bg-surface-container-low rounded-[2rem] p-4 flex flex-col gap-6 group">
+        <div class="md:col-span-8 bg-surface-container-low rounded-[2rem] p-4 flex flex-col gap-6 group border border-[#d7e5d8]">
           <div class="flex justify-between items-center px-4 pt-2">
             <h2 class="font-headline font-bold text-2xl">Live Risk Map Preview</h2>
-            <span class="material-symbols-outlined text-primary cursor-pointer" @click="router.push('/risk-map')">open_in_full</span>
+            <div class="flex items-center gap-3">
+              <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                {{ previewLoading ? 'Syncing…' : `Updated ${previewUpdatedAt ? previewUpdatedAt.toLocaleTimeString() : '--'}` }}
+              </span>
+              <span class="material-symbols-outlined text-primary cursor-pointer" @click="router.push('/risk-map')">open_in_full</span>
+            </div>
           </div>
-          <div class="relative w-full h-[400px] rounded-[1.5rem] overflow-hidden bg-surface-dim">
+          <div class="relative w-full h-[420px] rounded-[1.5rem] overflow-hidden bg-surface-dim border border-white/60">
             <img
               class="w-full h-full object-cover opacity-60 mix-blend-multiply"
               alt="Topographic satellite map of Victoria"
@@ -66,22 +158,41 @@ const router = useRouter()
             />
             <div class="absolute top-1/4 left-1/3 w-32 h-32 bg-error/30 blur-3xl rounded-full animate-pulse"></div>
             <div class="absolute bottom-1/4 right-1/4 w-48 h-48 bg-blue-500/20 blur-3xl rounded-full"></div>
-            <div class="absolute top-[28%] left-[35%] bg-white/90 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm">
-              BUSHFIRE RISK: DANDENONGS
-            </div>
-            <div class="absolute bottom-[30%] right-[25%] bg-white/90 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm">
-              HEAVY RAIN: GRAMPIANS
+
+            <div class="absolute inset-x-4 bottom-4 bg-white/90 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/70">
+              <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-[#31544a] mb-2">Top Active Hazards</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div
+                  v-for="hazard in topPreviewHazards"
+                  :key="hazard.id"
+                  class="bg-white rounded-lg border border-slate-200 px-3 py-2 flex items-start justify-between gap-3"
+                >
+                  <div class="min-w-0">
+                    <p class="text-[12px] font-semibold text-slate-800 truncate">{{ hazard.title }}</p>
+                    <p class="text-[10px] text-slate-500 uppercase tracking-wide">{{ hazard.type }} · {{ hazard.source }}</p>
+                  </div>
+                  <span
+                    class="text-[10px] font-bold px-2 py-1 rounded-full uppercase whitespace-nowrap"
+                    :class="severityMeta[hazard.severity]?.pill || severityMeta.low.pill"
+                  >
+                    {{ severityMeta[hazard.severity]?.label || 'Low' }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
           <div class="flex gap-4 px-4 pb-2 overflow-x-auto">
             <span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap">
-              <span class="w-2 h-2 rounded-full bg-error"></span> Bushfire Warning
+              <span class="w-2 h-2 rounded-full bg-error"></span> Fire {{ previewTypeSummary.fire }}
             </span>
             <span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap">
-              <span class="w-2 h-2 rounded-full bg-blue-500"></span> Flood Risk
+              <span class="w-2 h-2 rounded-full bg-blue-500"></span> Flood {{ previewTypeSummary.flood }}
             </span>
             <span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap">
-              <span class="w-2 h-2 rounded-full bg-yellow-500"></span> Trail Closure
+              <span class="w-2 h-2 rounded-full bg-violet-500"></span> Storm {{ previewTypeSummary.storm }}
+            </span>
+            <span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap">
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span> Heat {{ previewTypeSummary.heat }}
             </span>
           </div>
         </div>
@@ -125,39 +236,35 @@ const router = useRouter()
         <h2 class="font-headline font-bold text-3xl">Recent Community Alerts</h2>
         <button class="text-primary font-bold text-sm hover:underline" @click="router.push('/community-reports')">View all reports</button>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white p-6 rounded-2xl flex items-start gap-6 border-l-4 border-yellow-500 shadow-sm">
-          <div class="bg-surface-container-high p-4 rounded-xl">
-            <span class="material-symbols-outlined text-yellow-600">warning</span>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <article
+          v-for="alert in communityAlerts"
+          :key="alert.id"
+          class="bg-white p-6 rounded-2xl border border-[#dce7dd] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <div class="flex items-center justify-between mb-3">
+            <span
+              class="text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider"
+              :class="severityMeta[alert.severity]?.pill || severityMeta.low.pill"
+            >
+              {{ severityMeta[alert.severity]?.label || 'Low' }}
+            </span>
+            <span class="text-[10px] text-slate-400 font-medium">{{ alert.timeAgo }}</span>
           </div>
-          <div class="flex-1">
-            <div class="flex justify-between items-center mb-1">
-              <p class="font-bold text-lg">Fallen tree on 1000 Steps trail</p>
-              <span class="text-[10px] text-slate-400 font-medium">2 HOURS AGO</span>
-            </div>
-            <p class="text-on-surface-variant text-sm leading-relaxed mb-4">A large eucalyptus has fallen across the main path. Maintenance has been notified. Exercise caution when climbing.</p>
-            <div class="flex items-center gap-3">
-              <span class="text-[10px] font-bold text-primary bg-primary/5 px-2 py-1 rounded-full uppercase">Dandenongs</span>
-              <span class="text-[10px] font-bold text-slate-500">Reported by: Mark J.</span>
-            </div>
+          <h3 class="font-bold text-[1.02rem] leading-tight text-[#213d36]">{{ alert.title }}</h3>
+          <p class="mt-2 text-xs text-[#4f6a62]">{{ alert.details }}</p>
+          <div class="mt-4 space-y-2">
+            <p class="text-[11px] font-semibold text-[#39594f] uppercase tracking-wide">{{ alert.location }}</p>
+            <p class="text-[11px] text-slate-500">{{ alert.status }}</p>
           </div>
-        </div>
-        <div class="bg-white p-6 rounded-2xl flex items-start gap-6 border-l-4 border-error shadow-sm">
-          <div class="bg-surface-container-high p-4 rounded-xl">
-            <span class="material-symbols-outlined text-error">water_damage</span>
+          <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span class="flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm">chat</span>
+              {{ alert.replies }} updates
+            </span>
+            <button class="font-semibold text-primary hover:underline" @click="router.push('/community-reports')">Open Thread</button>
           </div>
-          <div class="flex-1">
-            <div class="flex justify-between items-center mb-1">
-              <p class="font-bold text-lg">Flash flood risk near Wilsons Prom</p>
-              <span class="text-[10px] text-slate-400 font-medium">4 HOURS AGO</span>
-            </div>
-            <p class="text-on-surface-variant text-sm leading-relaxed mb-4">River levels are rising rapidly at Tidal River after heavy storm surge. Camping in low areas is currently discouraged.</p>
-            <div class="flex items-center gap-3">
-              <span class="text-[10px] font-bold text-primary bg-primary/5 px-2 py-1 rounded-full uppercase">South Coast</span>
-              <span class="text-[10px] font-bold text-slate-500">Verified Alert</span>
-            </div>
-          </div>
-        </div>
+        </article>
       </div>
       <div class="mt-8 flex justify-center">
         <button
