@@ -6,6 +6,7 @@ const router = useRouter()
 </script>
 
 <template>
+  <div>
   <main class="space-y-16 pb-20">
     <!-- Hero Section -->
     <section class="relative px-8 pt-12 md:pt-24 overflow-hidden">
@@ -13,7 +14,7 @@ const router = useRouter()
         <div class="w-full md:w-1/2 z-10">
           <span class="text-xs font-label uppercase tracking-[0.2em] text-primary mb-4 block">Official Victorian Safety Guide</span>
           <h1 class="text-5xl md:text-7xl font-headline font-extrabold text-on-surface leading-tight mb-8">
-            Hike with <span class="text-transparent bg-clip-text primary-gradient">Confidence</span> in Victoria.
+            Hike with <span class="gradient-text">Confidence</span> in Victoria.
           </h1>
           <div class="flex flex-wrap gap-4">
             <button
@@ -226,4 +227,5 @@ const router = useRouter()
   </main>
 
   <SiteFooter />
+  </div>
 </template>

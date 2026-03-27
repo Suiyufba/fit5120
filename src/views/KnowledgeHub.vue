@@ -7,6 +7,7 @@ const filters = ['All Topics', 'Getting Started', 'Hazard Safety', 'Weather Esse
 </script>
 
 <template>
+  <div>
   <main class="max-w-7xl mx-auto px-6 py-12 md:py-20">
     <!-- Hero Section -->
     <section class="mb-20">
@@ -153,4 +154,5 @@ const filters = ['All Topics', 'Getting Started', 'Hazard Safety', 'Weather Esse
   </main>
 
   <SiteFooter />
+  </div>
 </template>

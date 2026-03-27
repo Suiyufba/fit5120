@@ -12,7 +12,8 @@ function toggleLayer(layer) {
 </script>
 
 <template>
-  <main class="flex-1 flex relative overflow-hidden" style="height: calc(100vh - 72px)">
+  <div class="flex flex-col" style="height: calc(100vh - 72px)">
+  <main class="flex-1 flex relative overflow-hidden">
     <!-- Sidebar: Active Alerts -->
     <aside class="w-80 h-full bg-surface-container-low z-40 hidden lg:flex flex-col shadow-xl">
       <div class="p-6 space-y-6 overflow-y-auto flex-1">
@@ -205,4 +206,5 @@ function toggleLayer(layer) {
       <a href="#" class="text-slate-500 hover:text-[#4A6741] transition-colors text-sm tracking-wide">Data Sources</a>
     </div>
   </footer>
+  </div>
 </template>

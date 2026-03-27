@@ -6,6 +6,7 @@ const selectedSeverity = ref('high')
 </script>
 
 <template>
+  <div>
   <main class="max-w-3xl mx-auto px-6 py-12 md:py-20">
     <!-- Header -->
     <header class="mb-12 text-center md:text-left">
@@ -117,4 +118,5 @@ const selectedSeverity = ref('high')
   </main>
 
   <SiteFooter />
+  </div>
 </template>

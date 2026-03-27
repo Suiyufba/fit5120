@@ -52,7 +52,8 @@ const reports = [
 </script>
 
 <template>
-  <main class="flex-1 flex overflow-hidden relative" style="height: calc(100vh - 72px)">
+  <div class="flex flex-col" style="height: calc(100vh - 72px)">
+  <main class="flex-1 flex overflow-hidden relative">
     <!-- Sidebar: Reports List -->
     <aside class="w-full md:w-[420px] bg-surface-container-low flex flex-col z-20 shadow-xl md:shadow-none">
       <div class="p-6 border-b border-outline-variant/20">
@@ -203,4 +204,5 @@ const reports = [
       <a href="#" class="text-[10px] font-bold text-slate-500 hover:text-[#4A6741] transition-colors uppercase tracking-widest">Privacy Policy</a>
     </div>
   </footer>
+  </div>
 </template>
