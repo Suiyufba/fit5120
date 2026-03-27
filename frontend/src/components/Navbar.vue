@@ -42,8 +42,9 @@ function goAccount() {
 <template>
   <header class="bg-white/80 backdrop-blur-xl sticky top-0 z-[3000] shadow-sm bg-surface-container-low">
     <nav class="flex justify-between items-center px-8 py-4 max-w-full mx-auto">
-      <router-link to="/" class="text-2xl font-black text-[#4A6741] italic font-headline tracking-tight">
-        HikeShield Victoria
+      <router-link to="/" class="brand-lockup">
+        <img src="/gohiking-logo.svg" alt="goHiking logo" class="brand-mark" />
+        <span class="brand-wordmark">goHiking</span>
       </router-link>
 
       <div class="hidden md:flex items-center gap-8 font-headline font-bold tracking-tight text-on-surface">
@@ -97,6 +98,28 @@ function goAccount() {
 </template>
 
 <style scoped>
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.62rem;
+  text-decoration: none;
+}
+
+.brand-mark {
+  width: 2.05rem;
+  height: 2.05rem;
+  border-radius: 0.7rem;
+  box-shadow: 0 8px 18px rgba(32, 70, 56, 0.18);
+}
+
+.brand-wordmark {
+  font-size: 1.45rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #2f5648;
+  line-height: 1;
+}
+
 .dropdown-enter-active,
 .dropdown-leave-active {
   transition: all 0.3s ease;
