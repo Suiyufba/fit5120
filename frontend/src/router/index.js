@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
+import { restoreSession, useAuthState } from '../services/authStore'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -47,7 +48,40 @@ const router = createRouter({
       name: 'location-detail',
       component: () => import('../views/LocationDetail.vue')
     },
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/Login.vue'),
+      meta: { guestOnly: true }
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: () => import('../views/Register.vue'),
+      meta: { guestOnly: true }
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: () => import('../views/Profile.vue'),
+      meta: { requiresAuth: true }
+    },
   ]
+})
+
+router.beforeEach(async (to) => {
+  await restoreSession()
+  const { isAuthenticated } = useAuthState()
+
+  if (to.meta.requiresAuth && !isAuthenticated.value) {
+    return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  if (to.meta.guestOnly && isAuthenticated.value) {
+    return { name: 'profile' }
+  }
+
+  return true
 })
 
 export default router

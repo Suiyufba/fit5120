@@ -3,6 +3,9 @@
 后端已提供前端所需最小可用接口：
 - `GET /api/hazards/realtime?bbox=west,south,east,north&layers=fire,flood,storm,heat`
 - `GET /api/health`
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
 
 ## 项目分层（按功能）
 
@@ -96,6 +99,8 @@ npm run dev
 - `DEFAULT_LAYERS=fire,flood,storm,heat`
 - `DATABASE_URL=<Railway Postgres URL>`
 - `DATABASE_SSL=true`
+- `AUTH_JWT_SECRET=<strong-random-secret>`
+- `AUTH_JWT_EXPIRES_IN=7d`
 
 可选（建议逐步接入官方源）：
 
@@ -140,3 +145,35 @@ VITE_HAZARD_API_BASE_URL=https://<railway-domain>/api
 - 增加 `SSE / WebSocket` 推送
 - 扩展 GeoJSON 原样返回模式
 - 增加上游健康检查和告警（例如 `/api/health/providers`）
+
+## 8) 用户认证接口
+
+`POST /api/auth/register`
+
+```json
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "age": 24,
+  "region": "Melbourne, VIC",
+  "assessmentAnswers": {
+    "q_weather": "b",
+    "q_injury": "a",
+    "q_lost": "a",
+    "q_fire": "b"
+  }
+}
+```
+
+`POST /api/auth/login`
+
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+`GET /api/auth/me`
+
+Header: `Authorization: Bearer <token>`

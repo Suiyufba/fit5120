@@ -4,6 +4,7 @@ import { config } from './config/index.js';
 import { apiRouter } from './routes/index.js';
 import { startScheduler } from './modules/hazards/services/hazardAggregator.js';
 import { initHazardSnapshotStore } from './infrastructure/db/hazardSnapshotRepository.js';
+import { initUserStore } from './modules/auth/repositories/userRepository.js';
 
 const app = express();
 
@@ -14,13 +15,17 @@ app.use('/api', apiRouter);
 async function boot() {
   try {
     const dbReady = await initHazardSnapshotStore();
+    const userStoreReady = await initUserStore();
     if (dbReady) {
       console.log('Postgres snapshot store ready');
     } else {
       console.warn('DATABASE_URL is not set, fallback to in-memory snapshot only');
     }
+    if (userStoreReady) {
+      console.log('User auth store ready');
+    }
   } catch (error) {
-    console.error('Failed to init Postgres snapshot store:', error.message);
+    console.error('Failed to initialize database stores:', error.message);
   }
 
   app.listen(config.port, () => {

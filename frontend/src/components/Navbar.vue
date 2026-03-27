@@ -1,9 +1,12 @@
 <script setup>
-import { ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthState } from '../services/authStore'
 
 const route = useRoute()
+const router = useRouter()
 const isMenuOpen = ref(false)
+const { isAuthenticated, state } = useAuthState()
 
 const navItems = [
   { name: 'Home', path: '/' },
@@ -16,6 +19,23 @@ const navItems = [
 const isActive = (path) => {
   if (path === '/') return route.path === '/'
   return route.path.startsWith(path)
+}
+
+const accountLabel = computed(() => {
+  if (!isAuthenticated.value) return 'Sign In'
+  const level = state.user?.experienceLevel || 'newcomer'
+  if (level === 'advanced') return 'Profile · 老手'
+  if (level === 'intermediate') return 'Profile · 中等'
+  return 'Profile · 新人'
+})
+
+function goAccount() {
+  if (isAuthenticated.value) {
+    router.push('/profile')
+    return
+  }
+
+  router.push('/login')
 }
 </script>
 
@@ -41,8 +61,12 @@ const isActive = (path) => {
       </div>
 
       <div class="flex items-center gap-4">
-        <button class="p-2 rounded-full hover:bg-slate-100/50 transition-all active:scale-95">
+        <button
+          class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-[#d8e4da] bg-white/80 hover:bg-white transition-all active:scale-95"
+          @click="goAccount"
+        >
           <span class="material-symbols-outlined text-[#4A6741]">account_circle</span>
+          <span class="text-sm font-semibold text-[#31554a] hidden lg:inline">{{ accountLabel }}</span>
         </button>
         <button
           class="md:hidden p-2 rounded-full hover:bg-slate-100/50 transition-all"

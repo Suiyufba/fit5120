@@ -16,6 +16,8 @@ export const config = {
   corsOrigin: process.env.CORS_ORIGIN || '*',
   databaseUrl: process.env.DATABASE_URL || '',
   databaseSsl: (process.env.DATABASE_SSL || 'true').toLowerCase() !== 'false',
+  authJwtSecret: process.env.AUTH_JWT_SECRET || 'dev-only-change-me',
+  authJwtExpiresIn: process.env.AUTH_JWT_EXPIRES_IN || '7d',
   redisUrl: process.env.REDIS_URL || '',
   redisTtlSeconds: toInt(process.env.REDIS_TTL_SECONDS, 90),
   vicroadsApiUrl: process.env.VICROADS_API_URL || '',
