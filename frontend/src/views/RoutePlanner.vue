@@ -55,22 +55,24 @@ function renderMarkers() {
   markerLayer.clearLayers()
 
   if (startPoint.value) {
-    L.circleMarker([startPoint.value.lat, startPoint.value.lng], {
-      radius: 8,
-      color: '#1F6E57',
-      fillColor: '#2E9D7A',
-      fillOpacity: 0.9,
-      weight: 2,
+    L.marker([startPoint.value.lat, startPoint.value.lng], {
+      icon: L.divIcon({
+        className: 'planner-anchor-icon',
+        html: '<div class="planner-anchor planner-anchor--start">S</div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      }),
     }).bindPopup('Start point').addTo(markerLayer)
   }
 
   if (endPoint.value) {
-    L.circleMarker([endPoint.value.lat, endPoint.value.lng], {
-      radius: 8,
-      color: '#A6382A',
-      fillColor: '#D84727',
-      fillOpacity: 0.9,
-      weight: 2,
+    L.marker([endPoint.value.lat, endPoint.value.lng], {
+      icon: L.divIcon({
+        className: 'planner-anchor-icon',
+        html: '<div class="planner-anchor planner-anchor--end">E</div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      }),
     }).bindPopup('Destination').addTo(markerLayer)
   }
 }
@@ -581,6 +583,34 @@ h1 {
 .planner-map :deep(.leaflet-control-attribution) {
   font-size: 10px;
   background: rgba(255, 255, 255, 0.58);
+}
+
+.planner-map :deep(.planner-anchor-icon) {
+  background: transparent;
+  border: none;
+}
+
+.planner-map :deep(.planner-anchor) {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.24);
+  border: 2px solid #ffffff;
+}
+
+.planner-map :deep(.planner-anchor--start) {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.planner-map :deep(.planner-anchor--end) {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #0f172a;
 }
 
 @media (max-width: 980px) {
