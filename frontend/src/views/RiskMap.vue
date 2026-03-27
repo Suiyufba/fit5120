@@ -82,12 +82,42 @@ function getMarkerRadius(severity) {
   return 6
 }
 
+function zoneOpacitiesBySeverity(severity) {
+  if (severity === 'extreme') return { l1: 0.28, l2: 0.18, l3: 0.1 }
+  if (severity === 'high') return { l1: 0.23, l2: 0.14, l3: 0.08 }
+  if (severity === 'moderate') return { l1: 0.18, l2: 0.11, l3: 0.06 }
+  return { l1: 0.14, l2: 0.09, l3: 0.05 }
+}
+
+function renderRiskCoverageZones(hazard, color) {
+  const opacity = zoneOpacitiesBySeverity(hazard.severity)
+  const circles = [
+    { radius: 5000, fillOpacity: opacity.l3, weight: 1 },
+    { radius: 3000, fillOpacity: opacity.l2, weight: 1 },
+    { radius: 1000, fillOpacity: opacity.l1, weight: 2 },
+  ]
+
+  circles.forEach((zone) => {
+    L.circle(hazard.coordinates, {
+      radius: zone.radius,
+      color,
+      fillColor: color,
+      fillOpacity: zone.fillOpacity,
+      opacity: 0.45,
+      weight: zone.weight,
+      interactive: false,
+    }).addTo(markersLayer)
+  })
+}
+
 function renderMarkers() {
   if (!markersLayer) return
   markersLayer.clearLayers()
 
   filteredHazards.value.forEach((hazard) => {
     const meta = layerMeta[hazard.type] || layerMeta.other
+    renderRiskCoverageZones(hazard, meta.color)
+
     const marker = L.circleMarker(hazard.coordinates, {
       radius: getMarkerRadius(hazard.severity),
       color: meta.color,
@@ -275,6 +305,7 @@ watch(filteredHazards, () => {
         <p class="risk-map-subline">
           {{ filteredHazards.length }} events · Extreme {{ mapStats.extreme }} · High {{ mapStats.high }} · Moderate {{ mapStats.moderate }}
         </p>
+        <p class="risk-map-subline">Coverage zones: L1 ≤1km · L2 1–3km · L3 3–5km</p>
         <p class="risk-map-subline">
           Last update: {{ lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString() : '—' }}
         </p>
