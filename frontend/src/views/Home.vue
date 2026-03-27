@@ -1,13 +1,16 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import SiteFooter from '../components/SiteFooter.vue'
+import HomeRiskPreviewMap from '../components/HomeRiskPreviewMap.vue'
 import { fetchRealtimeHazards } from '../services/hazardApi'
 
 const router = useRouter()
 const previewLoading = ref(false)
 const previewUpdatedAt = ref(null)
 const previewHazards = ref([])
+const HOME_PREVIEW_REFRESH_MS = 60_000
+let previewTimer
 
 const severityRank = { extreme: 4, high: 3, moderate: 2, low: 1 }
 const severityMeta = {
@@ -89,6 +92,11 @@ async function loadHomePreview() {
 
 onMounted(() => {
   loadHomePreview()
+  previewTimer = window.setInterval(loadHomePreview, HOME_PREVIEW_REFRESH_MS)
+})
+
+onUnmounted(() => {
+  if (previewTimer) window.clearInterval(previewTimer)
 })
 </script>
 
@@ -151,14 +159,7 @@ onMounted(() => {
             </div>
           </div>
           <div class="relative w-full h-[420px] rounded-[1.5rem] overflow-hidden bg-surface-dim border border-white/60">
-            <img
-              class="w-full h-full object-cover opacity-60 mix-blend-multiply"
-              alt="Topographic satellite map of Victoria"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeuuHnBvXZfDu-0v2-C3a-X7CSQ86x6JqmdlvzE3xRtqTbvijvfw_PJj7S3mKGeVbIx94QgEvaywz7Ukn3XaBX-UVpMhz1tpiqeB8H95L3LK2fBPauv2Vp1UvtukDjZzbi45lxvxeJs_xMivx_SfeuSfqofifOfnl2MM-PKN0g5PSEiA8lQT6GTkDHIWIeRkf7wM14FZniFRrG8eFisjXKEBE0rkUMdXGCc6Px5K6mPaYdFb8OEkvfDJw4HoqztLb2iyEAJASA8M0"
-            />
-            <div class="absolute top-1/4 left-1/3 w-32 h-32 bg-error/30 blur-3xl rounded-full animate-pulse"></div>
-            <div class="absolute bottom-1/4 right-1/4 w-48 h-48 bg-blue-500/20 blur-3xl rounded-full"></div>
-
+            <HomeRiskPreviewMap :hazards="previewHazards" />
             <div class="absolute inset-x-4 bottom-4 bg-white/90 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/70">
               <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-[#31544a] mb-2">Top Active Hazards</p>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
