@@ -21,7 +21,7 @@ const layerMeta = {
 
 const mapElement = ref(null)
 const selectedHazardId = ref('')
-const activeLayers = ref(['fire', 'flood', 'storm', 'heat'])
+const activeLayers = ref(['fire', 'flood', 'storm', 'heat', 'other'])
 const hazards = ref([])
 const loading = ref(false)
 const lastUpdatedAt = ref(null)
