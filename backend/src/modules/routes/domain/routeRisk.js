@@ -14,6 +14,11 @@ const TYPE_FACTOR = {
 };
 
 const WEATHER_TYPES = new Set(['heat', 'flood', 'storm']);
+const USER_RISK_FACTOR = {
+  newcomer: 1.1,
+  intermediate: 1.0,
+  advanced: 0.92
+};
 
 function clamp(value, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
@@ -93,8 +98,22 @@ function zoneLabel(level) {
 function toHazardImpact(hazard, distanceKm) {
   const base = SEVERITY_BASE[hazard.severity] ?? 20;
   const factor = TYPE_FACTOR[hazard.type] ?? TYPE_FACTOR.other;
-  const impact = base * distanceFactor(distanceKm) * factor;
+  const impact = base * distanceFactor(distanceKm) * factor * recencyFactor(hazard.updatedAt);
   return clamp(impact);
+}
+
+function recencyFactor(updatedAt) {
+  const ts = Date.parse(updatedAt || '');
+  if (Number.isNaN(ts)) return 0.6;
+
+  const ageHours = Math.max(0, (Date.now() - ts) / (1000 * 60 * 60));
+  if (ageHours <= 6) return 1.0;
+  if (ageHours <= 24) return 0.85;
+  if (ageHours <= 72) return 0.65;
+  if (ageHours <= 24 * 7) return 0.45;
+  if (ageHours <= 24 * 14) return 0.3;
+  if (ageHours <= 24 * 30) return 0.15;
+  return 0;
 }
 
 function topImpactAverage(hazards, geometry, filterFn) {
@@ -120,8 +139,9 @@ function topImpactAverage(hazards, geometry, filterFn) {
   }
 
   const avg = impacts.reduce((sum, item) => sum + item.impact, 0) / impacts.length;
+  const densityBoost = Math.min(1.6, 0.7 + (impacts.length * 0.2));
   return {
-    score: clamp(avg),
+    score: clamp(avg * densityBoost),
     impacts
   };
 }
@@ -146,10 +166,24 @@ function collectCoverageImpacts(hazards, geometry, filterFn = () => true) {
     });
 }
 
-function difficultyScore(distanceKm, durationMin) {
-  const distanceComponent = clamp((distanceKm / 25) * 100);
-  const durationComponent = clamp((durationMin / 240) * 100);
-  return clamp(0.6 * distanceComponent + 0.4 * durationComponent);
+function difficultyScore(route, fastestRoute) {
+  const distanceKm = route.distanceKm || 0;
+  const durationMin = route.durationMin || 0;
+
+  const baseDistance = clamp((Math.log1p(Math.max(distanceKm, 0)) / Math.log1p(80)) * 100);
+  const baseDuration = clamp((Math.log1p(Math.max(durationMin, 0)) / Math.log1p(480)) * 100);
+
+  const fastestDistance = Math.max(fastestRoute?.distanceKm || distanceKm || 1, 1);
+  const fastestDuration = Math.max(fastestRoute?.durationMin || durationMin || 1, 1);
+  const detourDistancePenalty = clamp(((distanceKm - fastestDistance) / fastestDistance) * 120, 0, 100);
+  const detourDurationPenalty = clamp(((durationMin - fastestDuration) / fastestDuration) * 120, 0, 100);
+
+  return clamp(
+    (0.35 * baseDistance)
+    + (0.25 * baseDuration)
+    + (0.2 * detourDistancePenalty)
+    + (0.2 * detourDurationPenalty)
+  );
 }
 
 function riskLevelByScore(score) {
@@ -271,10 +305,12 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute })
   const weatherAgg = topImpactAverage(hazards, geometry, (hazard) => isOpenWeatherHazard(hazard));
   const coverageImpacts = collectCoverageImpacts(hazards, geometry);
 
-  const routeDifficultyScore = difficultyScore(route.distanceKm, route.durationMin);
-  const weightedTotal = clamp(
+  const routeDifficultyScore = difficultyScore(route, fastestRoute);
+  const rawWeighted = clamp(
     (0.55 * hazardAgg.score) + (0.25 * weatherAgg.score) + (0.20 * routeDifficultyScore)
   );
+  const profileFactor = USER_RISK_FACTOR[userLevel] || USER_RISK_FACTOR.newcomer;
+  const weightedTotal = clamp(rawWeighted * profileFactor);
   const riskLevel = riskLevelByScore(weightedTotal);
 
   const goNoGo = goNoGoDecision({
@@ -331,6 +367,8 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute })
       hazardScore: Number(hazardAgg.score.toFixed(1)),
       weatherScore: Number(weatherAgg.score.toFixed(1)),
       difficultyScore: Number(routeDifficultyScore.toFixed(1)),
+      baseWeightedTotal: Number(rawWeighted.toFixed(1)),
+      profileFactor: Number(profileFactor.toFixed(2)),
       weightedTotal: Number(weightedTotal.toFixed(1))
     }
   };

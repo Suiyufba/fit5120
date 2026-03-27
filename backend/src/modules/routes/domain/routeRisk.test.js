@@ -92,3 +92,65 @@ test('advanced user gets Go for low exposure route', () => {
   assert.equal(scored.goNoGo, 'Go');
   assert.ok(scored.riskScore < 80);
 });
+
+test('recent hazard has higher influence than stale hazard', () => {
+  const nowIso = new Date().toISOString();
+  const oldIso = new Date(Date.now() - (1000 * 60 * 60 * 24 * 40)).toISOString();
+  const recentHazard = {
+    id: 'recent',
+    type: 'fire',
+    severity: 'high',
+    source: 'VicEmergency',
+    title: 'Recent hazard',
+    updatedAt: nowIso,
+    coordinates: [-37.8, 144.92]
+  };
+  const staleHazard = {
+    ...recentHazard,
+    id: 'stale',
+    updatedAt: oldIso
+  };
+
+  const recentScore = scoreRouteCandidate({
+    route: baseRoute,
+    hazards: [recentHazard],
+    userLevel: 'intermediate',
+    fastestRoute: baseRoute
+  }).scoringBreakdown.hazardScore;
+
+  const staleScore = scoreRouteCandidate({
+    route: baseRoute,
+    hazards: [staleHazard],
+    userLevel: 'intermediate',
+    fastestRoute: baseRoute
+  }).scoringBreakdown.hazardScore;
+
+  assert.ok(recentScore > staleScore);
+});
+
+test('newcomer profile risk is higher than advanced for same route/hazards', () => {
+  const hazard = {
+    id: 'same',
+    type: 'storm',
+    severity: 'moderate',
+    source: 'OpenWeather',
+    title: 'Wind alert',
+    updatedAt: new Date().toISOString(),
+    coordinates: [-37.79, 144.95]
+  };
+
+  const newcomer = scoreRouteCandidate({
+    route: baseRoute,
+    hazards: [hazard],
+    userLevel: 'newcomer',
+    fastestRoute: baseRoute
+  });
+  const advanced = scoreRouteCandidate({
+    route: baseRoute,
+    hazards: [hazard],
+    userLevel: 'advanced',
+    fastestRoute: baseRoute
+  });
+
+  assert.ok(newcomer.riskScore > advanced.riskScore);
+});
