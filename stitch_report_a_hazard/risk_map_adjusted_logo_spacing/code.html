@@ -1,0 +1,292 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Risk Map | HikeShield Victoria</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed-dim": "#9ecfd1",
+                        "secondary": "#6b5c4f",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#f4dfce",
+                        "surface": "#f3faff",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#1a4e50",
+                        "inverse-surface": "#123441",
+                        "tertiary": "#1c4f51",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#324e2a",
+                        "primary-fixed": "#caecbc",
+                        "surface-dim": "#bedfef",
+                        "primary-container": "#4a6741",
+                        "on-surface": "#001f29",
+                        "surface-tint": "#496640",
+                        "tertiary-container": "#366769",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#ccedfe",
+                        "on-primary-fixed": "#062104",
+                        "surface-container-highest": "#c6e8f8",
+                        "surface-bright": "#f3faff",
+                        "surface-container": "#d8f2ff",
+                        "on-tertiary-container": "#b1e3e5",
+                        "on-secondary-fixed-variant": "#524438",
+                        "on-surface-variant": "#434840",
+                        "tertiary-fixed": "#b9ecee",
+                        "background": "#f3faff",
+                        "on-secondary": "#ffffff",
+                        "on-primary-container": "#c2e4b4",
+                        "primary-fixed-dim": "#afd0a1",
+                        "primary": "#334f2b",
+                        "secondary-container": "#f4dfce",
+                        "outline-variant": "#c3c8bd",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#dff4ff",
+                        "on-background": "#001f29",
+                        "on-tertiary-fixed": "#002021",
+                        "inverse-primary": "#afd0a1",
+                        "on-secondary-container": "#716154",
+                        "outline": "#73796f",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#24190f",
+                        "surface-variant": "#c6e8f8",
+                        "surface-container-low": "#e6f6ff",
+                        "secondary-fixed-dim": "#d7c3b3"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .map-mesh {
+            background-image: radial-gradient(circle at 2px 2px, rgba(0,31,41,0.05) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+        .heat-fire {
+            background: radial-gradient(circle, rgba(231,111,81,0.4) 0%, rgba(231,111,81,0) 70%);
+        }
+        .heat-rain {
+            background: radial-gradient(circle, rgba(67,147,209,0.4) 0%, rgba(67,147,209,0) 70%);
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed overflow-hidden h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<nav class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl docked full-width top-0 sticky z-50 shadow-sm dark:shadow-none bg-surface-container-low flex justify-between items-center py-4 max-w-full mx-auto px-4">
+<div class="text-2xl font-black text-[#4A6741] dark:text-[#8BA87E] italic font-['Manrope'] tracking-tight -ml-2 mr-12" style="">HikeShield Victoria</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] font-['Manrope'] font-bold tracking-tight text-on-surface transition-all duration-300" href="#" style="">Home</a>
+<a class="text-[#4A6741] dark:text-[#8BA87E] border-b-2 border-[#4A6741] pb-1 font-['Manrope'] font-bold tracking-tight text-on-surface transition-all duration-300" href="#" style="">Risk Map</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] font-['Manrope'] font-bold tracking-tight text-on-surface transition-all duration-300" href="#" style="">Plan Route</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] font-['Manrope'] font-bold tracking-tight text-on-surface transition-all duration-300" href="#" style="">Community Reports</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] font-['Manrope'] font-bold tracking-tight text-on-surface transition-all duration-300" href="#" style="">Knowledge Hub</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-slate-100/50 transition-all duration-300" style="">
+<span class="material-symbols-outlined text-slate-700" data-icon="account_circle" style="">account_circle</span>
+</button>
+</div>
+</nav>
+<!-- Main Content Area: Map and Sidebar -->
+<main class="flex-1 flex relative overflow-hidden">
+<!-- Sidebar: Active Alerts -->
+<aside class="w-80 h-full bg-surface-container-low z-40 hidden lg:flex flex-col shadow-xl">
+<div class="p-6 space-y-6 overflow-y-auto">
+<header>
+<span class="label-md text-xs font-bold uppercase tracking-[0.1em] text-outline mb-2 block" style="">Current Status</span>
+<h1 class="font-headline text-3xl font-extrabold tracking-tight leading-none text-on-surface" style="">Active Alerts</h1>
+</header>
+<div class="space-y-4">
+<!-- Alert Card 1 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl transition-all hover:translate-x-1 duration-300">
+<div class="flex items-center gap-2 mb-3">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="text-xs font-bold text-error uppercase tracking-wider" style="">High Risk</span>
+</div>
+<h3 class="font-headline font-bold text-lg mb-1 leading-tight text-on-surface" style="">Great Ocean Road</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed" style="">Active bushfire alert near Apollo Bay. Visibility reduced. Avoid non-essential travel.</p>
+<div class="mt-4 flex items-center gap-2 text-primary font-semibold text-xs uppercase tracking-widest cursor-pointer group" style="">
+                            Details 
+                            <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform" data-icon="chevron_right" style="">chevron_right</span>
+</div>
+</div>
+<!-- Alert Card 2 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl transition-all hover:translate-x-1 duration-300">
+<div class="flex items-center gap-2 mb-3">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="text-xs font-bold text-tertiary uppercase tracking-wider" style="">Moderate Risk</span>
+</div>
+<h3 class="font-headline font-bold text-lg mb-1 leading-tight text-on-surface" style="">Gippsland Peaks</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed" style="">Flash flood warning for high-altitude trail crossings due to heavy precipitation.</p>
+<div class="mt-4 flex items-center gap-2 text-primary font-semibold text-xs uppercase tracking-widest cursor-pointer group" style="">
+                            Details 
+                            <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform" data-icon="chevron_right" style="">chevron_right</span>
+</div>
+</div>
+<!-- Alert Card 3 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl transition-all hover:translate-x-1 duration-300">
+<div class="flex items-center gap-2 mb-3">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-xs font-bold text-secondary uppercase tracking-wider" style="">Information</span>
+</div>
+<h3 class="font-headline font-bold text-lg mb-1 leading-tight text-on-surface" style="">Grampians National Park</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed" style="">Planned back-burns near MacKenzie Falls. Expect heavy smoke haze on northern tracks.</p>
+<div class="mt-4 flex items-center gap-2 text-primary font-semibold text-xs uppercase tracking-widest cursor-pointer group" style="">
+                            Details 
+                            <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform" data-icon="chevron_right" style="">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Sidebar Footer -->
+<div class="mt-auto p-6 bg-surface-container-high/50">
+<div class="flex items-center justify-between">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-high overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="professional hiker portrait with gear" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbyVxStLIWwYSzPetoMzehw8eDJV9M6vOg-EZEzWPaZtHvYbC3nbgJhxBigbCY8lHOOIJadOSWfJOixsvnDDRcLsbQx6xBCUW_1tRuLxHCGm3c2by1psU20MiRkqkrR6af4ffnWxipkjMAHvTjvYPdvl8uDiNEbK38rw1jGF1uctlDpdwzpyEnrrEAmqup3_SvMY7ZkbaImqqPssi4ndLtGtGk0dTQWKfeYmmk-zKpm-B5JbFFGm9Tq19Yfuk7ubc56z4uNRUpsoQ" style="">
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-high overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="emergency responder portrait in uniform" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRT-A1psZQhPmSoovfiqB7gNyTvYhSKxT27IBfTldOAQr0_xGGFILlppHZlTFe_6Mf4XKjB2CtX6UvK--T0-zceUcTqv2z1xWBCy-nRK0w3EBJeL4nl2-Xje0pgVw_rSmjurPHuX5KZE5rhxf2ezHHrjma1KwlRdnB7AOuONEI0DDrRHOvqe3lH8HdKd_jru4_GZrrcwgrO8h5MEea-vW9dlvvZLYnetvQlRuiVoVDIcW8BgeJe0itCbWHqH4qx_3VNWE0L-L1lrQ" style="">
+</div>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-widest text-outline" style="">12 Active Volunteers</span>
+</div>
+</div>
+</aside>
+<!-- Interactive Map Canvas -->
+<section class="flex-1 relative bg-surface-dim overflow-hidden map-mesh">
+<div class="absolute inset-0 z-0">
+<!-- Map Placeholder Image -->
+<img class="w-full h-full object-cover opacity-60 grayscale-[0.2]" data-alt="topographic satellite map view of Victoria Australia with rugged coastline and mountain ranges" data-location="Victoria, Australia" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoCECbwTODQvRWyMYwyS8EoT6OtnubFo2mWgVXnZUeMvE1_sfdn4LEaMAxstFi_77GwYfjR8YlmzoK35AK5bNIavjnC24zT3aoM0TJuKBWiEOv2xOdKm6v5-Aqn4fDoxb-qsMy7nMcjtaeMfAR0G78cptNu57nyNx2BaS9D_kd5IHJQGq1TsoPTN14noRCilUbm3fQtRPmYIhcWw4cFvUElJEfhpP9tXP_j8VU5LBEbpgXr5hQt326yX-3njYEK2N7kmDufq4jegQ" style="">
+<!-- Hazard Heat Overlays (Simulated) -->
+<div class="absolute top-[60%] left-[20%] w-[30vw] h-[30vw] heat-fire blur-3xl animate-pulse"></div>
+<div class="absolute top-[30%] right-[15%] w-[25vw] h-[25vw] heat-rain blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+</div>
+<!-- Map Markers -->
+<div class="absolute top-[65%] left-[30%] z-10">
+<div class="relative flex items-center justify-center">
+<div class="absolute w-12 h-12 bg-error/20 rounded-full animate-ping"></div>
+<div class="bg-error text-white p-2 rounded-full shadow-lg flex items-center justify-center border-2 border-white/50">
+<span class="material-symbols-outlined text-sm" data-icon="local_fire_department" data-weight="fill" style="">local_fire_department</span>
+</div>
+<div class="absolute top-8 bg-surface-container-lowest px-2 py-1 rounded shadow-sm whitespace-nowrap text-[10px] font-bold border border-outline-variant/20 uppercase tracking-tighter" style="">Apollo Bay Fire</div>
+</div>
+</div>
+<div class="absolute top-[40%] right-[25%] z-10">
+<div class="relative flex items-center justify-center">
+<div class="absolute w-12 h-12 bg-tertiary/20 rounded-full animate-ping"></div>
+<div class="bg-tertiary text-white p-2 rounded-full shadow-lg flex items-center justify-center border-2 border-white/50">
+<span class="material-symbols-outlined text-sm" data-icon="rainy" data-weight="fill" style="">rainy</span>
+</div>
+<div class="absolute top-8 bg-surface-container-lowest px-2 py-1 rounded shadow-sm whitespace-nowrap text-[10px] font-bold border border-outline-variant/20 uppercase tracking-tighter" style="">Gippsland Peak Rain</div>
+</div>
+</div>
+<!-- Floating Map Controls (Top Right) -->
+<div class="absolute top-6 right-6 z-30 flex flex-col gap-4">
+<!-- Hazard Layer Toggles -->
+<div class="bg-surface-container-lowest/80 backdrop-blur-md p-3 rounded-2xl shadow-xl flex flex-col gap-2 w-48 border border-white/20">
+<span class="text-[10px] font-bold text-outline uppercase tracking-widest px-2 mb-1" style="">Hazard Layers</span>
+<button class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary-container text-on-primary-container shadow-md transition-all" style="">
+<span class="material-symbols-outlined text-lg" data-icon="local_fire_department" style="">local_fire_department</span>
+<span class="text-sm font-semibold" style="">Fire Risk</span>
+</button>
+<button class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-container-high transition-all text-on-surface" style="">
+<span class="material-symbols-outlined text-lg" data-icon="rainy" style="">rainy</span>
+<span class="text-sm font-semibold" style="">Rainfall</span>
+</button>
+<button class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-container-high transition-all text-on-surface" style="">
+<span class="material-symbols-outlined text-lg" data-icon="thermostat" style="">thermostat</span>
+<span class="text-sm font-semibold" style="">Extreme Heat</span>
+</button>
+<button class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-container-high transition-all text-on-surface" style="">
+<span class="material-symbols-outlined text-lg" data-icon="ac_unit" style="">ac_unit</span>
+<span class="text-sm font-semibold" style="">Snow &amp; Ice</span>
+</button>
+</div>
+<!-- Community Reports Toggle -->
+<div class="bg-surface-container-lowest/80 backdrop-blur-md p-3 rounded-2xl shadow-xl flex items-center justify-between border border-white/20">
+<div class="flex items-center gap-3 px-2">
+<span class="material-symbols-outlined text-lg text-primary" data-icon="forum" style="">forum</span>
+<span class="text-sm font-semibold text-on-surface" style="">Community</span>
+</div>
+<div class="w-10 h-5 bg-primary-container rounded-full relative p-0.5 cursor-pointer">
+<div class="w-4 h-4 bg-white rounded-full absolute right-0.5 shadow-sm"></div>
+</div>
+</div>
+</div>
+<!-- Floating Timeline Picker (Bottom Center) -->
+<div class="absolute bottom-10 left-1/2 -translate-x-1/2 z-30">
+<div class="bg-surface-container-lowest/90 backdrop-blur-xl p-2 rounded-full shadow-2xl flex items-center gap-1 border border-white/40">
+<button class="px-6 py-2 rounded-full bg-primary text-on-primary text-sm font-bold transition-all shadow-md" style="">Today</button>
+<button class="px-6 py-2 rounded-full hover:bg-surface-container-high text-sm font-bold text-on-surface-variant transition-all" style="">Tomorrow</button>
+<button class="px-6 py-2 rounded-full hover:bg-surface-container-high text-sm font-bold text-on-surface-variant transition-all" style="">Weekend</button>
+<div class="h-6 w-[1px] bg-outline-variant/30 mx-2"></div>
+<button class="p-2 rounded-full hover:bg-surface-container-high" style="">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="calendar_today" style="">calendar_today</span>
+</button>
+</div>
+</div>
+<!-- Heat Legend (Bottom Right) -->
+<div class="absolute bottom-10 right-10 z-30">
+<div class="bg-surface-container-lowest/80 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/20">
+<span class="text-[10px] font-bold text-outline uppercase tracking-widest block mb-3" style="">Risk Intensity</span>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-error"></div>
+<span class="text-xs font-bold text-on-surface" style="">High Risk</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-[#E9C46A]"></div>
+<span class="text-xs font-bold text-on-surface" style="">Moderate</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-primary-fixed-dim"></div>
+<span class="text-xs font-bold text-on-surface" style="">Low/Safe</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Map Interactions (Bottom Left) -->
+<div class="absolute bottom-10 left-10 z-30 flex flex-col gap-2">
+<button class="w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all text-on-surface" style="">
+<span class="material-symbols-outlined" data-icon="add" style="">add</span>
+</button>
+<button class="w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all text-on-surface" style="">
+<span class="material-symbols-outlined" data-icon="remove" style="">remove</span>
+</button>
+<button class="w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all text-primary mt-2" style="">
+<span class="material-symbols-outlined" data-icon="my_location" data-weight="fill" style="">my_location</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-6 px-8 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex flex-col md:flex-row justify-between items-center gap-4 z-50">
+<div class="flex items-center gap-6">
+<span class="text-xl font-black text-[#4A6741] dark:text-[#8BA87E] italic font-['Manrope'] tracking-tight" style="">HikeShield Victoria&nbsp;</span>
+<span class="text-slate-500 dark:text-slate-500 text-sm font-['Inter'] tracking-wide" style="">© 2026. Official Victorian Safety Data.</span>
+</div>
+<div class="flex gap-8">
+<a class="text-error font-bold text-sm tracking-wide transition-colors hover:underline" href="#" style="">Emergency: 000</a>
+<a class="text-slate-500 dark:text-slate-500 hover:text-[#4A6741] transition-colors text-sm tracking-wide" href="#" style="">Privacy Policy</a>
+<a class="text-slate-500 dark:text-slate-500 hover:text-[#4A6741] transition-colors text-sm tracking-wide" href="#" style="">Terms of Service</a>
+<a class="text-slate-500 dark:text-slate-500 hover:text-[#4A6741] transition-colors text-sm tracking-wide" href="#" style="">Data Sources</a>
+</div>
+</footer>
+</body></html>

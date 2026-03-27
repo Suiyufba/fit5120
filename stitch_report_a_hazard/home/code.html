@@ -1,0 +1,335 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed-dim": "#9ecfd1",
+              "secondary": "#6b5c4f",
+              "error": "#ba1a1a",
+              "secondary-fixed": "#f4dfce",
+              "surface": "#f3faff",
+              "on-primary": "#ffffff",
+              "on-tertiary-fixed-variant": "#1a4e50",
+              "inverse-surface": "#123441",
+              "tertiary": "#1c4f51",
+              "surface-container-lowest": "#ffffff",
+              "on-primary-fixed-variant": "#324e2a",
+              "primary-fixed": "#caecbc",
+              "surface-dim": "#bedfef",
+              "primary-container": "#4a6741",
+              "on-surface": "#001f29",
+              "surface-tint": "#496640",
+              "tertiary-container": "#366769",
+              "on-tertiary": "#ffffff",
+              "surface-container-high": "#ccedfe",
+              "on-primary-fixed": "#062104",
+              "surface-container-highest": "#c6e8f8",
+              "surface-bright": "#f3faff",
+              "surface-container": "#d8f2ff",
+              "on-tertiary-container": "#b1e3e5",
+              "on-secondary-fixed-variant": "#524438",
+              "on-surface-variant": "#434840",
+              "tertiary-fixed": "#b9ecee",
+              "background": "#f3faff",
+              "on-secondary": "#ffffff",
+              "on-primary-container": "#c2e4b4",
+              "primary-fixed-dim": "#afd0a1",
+              "primary": "#334f2b",
+              "secondary-container": "#f4dfce",
+              "outline-variant": "#c3c8bd",
+              "error-container": "#ffdad6",
+              "on-error-container": "#93000a",
+              "inverse-on-surface": "#dff4ff",
+              "on-background": "#001f29",
+              "on-tertiary-fixed": "#002021",
+              "inverse-primary": "#afd0a1",
+              "on-secondary-container": "#716154",
+              "outline": "#73796f",
+              "on-error": "#ffffff",
+              "on-secondary-fixed": "#24190f",
+              "surface-variant": "#c6e8f8",
+              "surface-container-low": "#e6f6ff",
+              "secondary-fixed-dim": "#d7c3b3"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-glass {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .primary-gradient {
+            background: linear-gradient(135deg, #334f2b 0%, #4a6741 100%);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface">
+<!-- TopNavBar -->
+<header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl docked full-width top-0 sticky z-50 shadow-sm dark:shadow-none bg-surface-container-low">
+<nav class="flex justify-between items-center px-8 py-4 max-w-full mx-auto">
+<div class="text-2xl font-black text-[#4A6741] dark:text-[#8BA87E] italic font-headline tracking-tight" style="">HikeShield Victoria</div>
+<div class="hidden md:flex items-center gap-8 font-headline font-bold tracking-tight text-on-surface">
+<a class="text-[#4A6741] dark:text-[#8BA87E] border-b-2 border-[#4A6741] pb-1 transition-all duration-300" href="#" style="">Home</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] transition-all duration-300" href="#" style="">Risk Map</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] transition-all duration-300" href="#" style="">Plan Route</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] transition-all duration-300" href="#" style="">Community Reports</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] transition-all duration-300" href="#" style="">Knowledge Hub</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-slate-100/50 transition-all active:scale-95" style="">
+<span class="material-symbols-outlined text-[#4A6741]" style="">account_circle</span>
+</button>
+</div>
+</nav>
+</header>
+<main class="space-y-16 pb-20">
+<!-- Hero Section -->
+<section class="relative px-8 pt-12 md:pt-24 overflow-hidden">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-12 items-center">
+<div class="w-full md:w-1/2 z-10">
+<span class="text-xs font-label uppercase tracking-[0.2em] text-primary mb-4 block" style="">Official Victorian Safety Guide</span>
+<h1 class="text-5xl md:text-7xl font-headline font-extrabold text-on-surface leading-tight mb-8" style="">
+                        Hike with <span class="text-transparent bg-clip-text primary-gradient" style="">Confidence</span> in Victoria.
+                    </h1>
+<div class="flex flex-wrap gap-4">
+<button class="primary-gradient text-on-primary px-8 py-4 rounded-lg font-bold flex items-center gap-2 shadow-xl shadow-primary/20 hover:opacity-90 transition-all" style="">
+<span class="material-symbols-outlined" style="">map</span> Check Risk Map
+                        </button>
+<button class="bg-surface-container-high text-primary px-8 py-4 rounded-lg font-bold border-2 border-primary/10 hover:bg-surface-container-highest transition-all" style="">
+                            Plan My Route
+                        </button>
+</div>
+</div>
+<div class="w-full md:w-1/2 relative">
+<div class="aspect-square rounded-[2rem] overflow-hidden bg-surface-container-high rotate-3 hover:rotate-0 transition-transform duration-500">
+<img class="w-full h-full object-cover" data-alt="Stunning aerial view of the rugged Grampians National Park in Victoria with misty peaks and dense green eucalyptus forest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmNyB922YneY1cbo22Sttfq74UspbMx6Vrm-cr5xzgB9OfhoGhfly1s-GFQUpk1yLdxJESMHIccLvddetSCEwmU519zR9aV38SFNj_QpO4O-ippvOXQhrAl8K3lAoNTtrTk86KAEKNXoWKZXZZV7tQGlSkwH9C-6eukOcdWi6jW6iooq9zRGM513df6ITqsjlEqL8ucroqiBNahzq-UQCYyukUlfLXUtKQnsW89abQApWV8cs_4I0yWhFWgelNSH3UwMC734-x3vc" style="">
+</div>
+<div class="absolute -bottom-6 -left-6 bg-glass bg-white/70 p-6 rounded-2xl shadow-2xl backdrop-blur-md max-w-[240px] border border-white/40">
+<div class="flex items-center gap-3 mb-2">
+<span class="w-3 h-3 rounded-full bg-error animate-pulse"></span>
+<span class="font-bold text-sm" style="">Active Warning</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed" style="">Extreme heat predicted for the High Country trails this weekend. Stay hydrated.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Risk Map Preview & Hazard Bento -->
+<section class="px-8 max-w-7xl mx-auto">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+<!-- Map Preview (8 cols) -->
+<div class="md:col-span-8 bg-surface-container-low rounded-[2rem] p-4 flex flex-col gap-6 group">
+<div class="flex justify-between items-center px-4 pt-2">
+<h2 class="font-headline font-bold text-2xl" style="">Live Risk Map Preview</h2>
+<span class="material-symbols-outlined text-primary" style="">open_in_full</span>
+</div>
+<div class="relative w-full h-[400px] rounded-[1.5rem] overflow-hidden bg-surface-dim">
+<!-- Simulated Map with Heat Overlays -->
+<img class="w-full h-full object-cover opacity-60 mix-blend-multiply" data-alt="Topographic satellite map of Victoria showing terrain variations with glowing heat map overlays indicating weather zones" data-location="Victoria, Australia" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeuuHnBvXZfDu-0v2-C3a-X7CSQ86x6JqmdlvzE3xRtqTbvijvfw_PJj7S3mKGeVbIx94QgEvaywz7Ukn3XaBX-UVpMhz1tpiqeB8H95L3LK2fBPauv2Vp1UvtukDjZzbi45lxvxeJs_xMivx_SfeuSfqofifOfnl2MM-PKN0g5PSEiA8lQT6GTkDHIWIeRkf7wM14FZniFRrG8eFisjXKEBE0rkUMdXGCc6Px5K6mPaYdFb8OEkvfDJw4HoqztLb2iyEAJASA8M0" style="">
+<!-- Heat Overlays -->
+<div class="absolute top-1/4 left-1/3 w-32 h-32 bg-error/30 blur-3xl rounded-full animate-pulse"></div>
+<div class="absolute bottom-1/4 right-1/4 w-48 h-48 bg-blue-500/20 blur-3xl rounded-full"></div>
+<!-- Labels -->
+<div class="absolute top-[28%] left-[35%] bg-white/90 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm" style="">
+                            BUSHFIRE RISK: DANDENONGS
+                        </div>
+<div class="absolute bottom-[30%] right-[25%] bg-white/90 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm" style="">
+                            HEAVY RAIN: GRAMPIANS
+                        </div>
+</div>
+<div class="flex gap-4 px-4 pb-2 overflow-x-auto no-scrollbar">
+<span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap" style="">
+<span class="w-2 h-2 rounded-full bg-error"></span> Bushfire Warning
+                        </span>
+<span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap" style="">
+<span class="w-2 h-2 rounded-full bg-blue-500"></span> Flood Risk
+                        </span>
+<span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap" style="">
+<span class="w-2 h-2 rounded-full bg-yellow-500"></span> Trail Closure
+                        </span>
+</div>
+</div>
+<!-- Quick Hazard Cards (4 cols) -->
+<div class="md:col-span-4 grid grid-cols-2 md:grid-cols-1 gap-4">
+<div class="bg-surface-container-low p-6 rounded-[2rem] flex flex-col justify-between hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-4xl text-error mb-4" data-weight="fill" style="">local_fire_department</span>
+<div>
+<p class="font-headline font-bold text-lg" style="">Bushfire</p>
+<span class="inline-block mt-1 px-2 py-0.5 bg-error/10 text-error text-[10px] font-bold rounded uppercase tracking-wider" style="">High Risk</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-[2rem] flex flex-col justify-between hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-4xl text-blue-500 mb-4" data-weight="fill" style="">rainy</span>
+<div>
+<p class="font-headline font-bold text-lg" style="">Heavy Rain</p>
+<span class="inline-block mt-1 px-2 py-0.5 bg-blue-100 text-blue-600 text-[10px] font-bold rounded uppercase tracking-wider" style="">Moderate</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-[2rem] flex flex-col justify-between hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-4xl text-yellow-600 mb-4" data-weight="fill" style="">thermostat</span>
+<div>
+<p class="font-headline font-bold text-lg" style="">Heat</p>
+<span class="inline-block mt-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded uppercase tracking-wider" style="">Moderate</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-[2rem] flex flex-col justify-between hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-4xl text-cyan-600 mb-4" data-weight="fill" style="">ac_unit</span>
+<div>
+<p class="font-headline font-bold text-lg" style="">Cold Weather</p>
+<span class="inline-block mt-1 px-2 py-0.5 bg-cyan-100 text-cyan-700 text-[10px] font-bold rounded uppercase tracking-wider" style="">Low Risk</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Community Alerts -->
+<section class="px-8 max-w-7xl mx-auto">
+<div class="flex items-baseline justify-between mb-8">
+<h2 class="font-headline font-bold text-3xl" style="">Recent Community Alerts</h2>
+<button class="text-primary font-bold text-sm hover:underline" style="">View all reports</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="bg-white p-6 rounded-2xl flex items-start gap-6 border-l-4 border-yellow-500 shadow-sm">
+<div class="bg-surface-container-high p-4 rounded-xl">
+<span class="material-symbols-outlined text-yellow-600" style="">warning</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<p class="font-bold text-lg" style="">Fallen tree on 1000 Steps trail</p>
+<span class="text-[10px] text-slate-400 font-medium" style="">2 HOURS AGO</span>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-4" style="">A large eucalyptus has fallen across the main path. Maintenance has been notified. Exercise caution when climbing.</p>
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-bold text-primary bg-primary/5 px-2 py-1 rounded-full uppercase" style="">Dandenongs</span>
+<span class="text-[10px] font-bold text-slate-500" style="">Reported by: Mark J.</span>
+</div>
+</div>
+</div>
+<div class="bg-white p-6 rounded-2xl flex items-start gap-6 border-l-4 border-error shadow-sm">
+<div class="bg-surface-container-high p-4 rounded-xl">
+<span class="material-symbols-outlined text-error" style="">water_damage</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<p class="font-bold text-lg" style="">Flash flood risk near Wilsons Prom</p>
+<span class="text-[10px] text-slate-400 font-medium" style="">4 HOURS AGO</span>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-4" style="">River levels are rising rapidly at Tidal River after heavy storm surge. Camping in low areas is currently discouraged.</p>
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-bold text-primary bg-primary/5 px-2 py-1 rounded-full uppercase" style="">South Coast</span>
+<span class="text-[10px] font-bold text-slate-500" style="">Verified Alert</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-8 flex justify-center">
+<button class="flex items-center gap-2 px-12 py-4 bg-surface-container-high rounded-full font-bold text-primary hover:bg-surface-container-highest transition-all" style="">
+<span class="material-symbols-outlined" style="">add_circle</span> Report a Hazard
+                </button>
+</div>
+</section>
+<!-- Knowledge Hub Preview -->
+<section class="bg-surface-container-low py-20 px-8">
+<div class="max-w-7xl mx-auto">
+<div class="mb-12 text-center md:text-left">
+<h2 class="font-headline font-bold text-3xl mb-4" style="">Knowledge Hub</h2>
+<p class="text-on-surface-variant max-w-xl" style="">Equip yourself with the essential knowledge before stepping onto the trail. Expertise from Victorian Park Rangers.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Checklist Card -->
+<div class="bg-white rounded-[2rem] p-8 flex flex-col h-full shadow-sm hover:translate-y-[-4px] transition-transform">
+<div class="bg-primary/10 w-12 h-12 rounded-xl flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-primary" style="">checklist</span>
+</div>
+<h3 class="font-headline font-bold text-xl mb-4" style="">"Before You Go" checklist</h3>
+<ul class="space-y-3 mb-8 flex-1">
+<li class="flex items-center gap-2 text-sm text-on-surface-variant" style="">
+<span class="material-symbols-outlined text-primary text-sm" style="">check_circle</span> Personal Locator Beacon (PLB)
+                            </li>
+<li class="flex items-center gap-2 text-sm text-on-surface-variant" style="">
+<span class="material-symbols-outlined text-primary text-sm" style="">check_circle</span> 2L Water per person
+                            </li>
+<li class="flex items-center gap-2 text-sm text-on-surface-variant" style="">
+<span class="material-symbols-outlined text-primary text-sm" style="">check_circle</span> Map &amp; Offline Navigation
+                            </li>
+</ul>
+<button class="text-primary font-bold text-sm text-left flex items-center gap-2 group" style="">
+                            Full Checklist <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" style="">arrow_forward</span>
+</button>
+</div>
+<!-- Weather 101 Cards -->
+<div class="bg-white rounded-[2rem] p-8 flex flex-col h-full shadow-sm hover:translate-y-[-4px] transition-transform">
+<div class="bg-secondary/10 w-12 h-12 rounded-xl flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-secondary" style="">cloudy_filled</span>
+</div>
+<h3 class="font-headline font-bold text-xl mb-4" style="">"Weather 101" guides</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed mb-8 flex-1" style="">Understanding how Victorian alpine weather can shift in minutes. Learn to spot the signs of incoming storms.</p>
+<button class="text-secondary font-bold text-sm text-left flex items-center gap-2 group" style="">
+                            Browse Guides <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" style="">arrow_forward</span>
+</button>
+</div>
+<!-- Expert Tips -->
+<div class="relative rounded-[2rem] overflow-hidden group h-full">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="Experienced hiker with high-quality gear looking out over a vast Victorian forest valley under a clear morning sky" src="https://lh3.googleusercontent.com/aida-public/AB6AXuArD15DPJjumuqYnRE_aAWV91cvQ60OSASHsfR_6lvPQ6xN2_jXi5aLK5lOc2a5r5GV1WJ60EZnc-DzjZjQW-_kKo7tQ7-2Z_c_sFmJGV02bffT2CTyi5-sR4OIz8wBQVxYlci0Cnw5R1rxl1tBpWC-dW4gfMyJXtNJ5H3cPvhOcrWIz9Lz0X_yGGnbHE8AtGmqiTv9Y1xQokILke_5TF_WpoJmoOx3TkVEa3l2Jnf4NKsphZykza0dTbb6fcq3uOw49LErD_qJvQY" style="">
+<div class="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent flex flex-col justify-end p-8">
+<h3 class="text-white font-headline font-bold text-xl mb-2" style="">Park Ranger Insights</h3>
+<p class="text-white/80 text-sm mb-6" style="">Local tips for the Dandenong Ranges and beyond.</p>
+<button class="bg-white text-primary px-6 py-3 rounded-full font-bold text-sm w-fit" style="">Read Stories</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-slate-50 dark:bg-slate-950 w-full py-12 px-8 border-t border-slate-200 dark:border-slate-800">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
+<div class="space-y-4">
+<div class="font-['Manrope'] font-bold text-slate-900 dark:text-slate-100 text-xl italic" style="">
+                    HikeShield Victoria</div>
+<p class="text-slate-500 font-['Inter'] text-sm max-w-xs leading-relaxed" style="">
+                    © 2026 The HikeShield Victoria. Official Victorian Safety Data. Empowering hikers with real-time risk assessments.
+                </p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-12">
+<div class="flex flex-col gap-3 font-['Inter'] text-sm tracking-wide">
+<span class="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest text-[10px]" style="">Safety</span>
+<a class="text-slate-500 dark:text-slate-500 hover:text-[#4A6741] dark:hover:text-[#8BA87E] transition-colors" href="#" style="">Emergency: 000</a>
+<a class="text-slate-500 dark:text-slate-500 hover:text-[#4A6741] dark:hover:text-[#8BA87E] transition-colors" href="#" style="">Risk Map</a>
+<a class="text-slate-500 dark:text-slate-500 hover:text-[#4A6741] dark:hover:text-[#8BA87E] transition-colors" href="#" style="">Reports</a>
+</div>
+<div class="flex flex-col gap-3 font-['Inter'] text-sm tracking-wide">
+<span class="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest text-[10px]" style="">Company</span>
+<a class="text-slate-500 dark:text-slate-500 hover:text-[#4A6741] dark:hover:text-[#8BA87E] transition-colors" href="#" style="">About Us</a>
+<a class="text-slate-500 dark:text-slate-500 hover:text-[#4A6741] dark:hover:text-[#8BA87E] transition-colors" href="#" style="">Privacy Policy</a>
+<a class="text-slate-500 dark:text-slate-500 hover:text-[#4A6741] dark:hover:text-[#8BA87E] transition-colors" href="#" style="">Terms of Service</a>
+</div>
+<div class="flex flex-col gap-3 font-['Inter'] text-sm tracking-wide">
+<span class="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest text-[10px]" style="">Resources</span>
+<a class="text-slate-500 dark:text-slate-500 hover:text-[#4A6741] dark:hover:text-[#8BA87E] transition-colors" href="#" style="">Data Sources</a>
+<a class="text-slate-500 dark:text-slate-500 hover:text-[#4A6741] dark:hover:text-[#8BA87E] transition-colors" href="#" style="">Knowledge Hub</a>
+<a class="text-slate-500 dark:text-slate-500 hover:text-[#4A6741] dark:hover:text-[#8BA87E] transition-colors" href="#" style="">Victorian Parks</a>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

@@ -3,6 +3,9 @@ import Home from '../views/Home.vue'
 
 const router = createRouter({
   history: createWebHistory(),
+  scrollBehavior() {
+    return { top: 0 }
+  },
   routes: [
     {
       path: '/',
@@ -10,24 +13,39 @@ const router = createRouter({
       component: Home
     },
     {
-      path: '/quiz',
-      name: 'quiz',
-      component: () => import('../views/Quiz.vue')
+      path: '/risk-map',
+      name: 'risk-map',
+      component: () => import('../views/RiskMap.vue')
     },
     {
-      path: '/events',
-      name: 'events',
-      component: () => import('../views/Events.vue')
+      path: '/route-planner',
+      name: 'route-planner',
+      component: () => import('../views/RoutePlanner.vue')
     },
     {
-      path: '/rewards',
-      name: 'rewards',
-      component: () => import('../views/Rewards.vue')
+      path: '/route-detail',
+      name: 'route-detail',
+      component: () => import('../views/RouteDetail.vue')
     },
     {
-      path: '/profile',
-      name: 'profile',
-      component: () => import('../views/Profile.vue')
+      path: '/community-reports',
+      name: 'community-reports',
+      component: () => import('../views/CommunityReports.vue')
+    },
+    {
+      path: '/knowledge-hub',
+      name: 'knowledge-hub',
+      component: () => import('../views/KnowledgeHub.vue')
+    },
+    {
+      path: '/report-hazard',
+      name: 'report-hazard',
+      component: () => import('../views/ReportHazard.vue')
+    },
+    {
+      path: '/location/:id?',
+      name: 'location-detail',
+      component: () => import('../views/LocationDetail.vue')
     },
   ]
 })

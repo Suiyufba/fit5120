@@ -1,0 +1,230 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Report Hazard - Topographic Guardian</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed-dim": "#9ecfd1",
+              "secondary": "#6b5c4f",
+              "error": "#ba1a1a",
+              "secondary-fixed": "#f4dfce",
+              "surface": "#f3faff",
+              "on-primary": "#ffffff",
+              "on-tertiary-fixed-variant": "#1a4e50",
+              "inverse-surface": "#123441",
+              "tertiary": "#1c4f51",
+              "surface-container-lowest": "#ffffff",
+              "on-primary-fixed-variant": "#324e2a",
+              "primary-fixed": "#caecbc",
+              "surface-dim": "#bedfef",
+              "primary-container": "#4a6741",
+              "on-surface": "#001f29",
+              "surface-tint": "#496640",
+              "tertiary-container": "#366769",
+              "on-tertiary": "#ffffff",
+              "surface-container-high": "#ccedfe",
+              "on-primary-fixed": "#062104",
+              "surface-container-highest": "#c6e8f8",
+              "surface-bright": "#f3faff",
+              "surface-container": "#d8f2ff",
+              "on-tertiary-container": "#b1e3e5",
+              "on-secondary-fixed-variant": "#524438",
+              "on-surface-variant": "#434840",
+              "tertiary-fixed": "#b9ecee",
+              "background": "#f3faff",
+              "on-secondary": "#ffffff",
+              "on-primary-container": "#c2e4b4",
+              "primary-fixed-dim": "#afd0a1",
+              "primary": "#334f2b",
+              "secondary-container": "#f4dfce",
+              "outline-variant": "#c3c8bd",
+              "error-container": "#ffdad6",
+              "on-error-container": "#93000a",
+              "inverse-on-surface": "#dff4ff",
+              "on-background": "#001f29",
+              "on-tertiary-fixed": "#002021",
+              "inverse-primary": "#afd0a1",
+              "on-secondary-container": "#716154",
+              "outline": "#73796f",
+              "on-error": "#ffffff",
+              "on-secondary-fixed": "#24190f",
+              "surface-variant": "#c6e8f8",
+              "surface-container-low": "#e6f6ff",
+              "secondary-fixed-dim": "#d7c3b3"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-glass {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .primary-gradient {
+            background: linear-gradient(135deg, #334f2b 0%, #4a6741 100%);
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface">
+<!-- TopNavBar -->
+<nav class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl docked full-width top-0 sticky z-50 shadow-sm dark:shadow-none bg-surface-container-low">
+<div class="flex justify-between items-center px-8 py-4 max-w-full mx-auto">
+<div class="text-2xl font-black text-[#4A6741] dark:text-[#8BA87E] italic font-['Manrope'] tracking-tight" style="">
+                HikeShield Victoria</div>
+<div class="hidden md:flex items-center gap-8 font-['Manrope'] font-bold tracking-tight">
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] transition-all duration-300" href="#" style="">Home</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] transition-all duration-300" href="#" style="">Risk Map</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] transition-all duration-300" href="#" style="">Plan Route</a>
+<a class="text-[#4A6741] dark:text-[#8BA87E] border-b-2 border-[#4A6741] pb-1 transition-all duration-300" href="#" style="">Community Reports</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] transition-all duration-300" href="#" style="">Knowledge Hub</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-all duration-300 active:scale-95" style="">
+<span class="material-symbols-outlined text-[#4A6741] dark:text-[#8BA87E]" style="">account_circle</span>
+</button>
+</div>
+</div>
+</nav>
+<main class="max-w-3xl mx-auto px-6 py-12 md:py-20">
+<!-- Header Section -->
+<header class="mb-12 text-center md:text-left">
+<h1 class="font-headline text-5xl font-extrabold tracking-tight text-primary mb-4" style="">Submit Hazard Report</h1>
+<p class="text-on-surface-variant text-lg max-w-xl" style="">
+                Your report helps keep fellow hikers safe. Please only report active hazards you have seen in person.
+            </p>
+</header>
+<!-- Form Container -->
+<section class="bg-surface-container-low p-8 md:p-12 rounded-xl shadow-sm space-y-12">
+<!-- Photo Upload -->
+<div class="space-y-4">
+<label class="font-label text-xs uppercase tracking-widest font-bold text-outline" style="">Visual Evidence</label>
+<div class="group relative flex flex-col items-center justify-center border-2 border-dashed border-outline-variant/30 rounded-xl bg-surface-container-lowest h-64 cursor-pointer hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-4xl text-primary mb-2" style="">add_a_photo</span>
+<p class="font-medium text-on-surface-variant" style="">Click to add a hazard photo.</p>
+<p class="text-xs text-outline mt-1" style="">Maximum file size: 10MB (JPG, PNG)</p>
+<input class="absolute inset-0 opacity-0 cursor-pointer" type="file">
+</div>
+</div>
+<!-- Map Picker -->
+<div class="space-y-4">
+<div class="flex justify-between items-end">
+<label class="font-label text-xs uppercase tracking-widest font-bold text-outline" style="">Exact Location</label>
+<span class="text-xs font-medium text-primary bg-primary-container/10 px-3 py-1 rounded-full" style="">Wilsons Promontory</span>
+</div>
+<div class="relative rounded-xl overflow-hidden h-80 ring-1 ring-outline-variant/20">
+<img class="w-full h-full object-cover" data-alt="Satellite map view of Wilsons Promontory coastline with turquoise water and green dense coastal shrubland" data-location="Wilsons Promontory" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJTeZ4cgHt3sIJRN6qm-nMKTu2PpnIIW1Gc50pt1FPb_ME5OR6zOLegUPsIU1T4o3EQvBABduirzLh89XcsbDMOmbhsLEl5S7bIXiklbcH_5M7mfduxt2u02B0VrOhyxnsJV1j0RKQGbPI1o19G6jrhsV93drPb-GQGKT_SS9u3WeBMWrCxYLaDEa12A4Sb4JoY8Duv9ptgfXppqB8zEUAIuqOhJYuotYqD7nK69N9RS1GmARnbzTygLgV4Gj5K23AktQdGvuuKno" style="">
+<div class="absolute inset-0 bg-black/5 pointer-events-none"></div>
+<!-- Map Pin Overlay -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+<span class="material-symbols-outlined text-error text-4xl drop-shadow-lg" style="font-variation-settings: &quot;FILL&quot; 1;">location_on</span>
+</div>
+<div class="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur p-3 rounded-lg flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" style="">explore</span>
+<p class="text-sm font-medium text-on-surface" style="">Where is the hazard located?</p>
+</div>
+</div>
+</div>
+<!-- Incident Details Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Incident Type -->
+<div class="space-y-3">
+<label class="font-label text-xs uppercase tracking-widest font-bold text-outline" style="">Incident Type</label>
+<div class="relative">
+<select class="w-full appearance-none bg-surface-container-high border-none rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-highest transition-all">
+<option disabled="" selected="" value="">Select type...</option>
+<option>Bushfire</option>
+<option>Fallen Tree</option>
+<option>Flood</option>
+<option>Track Damage</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline" style="">expand_more</span>
+</div>
+</div>
+<!-- Time/Date -->
+<div class="space-y-3">
+<label class="font-label text-xs uppercase tracking-widest font-bold text-outline" style="">Time Spotted</label>
+<div class="relative">
+<input class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-highest transition-all" type="datetime-local">
+</div>
+</div>
+</div>
+<!-- Severity Selector -->
+<div class="space-y-4">
+<label class="font-label text-xs uppercase tracking-widest font-bold text-outline" style="">Severity Level</label>
+<div class="grid grid-cols-3 gap-4">
+<button class="flex flex-col items-center gap-2 p-4 rounded-xl border border-outline-variant/30 bg-surface-container-highest hover:bg-surface transition-all group" style="">
+<div class="w-3 h-3 rounded-full bg-green-500"></div>
+<span class="font-bold text-sm text-on-surface" style="">Low</span>
+</button>
+<button class="flex flex-col items-center gap-2 p-4 rounded-xl border border-outline-variant/30 bg-surface-container-highest hover:bg-surface transition-all group" style="">
+<div class="w-3 h-3 rounded-full bg-amber-500"></div>
+<span class="font-bold text-sm text-on-surface" style="">Moderate</span>
+</button>
+<button class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-primary/40 bg-primary/5 transition-all group" style="">
+<div class="w-3 h-3 rounded-full bg-red-600"></div>
+<span class="font-bold text-sm text-primary" style="">High</span>
+</button>
+</div>
+</div>
+<!-- Submit Action -->
+<div class="pt-8">
+<button class="w-full primary-gradient text-on-primary font-headline font-bold py-5 px-8 rounded-lg shadow-xl hover:opacity-95 transition-all active:scale-[0.98] flex items-center justify-center gap-3" style="">
+<span class="material-symbols-outlined" style="">send</span>
+                    Submit Hazard Report
+                </button>
+<p class="text-center text-xs text-outline mt-6 italic" style="">
+                    By submitting, you confirm this information is accurate to the best of your knowledge.
+                </p>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-slate-50 dark:bg-slate-950 w-full py-12 px-8 border-t border-slate-200 dark:border-slate-800 tonal-shift">
+<div class="max-w-full mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
+<div class="space-y-4">
+<div class="font-['Manrope'] font-bold text-slate-900 dark:text-slate-100 text-xl" style="">HikeShield Victoria</div>
+<p class="font-['Inter'] text-sm tracking-wide text-slate-500 dark:text-slate-500 max-w-xs" style="">
+                    Official Victorian Safety Data integration for safer exploration of the Australian bush.
+                </p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-12">
+<div class="flex flex-col gap-3">
+<span class="font-label text-xs uppercase tracking-widest font-bold text-primary" style="">Emergency</span>
+<a class="font-['Inter'] text-sm tracking-wide text-[#4A6741] underline" href="#" style="">Emergency: 000</a>
+</div>
+<div class="flex flex-col gap-3">
+<span class="font-label text-xs uppercase tracking-widest font-bold text-slate-400" style="">Legal</span>
+<a class="font-['Inter'] text-sm tracking-wide text-slate-500 hover:text-[#4A6741] transition-colors" href="#" style="">Privacy Policy</a>
+<a class="font-['Inter'] text-sm tracking-wide text-slate-500 hover:text-[#4A6741] transition-colors" href="#" style="">Terms of Service</a>
+</div>
+<div class="flex flex-col gap-3">
+<span class="font-label text-xs uppercase tracking-widest font-bold text-slate-400" style="">Resources</span>
+<a class="font-['Inter'] text-sm tracking-wide text-slate-500 hover:text-[#4A6741] transition-colors" href="#" style="">Data Sources</a>
+</div>
+</div>
+</div>
+<div class="mt-12 pt-8 border-t border-slate-200/50 dark:border-slate-800/50 text-center md:text-left">
+<p class="font-['Inter'] text-sm tracking-wide text-slate-500 dark:text-slate-500" style="">
+                © 2026 The HikeShield Victoria. Official Victorian Safety Data.
+            </p>
+</div>
+</footer>
+</body></html>

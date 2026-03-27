@@ -1,0 +1,323 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Community Reports | Topographic Guardian</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed-dim": "#9ecfd1",
+                        "secondary": "#6b5c4f",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#f4dfce",
+                        "surface": "#f3faff",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#1a4e50",
+                        "inverse-surface": "#123441",
+                        "tertiary": "#1c4f51",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#324e2a",
+                        "primary-fixed": "#caecbc",
+                        "surface-dim": "#bedfef",
+                        "primary-container": "#4a6741",
+                        "on-surface": "#001f29",
+                        "surface-tint": "#496640",
+                        "tertiary-container": "#366769",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#ccedfe",
+                        "on-primary-fixed": "#062104",
+                        "surface-container-highest": "#c6e8f8",
+                        "surface-bright": "#f3faff",
+                        "surface-container": "#d8f2ff",
+                        "on-tertiary-container": "#b1e3e5",
+                        "on-secondary-fixed-variant": "#524438",
+                        "on-surface-variant": "#434840",
+                        "tertiary-fixed": "#b9ecee",
+                        "background": "#f3faff",
+                        "on-secondary": "#ffffff",
+                        "on-primary-container": "#c2e4b4",
+                        "primary-fixed-dim": "#afd0a1",
+                        "primary": "#334f2b",
+                        "secondary-container": "#f4dfce",
+                        "outline-variant": "#c3c8bd",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#dff4ff",
+                        "on-background": "#001f29",
+                        "on-tertiary-fixed": "#002021",
+                        "inverse-primary": "#afd0a1",
+                        "on-secondary-container": "#716154",
+                        "outline": "#73796f",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#24190f",
+                        "surface-variant": "#c6e8f8",
+                        "surface-container-low": "#e6f6ff",
+                        "secondary-fixed-dim": "#d7c3b3"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .map-gradient-overlay {
+            background: linear-gradient(to bottom, rgba(243, 250, 255, 0) 0%, rgba(243, 250, 255, 0.8) 100%);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4a674133;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary-container selection:text-on-primary-container overflow-hidden h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<nav class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-sm dark:shadow-none docked full-width top-0 sticky z-50 flex justify-between items-center px-8 py-4 max-w-full mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black text-[#4A6741] dark:text-[#8BA87E] italic font-headline tracking-tight" style="">HikeShield Victoria</span>
+<div class="hidden md:flex gap-6 items-center">
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] transition-all duration-300 font-headline font-bold tracking-tight" href="#" style="">Home</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] transition-all duration-300 font-headline font-bold tracking-tight" href="#" style="">Risk Map</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] transition-all duration-300 font-headline font-bold tracking-tight" href="#" style="">Plan Route</a>
+<a class="text-[#4A6741] dark:text-[#8BA87E] border-b-2 border-[#4A6741] pb-1 font-headline font-bold tracking-tight" href="#" style="">Community Reports</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] transition-all duration-300 font-headline font-bold tracking-tight" href="#" style="">Knowledge Hub</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-all duration-300 active:scale-95 duration-200" style="">
+<span class="material-symbols-outlined text-[#4A6741]" data-icon="account_circle" style="">account_circle</span>
+</button>
+</div>
+</nav>
+<!-- Main Content: Map & Sidebar Layout -->
+<main class="flex-1 flex overflow-hidden relative">
+<!-- Sidebar: Community Reports List -->
+<aside class="w-full md:w-[420px] bg-surface-container-low flex flex-col z-20 shadow-xl md:shadow-none">
+<div class="p-6 border-b border-outline-variant/20">
+<div class="flex justify-between items-end mb-4">
+<h1 class="text-3xl font-headline font-extrabold tracking-tight text-primary" style="">Live Reports</h1>
+<span class="text-xs font-label font-medium bg-primary-container/10 text-primary px-3 py-1 rounded-full uppercase tracking-widest" style="">Victoria, AU</span>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 py-2 px-4 rounded-lg bg-primary text-on-primary font-headline font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20" style="">
+<span class="material-symbols-outlined text-sm" data-icon="add_circle" style="">add_circle</span>
+                        Submit Report
+                    </button>
+<button class="p-2 rounded-lg bg-surface-container-high text-primary hover:bg-surface-container-highest transition-colors" style="">
+<span class="material-symbols-outlined" data-icon="filter_list" style="">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Scrollable Reports List -->
+<div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4 bg-surface-container-low">
+<!-- Report Card 1 -->
+<div class="group bg-surface-container-lowest rounded-xl p-4 flex gap-4 transition-all duration-300 hover:bg-surface-bright cursor-pointer border-l-4 border-[#E76F51]">
+<div class="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-surface-dim">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="thick grey smoke rising from a dense eucalyptus forest under a hazy overcast sky during afternoon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnE5L4OI0gSoZKDDmD7kwra7SyoBMcx4f-quPVONVCxkTR2JBXREknVUvVDUqKttGGXpQ0jai9LFM14QfqtEuyVjsDG_JrPKpZItjuB2fHfLrXMYHCUb2C1FYWidnB30bnb4cNcLYzxp9Qg1eK_gqJ03e_zDFWyvZZnH8yO9UJ2MVlRsd8VNKLjcnRtVeh0IrE007EZIZ2p4196AkedXq_ftDE55W8jNZUEBOsJAFt4EzQy_cBdlnGwsrp_73d99pq_YY26Cc8rXQ" style="">
+</div>
+<div class="flex flex-col justify-between py-1">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="w-2 h-2 rounded-full bg-[#E76F51]"></span>
+<span class="text-[10px] font-label font-bold uppercase tracking-widest text-[#E76F51]" style="">Fire Hazard</span>
+</div>
+<h3 class="font-headline font-bold text-on-surface leading-tight group-hover:text-primary transition-colors" style="">Smoke near Cathedral Range</h3>
+<p class="text-xs text-on-surface-variant font-medium mt-1" style="">Neds Gully Track • 14 mins ago</p>
+</div>
+<div class="flex items-center gap-3 mt-2">
+<span class="flex items-center gap-1 text-[10px] font-bold text-slate-500" style="">
+<span class="material-symbols-outlined text-xs" data-icon="thumb_up" style="">thumb_up</span> 12
+                            </span>
+<span class="flex items-center gap-1 text-[10px] font-bold text-slate-500" style="">
+<span class="material-symbols-outlined text-xs" data-icon="visibility" style="">visibility</span> 450
+                            </span>
+</div>
+</div>
+</div>
+<!-- Report Card 2 -->
+<div class="group bg-surface-container-lowest rounded-xl p-4 flex gap-4 transition-all duration-300 hover:bg-surface-bright cursor-pointer border-l-4 border-tertiary">
+<div class="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-surface-dim">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="deep brown muddy hiking trail with heavy boot tracks and water puddles in a temperate rainforest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJRFVOiaL9n_lT6t7IB76NHjlx-9HATKZUe8T5hF93uTRzgRobG7xlfDwDU7VQpkhx4c5NzCvKuDfJCvM0B_2klhC9C7KwNjGVTOdiUo4_NFgqSXGY_CgBTmEtI_0J6KQaN7TR4YNLleg-_she-yWlDvkq25_-tWm5HOQovIYKyWwom0n5ib8lGewWOslaj1I9d_Wt1vZTosyMMfFZRIUx8EZs88wW-d6BDQLKNh6BqmRgfAgY-_Mj7CxHRdHD3PsrV71kpl3FlME" style="">
+</div>
+<div class="flex flex-col justify-between py-1">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="text-[10px] font-label font-bold uppercase tracking-widest text-tertiary" style="">Weather Impact</span>
+</div>
+<h3 class="font-headline font-bold text-on-surface leading-tight group-hover:text-primary transition-colors" style="">Deep mud on Razorback Trail</h3>
+<p class="text-xs text-on-surface-variant font-medium mt-1" style="">Alpine National Park • 2h ago</p>
+</div>
+<div class="flex items-center gap-3 mt-2">
+<span class="flex items-center gap-1 text-[10px] font-bold text-slate-500" style="">
+<span class="material-symbols-outlined text-xs" data-icon="thumb_up" style="">thumb_up</span> 8
+                            </span>
+<span class="flex items-center gap-1 text-[10px] font-bold text-slate-500" style="">
+<span class="material-symbols-outlined text-xs" data-icon="visibility" style="">visibility</span> 1.2k
+                            </span>
+</div>
+</div>
+</div>
+<!-- Report Card 3 -->
+<div class="group bg-surface-container-lowest rounded-xl p-4 flex gap-4 transition-all duration-300 hover:bg-surface-bright cursor-pointer border-l-4 border-secondary">
+<div class="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-surface-dim">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="fallen ancient tree trunk blocking a narrow gravel path in a lush green mountain forest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAo6QMw_q4g3isNjhALJJEQVyI8lcl88BJb4eGUnBJPvobqehfHAQEUr95IBp_t2H9ZCGwY_E1Uk-F33-iK8Pw0J_d9pF2e9ldPmE4OLgIWoNTlsY93HWfpJOH4aunLHRSed_ploE-Vthea6KRYrK8xR449IBsI_VMvwBb4gcN1LNY5Zht_4zw6Bid026UFYe6hCfUnU_Uj8walsgIgg5lmfWLVzgJD_C2UiRAczdl1oo_iwGKP-WJfcHJVsu3M9ytggLUerUdfgq4" style="">
+</div>
+<div class="flex flex-col justify-between py-1">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-[10px] font-label font-bold uppercase tracking-widest text-secondary" style="">Trail Caution</span>
+</div>
+<h3 class="font-headline font-bold text-on-surface leading-tight group-hover:text-primary transition-colors" style="">Fallen Tree - West Ridge</h3>
+<p class="text-xs text-on-surface-variant font-medium mt-1" style="">Mt Buller Area • 5h ago</p>
+</div>
+<div class="flex items-center gap-3 mt-2">
+<span class="flex items-center gap-1 text-[10px] font-bold text-slate-500" style="">
+<span class="material-symbols-outlined text-xs" data-icon="thumb_up" style="">thumb_up</span> 24
+                            </span>
+<span class="flex items-center gap-1 text-[10px] font-bold text-slate-500" style="">
+<span class="material-symbols-outlined text-xs" data-icon="visibility" style="">visibility</span> 890
+                            </span>
+</div>
+</div>
+</div>
+<!-- Report Card 4 -->
+<div class="group bg-surface-container-lowest rounded-xl p-4 flex gap-4 transition-all duration-300 hover:bg-surface-bright cursor-pointer border-l-4 border-tertiary">
+<div class="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-surface-dim">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="flooded creek crossing with rapid white water flowing over grey granite rocks during heavy rain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMe1VazPyBaqcGurW2VgC-MXtsLzI7BULR-XK2BG-784uZjdf29N4gQDZTIIa085ZZA6j5EgntNmSNec8xfNLKejZw4KjCQ3gRikPzx5lrwhw1l3-szJsVw1_AqnWYTGgr79PLBCFGViu6xmgxIVYPb2Xz2t55_jlY5rbAzneGF_hCG6YUYmGjq3Sz2i_t4l0nw7OIlXOpzRdxuzyIoxogJFEUOnzF7_SWKzcOlGT4PQEbg46li3Zq9mmvjr2FabresKRosMlIcyU" style="">
+</div>
+<div class="flex flex-col justify-between py-1">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="text-[10px] font-label font-bold uppercase tracking-widest text-tertiary" style="">Flood Warning</span>
+</div>
+<h3 class="font-headline font-bold text-on-surface leading-tight group-hover:text-primary transition-colors" style="">Creek Level Rising - Mitchell</h3>
+<p class="text-xs text-on-surface-variant font-medium mt-1" style="">Wonnangatta Valley • 8h ago</p>
+</div>
+<div class="flex items-center gap-3 mt-2">
+<span class="flex items-center gap-1 text-[10px] font-bold text-slate-500" style="">
+<span class="material-symbols-outlined text-xs" data-icon="thumb_up" style="">thumb_up</span> 5
+                            </span>
+<span class="flex items-center gap-1 text-[10px] font-bold text-slate-500" style="">
+<span class="material-symbols-outlined text-xs" data-icon="visibility" style="">visibility</span> 312
+                            </span>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- Map Canvas Section -->
+<section class="flex-1 relative bg-[#e5e5f7] overflow-hidden">
+<!-- Background Map Representation (Abstract Stylized) -->
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-80 mix-blend-multiply grayscale-[20%]" data-alt="topographic map detail with contoured lines and muted green forest textures and winding blue river lines" data-location="Victoria" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnpDiY-W_u-7FF6aOXRQbek5VwW_hTWMQYnDL40UVGg9twyDJG_PnbtNXXzwfZcl8eHBizV-CvDl4_pFCJ-EkoyNSk9M6Ac4iWRBzQNOMbqxP56mlU9i-hN00i2KSOa6gX2Lwvcp6-M119i7KqeKj_jmxCQetWPJRG7gfLurvFfmv4Q9mAqqw93Pu2-mjksLcqWWvPnZm2MtixXhB-TFKDRMHQ5l3_xt0fcMjz7-B5gYi1HnhnzTNzaEkOR6FKfMdytWtZJNUKDyE" style="">
+<div class="absolute inset-0 bg-primary/5"></div>
+</div>
+<!-- Custom Floating Map Markers -->
+<!-- Marker 1 (Fire) -->
+<div class="absolute top-1/3 left-1/4 z-10 group cursor-pointer" style="transform: translate(-50%, -50%);">
+<div class="relative">
+<div class="absolute -inset-4 bg-[#E76F51]/20 rounded-full animate-ping"></div>
+<div class="bg-surface-container-lowest p-2 rounded-full shadow-xl border-2 border-[#E76F51] flex items-center justify-center group-hover:scale-125 transition-transform duration-300">
+<span class="material-symbols-outlined text-[#E76F51]" data-icon="local_fire_department" style="font-variation-settings: &quot;FILL&quot; 1;">local_fire_department</span>
+</div>
+<div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-on-surface text-surface text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-bold" style="">
+                        Smoke - Cathedral Range
+                    </div>
+</div>
+</div>
+<!-- Marker 2 (Rain/Mud) -->
+<div class="absolute top-1/2 left-2/3 z-10 group cursor-pointer" style="transform: translate(-50%, -50%);">
+<div class="relative">
+<div class="bg-surface-container-lowest p-2 rounded-full shadow-xl border-2 border-tertiary flex items-center justify-center group-hover:scale-125 transition-transform duration-300">
+<span class="material-symbols-outlined text-tertiary" data-icon="rainy" style="font-variation-settings: &quot;FILL&quot; 1;">rainy</span>
+</div>
+<div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-on-surface text-surface text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-bold" style="">
+                        Deep Mud - Razorback
+                    </div>
+</div>
+</div>
+<!-- Marker 3 (Caution) -->
+<div class="absolute top-2/3 left-1/3 z-10 group cursor-pointer" style="transform: translate(-50%, -50%);">
+<div class="relative">
+<div class="bg-surface-container-lowest p-2 rounded-full shadow-xl border-2 border-secondary flex items-center justify-center group-hover:scale-125 transition-transform duration-300">
+<span class="material-symbols-outlined text-secondary" data-icon="warning" style="font-variation-settings: &quot;FILL&quot; 1;">warning</span>
+</div>
+<div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-on-surface text-surface text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-bold" style="">
+                        Fallen Tree - West Ridge
+                    </div>
+</div>
+</div>
+<!-- Map UI Overlays -->
+<div class="absolute bottom-8 right-8 flex flex-col gap-3 z-30">
+<div class="bg-surface-container-lowest/80 backdrop-blur-md rounded-xl p-2 flex flex-col gap-1 shadow-2xl border border-outline-variant/10">
+<button class="p-3 rounded-lg hover:bg-surface-container-high text-primary transition-colors" style="">
+<span class="material-symbols-outlined" data-icon="add" style="">add</span>
+</button>
+<button class="p-3 rounded-lg hover:bg-surface-container-high text-primary transition-colors" style="">
+<span class="material-symbols-outlined" data-icon="remove" style="">remove</span>
+</button>
+</div>
+<button class="bg-primary p-4 rounded-xl text-on-primary shadow-2xl shadow-primary/40 hover:scale-105 active:scale-95 transition-all" style="">
+<span class="material-symbols-outlined" data-icon="my_location" style="">my_location</span>
+</button>
+</div>
+<div class="absolute top-8 left-8 z-30">
+<div class="bg-surface-container-lowest/90 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-outline-variant/10 max-w-xs">
+<h4 class="font-headline font-extrabold text-primary mb-3 text-sm" style="">Legend</h4>
+<div class="space-y-3">
+<div class="flex items-center gap-3">
+<span class="w-8 h-8 rounded-full bg-[#E76F51]/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-[#E76F51]" data-icon="local_fire_department" style="">local_fire_department</span>
+</span>
+<span class="text-xs font-medium text-on-surface-variant" style="">Active Fire/Smoke</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="w-8 h-8 rounded-full bg-tertiary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-tertiary" data-icon="rainy" style="">rainy</span>
+</span>
+<span class="text-xs font-medium text-on-surface-variant" style="">Weather/Mud Impact</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-secondary" data-icon="warning" style="">warning</span>
+</span>
+<span class="text-xs font-medium text-on-surface-variant" style="">Trail Hazard</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer - Integrated as a slim status bar or suppressed for map view as per mandate for task focus, 
+         but we keep a small copyright for brand consistency if allowed. 
+         JSON indicates a standard footer but map views often suppress for space. -->
+<footer class="bg-slate-50 dark:bg-slate-950 w-full py-4 px-8 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center z-40">
+<span class="font-['Inter'] text-[10px] tracking-wide text-slate-500 uppercase font-bold" style=""><span style="font-size: 14px; font-weight: 400; letter-spacing: 0.35px; text-transform: none;">©</span>&nbsp;<span style="font-size: 14px; font-weight: 400; letter-spacing: 0.35px; text-transform: none;">2026 The HikeShield Victoria. Official Victorian Safety Data.</span></span>
+<div class="flex gap-4">
+<a class="text-[10px] font-bold text-[#4A6741] underline uppercase tracking-widest" href="#" style="">Emergenc: 000</a>
+<a class="text-[10px] font-bold text-slate-500 hover:text-[#4A6741] transition-colors uppercase tracking-widest" href="#" style="">Privacy Policy</a>
+</div>
+</footer>
+</body></html>

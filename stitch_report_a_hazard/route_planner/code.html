@@ -1,0 +1,264 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Route Planner | Topographic Guardian</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed-dim": "#9ecfd1",
+              "secondary": "#6b5c4f",
+              "error": "#ba1a1a",
+              "secondary-fixed": "#f4dfce",
+              "surface": "#f3faff",
+              "on-primary": "#ffffff",
+              "on-tertiary-fixed-variant": "#1a4e50",
+              "inverse-surface": "#123441",
+              "tertiary": "#1c4f51",
+              "surface-container-lowest": "#ffffff",
+              "on-primary-fixed-variant": "#324e2a",
+              "primary-fixed": "#caecbc",
+              "surface-dim": "#bedfef",
+              "primary-container": "#4a6741",
+              "on-surface": "#001f29",
+              "surface-tint": "#496640",
+              "tertiary-container": "#366769",
+              "on-tertiary": "#ffffff",
+              "surface-container-high": "#ccedfe",
+              "on-primary-fixed": "#062104",
+              "surface-container-highest": "#c6e8f8",
+              "surface-bright": "#f3faff",
+              "surface-container": "#d8f2ff",
+              "on-tertiary-container": "#b1e3e5",
+              "on-secondary-fixed-variant": "#524438",
+              "on-surface-variant": "#434840",
+              "tertiary-fixed": "#b9ecee",
+              "background": "#f3faff",
+              "on-secondary": "#ffffff",
+              "on-primary-container": "#c2e4b4",
+              "primary-fixed-dim": "#afd0a1",
+              "primary": "#334f2b",
+              "secondary-container": "#f4dfce",
+              "outline-variant": "#c3c8bd",
+              "error-container": "#ffdad6",
+              "on-error-container": "#93000a",
+              "inverse-on-surface": "#dff4ff",
+              "on-background": "#001f29",
+              "on-tertiary-fixed": "#002021",
+              "inverse-primary": "#afd0a1",
+              "on-secondary-container": "#716154",
+              "outline": "#73796f",
+              "on-error": "#ffffff",
+              "on-secondary-fixed": "#24190f",
+              "surface-variant": "#c6e8f8",
+              "surface-container-low": "#e6f6ff",
+              "secondary-fixed-dim": "#d7c3b3"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            backdrop-filter: blur(20px);
+            background: rgba(243, 250, 255, 0.85);
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface antialiased">
+<!-- Top Navigation Bar -->
+<nav class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-sm dark:shadow-none docked full-width top-0 sticky z-50">
+<div class="flex justify-between items-center px-8 py-4 max-w-full mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black text-[#4A6741] dark:text-[#8BA87E] italic font-headline" style="">HikeShield Victoria&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+<div class="hidden md:flex items-center gap-6">
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] font-headline font-bold tracking-tight transition-all duration-300" href="#" style="">Home</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] font-headline font-bold tracking-tight transition-all duration-300" href="#" style="">Risk Map</a>
+<a class="text-[#4A6741] dark:text-[#8BA87E] border-b-2 border-[#4A6741] pb-1 font-headline font-bold tracking-tight" href="#" style="">Plan Route</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] font-headline font-bold tracking-tight transition-all duration-300" href="#" style="">Community Reports</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#4A6741] font-headline font-bold tracking-tight transition-all duration-300" href="#" style="">Knowledge Hub</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-slate-100/50 transition-all active:scale-95" style="">
+<span class="material-symbols-outlined text-on-surface" style="">account_circle</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="relative h-[calc(100vh-72px)] w-full overflow-hidden flex flex-col md:flex-row">
+<!-- Left Control Panel (Planning) -->
+<aside class="w-full md:w-[400px] z-20 h-full bg-surface-container-low p-6 flex flex-col gap-8 shadow-xl">
+<div class="space-y-2">
+<h1 class="text-3xl font-headline font-extrabold tracking-tight text-primary" style="">Plan Route</h1>
+<p class="text-on-surface-variant text-sm" style="">Calculate the safest path through Victoria's rugged terrain.</p>
+</div>
+<!-- Input Section -->
+<div class="space-y-6">
+<div class="space-y-4">
+<div class="relative group">
+<label class="block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-outline mb-1.5 ml-1" style="">Start Point</label>
+<div class="flex items-center bg-surface-container-high rounded-xl px-4 py-3 focus-within:bg-surface-container-highest transition-colors border-b-2 border-transparent focus-within:border-primary">
+<span class="material-symbols-outlined text-primary mr-3 text-sm" style="">my_location</span>
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-medium placeholder-outline" placeholder="Enter starting point" type="text" value="Melbourne CBD">
+</div>
+</div>
+<div class="relative group">
+<label class="block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-outline mb-1.5 ml-1" style="">Destination</label>
+<div class="flex items-center bg-surface-container-high rounded-xl px-4 py-3 focus-within:bg-surface-container-highest transition-colors border-b-2 border-transparent focus-within:border-primary">
+<span class="material-symbols-outlined text-error mr-3 text-sm" style="">location_on</span>
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-medium placeholder-outline" placeholder="Enter destination" type="text" value="Erskine Falls">
+</div>
+</div>
+</div>
+<!-- Safe Route Summary Card -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm flex flex-col gap-4 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16"></div>
+<div class="flex justify-between items-start">
+<div>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-3" style="">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: &quot;FILL&quot; 1;">verified_user</span> Recommended Safe Route
+                            </span>
+<h2 class="text-xl font-headline font-bold text-on-surface leading-tight" style="">Inland Safety Deviation</h2>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-low rounded-lg p-3">
+<div class="text-[0.65rem] font-bold uppercase text-outline mb-1" style="">Duration</div>
+<div class="text-lg font-bold text-on-surface" style="">2h 30m</div>
+</div>
+<div class="bg-surface-container-low rounded-lg p-3">
+<div class="text-[0.65rem] font-bold uppercase text-outline mb-1" style="">Distance</div>
+<div class="text-lg font-bold text-on-surface" style="">145km</div>
+</div>
+<div class="bg-surface-container-low rounded-lg p-3">
+<div class="text-[0.65rem] font-bold uppercase text-outline mb-1" style="">Difficulty</div>
+<div class="text-lg font-bold text-on-surface" style="">Moderate</div>
+</div>
+<div class="bg-surface-container-low rounded-lg p-3">
+<div class="text-[0.65rem] font-bold uppercase text-outline mb-1" style="">Risk Status</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span class="text-lg font-bold text-on-surface" style="">Low</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-high/50 p-4 rounded-lg border-l-4 border-primary">
+<p class="text-sm text-on-surface-variant leading-relaxed" style="">
+                            We've rerouted you 15 mins inland to avoid current moderate bushfire activity near the coast.
+                        </p>
+</div>
+<button class="w-full py-3.5 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-lg font-bold text-sm tracking-wide shadow-lg hover:brightness-110 transition-all active:scale-[0.98]" style="">
+                        View Route Details
+                    </button>
+</div>
+</div>
+<!-- Contextual Legend -->
+<div class="mt-auto pt-6">
+<div class="text-[0.65rem] font-bold uppercase text-outline mb-3 tracking-widest" style="">Active Hazards</div>
+<div class="flex flex-wrap gap-2">
+<span class="flex items-center gap-2 px-3 py-1.5 bg-surface rounded-full text-xs font-semibold text-error" style="">
+<span class="w-2 h-2 rounded-full bg-error"></span> Bushfire Warning
+                    </span>
+<span class="flex items-center gap-2 px-3 py-1.5 bg-surface rounded-full text-xs font-semibold text-on-surface-variant" style="">
+<span class="w-2 h-2 rounded-full bg-surface-dim"></span> Road Closure
+                    </span>
+</div>
+</div>
+</aside>
+<!-- Right Content Area (Map Visualization) -->
+<section class="flex-1 relative bg-surface-dim overflow-hidden">
+<!-- Map Background Placeholder -->
+<div class="absolute inset-0 bg-cover bg-center" data-alt="detailed topographic map of southern Victoria with lush forest contours and winding mountain roads" style="background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuAur3_tDNdSZZ4CywO5iu-4F4rmNZoxMuwhpEAT2XNlb_DqZlFe0hpKK4xdtsgGbWRIjl6cnVoi4YIAWyc15wz1MUjED5tG3Ln2yaF6Krsvcye1yZplU5mZpk70SjPOwVWNJC8Q7z95Y87hOHjCrXAW5ZQcIQaWg7oUNNVpR026wj02m6TBF-eAv6dmbk-_NAZneNISeuhlymXZPEBYJf0sL6y_ZWxoakYICh5DHpj3Z_3on1PqtXIG9iA-PwxVFgkhwG9yq2pWXeQ&quot;);">
+<!-- SVG Route Layer Overlay -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 1000 1000">
+<!-- Shadow path for depth -->
+<path d="M200,100 C250,200 300,450 450,550 S700,650 850,850" fill="none" opacity="0.1" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="12"></path>
+<!-- The Safe Route Line -->
+<path d="M200,100 C250,200 300,450 450,550 S700,650 850,850" fill="none" stroke="#334f2b" stroke-dasharray="1,12" stroke-linecap="round" stroke-linejoin="round" stroke-width="6"></path>
+<circle cx="200" cy="100" fill="#334f2b" r="8"></circle>
+<circle cx="850" cy="850" fill="#ba1a1a" r="8"></circle>
+</svg>
+<!-- Bushfire Risk Zone -->
+<div class="absolute top-[60%] right-[10%] w-[30%] h-[25%] bg-error/20 backdrop-blur-[2px] rounded-full border-2 border-dashed border-error flex items-center justify-center">
+<div class="text-center">
+<span class="material-symbols-outlined text-error text-3xl mb-1" style="">local_fire_department</span>
+<div class="text-error font-black uppercase tracking-tighter text-xs" style="">High Risk Area</div>
+<div class="text-error text-[10px] font-bold" style="">Bushfire Activity - Lorne Coast</div>
+</div>
+</div>
+<!-- Map Controls Overlay -->
+<div class="absolute bottom-8 right-8 flex flex-col gap-3">
+<button class="w-12 h-12 glass-panel rounded-full flex items-center justify-center text-on-surface shadow-lg hover:bg-white transition-all" style="">
+<span class="material-symbols-outlined" style="">add</span>
+</button>
+<button class="w-12 h-12 glass-panel rounded-full flex items-center justify-center text-on-surface shadow-lg hover:bg-white transition-all" style="">
+<span class="material-symbols-outlined" style="">remove</span>
+</button>
+<button class="w-12 h-12 glass-panel rounded-full flex items-center justify-center text-on-surface shadow-lg hover:bg-white transition-all" style="">
+<span class="material-symbols-outlined" style="">layers</span>
+</button>
+</div>
+<!-- Floating Info Marker -->
+<div class="absolute top-[48%] left-[42%] glass-panel px-4 py-2 rounded-xl shadow-2xl flex items-center gap-3 border border-white/20">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: &quot;FILL&quot; 1;">eco</span>
+<div>
+<div class="text-[10px] font-bold uppercase text-outline leading-none" style="">Safe Point</div>
+<div class="text-xs font-bold text-on-surface" style="">Winchelsea Deviation</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-slate-50 dark:bg-slate-950 w-full py-12 px-8 border-t border-slate-200 dark:border-slate-800">
+<div class="flex flex-col md:flex-row justify-between items-start gap-8 max-w-full mx-auto">
+<div class="space-y-4">
+<span class="font-['Manrope'] font-bold text-slate-900 dark:text-slate-100 text-xl" style="">The Topographic Guardian</span>
+<p class="font-['Inter'] text-sm tracking-wide text-slate-500 max-w-xs" style="">Providing hikers and explorers with real-time safety data integrated directly into the Victorian landscape.</p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-12">
+<div class="space-y-4">
+<h4 class="text-xs font-bold uppercase tracking-widest text-on-surface" style="">Safety</h4>
+<ul class="space-y-2">
+<li class="" style=""><a class="font-['Inter'] text-sm tracking-wide text-[#4A6741] underline" href="#" style="">Emergency: 000</a></li>
+<li class="" style=""><a class="font-['Inter'] text-sm tracking-wide text-slate-500 hover:text-[#4A6741] transition-colors" href="#" style="">Risk Alerts</a></li>
+</ul>
+</div>
+<div class="space-y-4">
+<h4 class="text-xs font-bold uppercase tracking-widest text-on-surface" style="">Legal</h4>
+<ul class="space-y-2">
+<li class="" style=""><a class="font-['Inter'] text-sm tracking-wide text-slate-500 hover:text-[#4A6741] transition-colors" href="#" style="">Privacy Policy</a></li>
+<li class="" style=""><a class="font-['Inter'] text-sm tracking-wide text-slate-500 hover:text-[#4A6741] transition-colors" href="#" style="">Terms of Service</a></li>
+</ul>
+</div>
+<div class="space-y-4">
+<h4 class="text-xs font-bold uppercase tracking-widest text-on-surface" style="">Data</h4>
+<ul class="space-y-2">
+<li class="" style=""><a class="font-['Inter'] text-sm tracking-wide text-slate-500 hover:text-[#4A6741] transition-colors" href="#" style="">Data Sources</a></li>
+<li class="" style=""><a class="font-['Inter'] text-sm tracking-wide text-slate-500 hover:text-[#4A6741] transition-colors" href="#" style="">API Docs</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 text-center">
+<p class="font-['Inter'] text-sm tracking-wide text-slate-500" style="">© 2024 The Topographic Guardian. Official Victorian Safety Data.</p>
+</div>
+</footer>
+</body></html>
