@@ -48,6 +48,23 @@ let markersLayer
 let refreshTimer
 let inflightController
 
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function cleanPopupDescription(value = '') {
+  return String(value)
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/?strong>/gi, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
 function toggleLayer(layerId) {
   if (activeLayers.value.includes(layerId)) {
     activeLayers.value = activeLayers.value.filter((item) => item !== layerId)
@@ -81,11 +98,11 @@ function renderMarkers() {
     marker.bindPopup(
       `
       <div style="min-width: 200px;">
-        <div style="font-weight: 800; margin-bottom: 6px;">${hazard.title}</div>
-        <div style="font-size: 12px; margin-bottom: 8px;">${hazard.description}</div>
+        <div style="font-weight: 800; margin-bottom: 6px;">${escapeHtml(hazard.title)}</div>
+        <div style="font-size: 12px; margin-bottom: 8px;">${escapeHtml(cleanPopupDescription(hazard.description))}</div>
         <div style="font-size: 11px; color: #5f6b66;">
-          ${meta.label} · ${severityLabel[hazard.severity] || 'Unknown'}<br />
-          Source: ${hazard.source}
+          ${escapeHtml(meta.label)} · ${escapeHtml(severityLabel[hazard.severity] || 'Unknown')}<br />
+          Source: ${escapeHtml(hazard.source)}
         </div>
       </div>
       `

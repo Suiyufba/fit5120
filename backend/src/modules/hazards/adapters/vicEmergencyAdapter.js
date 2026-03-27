@@ -9,11 +9,48 @@ const rssTag = (block, tagName) => {
   return match ? match[1].trim() : '';
 };
 
-const htmlField = (description, fieldName) => {
-  const escapedLabel = fieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`${escapedLabel}:&lt;\\/strong&gt;\\s*([^<]+)`, 'i');
-  const match = description.match(regex);
-  return match ? match[1].trim() : '';
+const decodeHtml = (value = '') =>
+  value
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+
+const toPlainText = (value = '') =>
+  decodeHtml(value)
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{2,}/g, '\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+
+const extractFields = (rawDescription) => {
+  const plain = toPlainText(rawDescription);
+  const lines = plain
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const fields = {};
+  for (const line of lines) {
+    const parts = line.split(':');
+    if (parts.length < 2) continue;
+    const key = parts.shift().trim().toLowerCase();
+    const value = parts.join(':').trim();
+    if (!key || !value) continue;
+    fields[key] = value;
+  }
+
+  return {
+    plain,
+    fields,
+    get(fieldName) {
+      return fields[fieldName.toLowerCase()] || '';
+    }
+  };
 };
 
 function parseVicEmergencyRss(xmlText) {
@@ -24,30 +61,39 @@ function parseVicEmergencyRss(xmlText) {
       const link = rssTag(block, 'link') || 'https://emergency.vic.gov.au/';
       const description = rssTag(block, 'description');
       const updatedAt = rssTag(block, 'dc:date') || rssTag(block, 'pubDate') || new Date().toISOString();
+      const parsed = extractFields(description);
 
-      const latitude = Number.parseFloat(htmlField(description, 'Latitude'));
-      const longitude = Number.parseFloat(htmlField(description, 'Longitude'));
+      const latitude = Number.parseFloat(parsed.get('Latitude'));
+      const longitude = Number.parseFloat(parsed.get('Longitude'));
       if (Number.isNaN(latitude) || Number.isNaN(longitude)) return null;
 
-      const incidentType = htmlField(description, 'Type');
-      const incidentStatus = htmlField(description, 'Status');
-      const incidentNo = htmlField(description, 'Incident No');
-      const incidentName = htmlField(description, 'Incident Name');
-      const incidentLocation = htmlField(description, 'Location');
+      const incidentType = parsed.get('Type');
+      const incidentStatus = parsed.get('Status');
+      const incidentNo = parsed.get('Incident No');
+      const incidentName = parsed.get('Incident Name');
+      const incidentLocation = parsed.get('Location');
+      const incidentSize = parsed.get('Size');
 
       return sanitizeHazard({
         id: `vicem-rss-${incidentNo || index}`,
         type: inferType(`${incidentType} ${title}`),
         severity: toSeverity(incidentStatus || incidentType || 'moderate'),
-        title,
-        description: `${incidentType || 'Incident'} · ${incidentStatus || 'Status unknown'} · ${incidentLocation || 'Victoria'}`,
+        title: decodeHtml(title).replace(/\s+/g, ' ').trim(),
+        description: [
+          `${incidentType || 'Incident'} at ${incidentLocation || 'Victoria'}`,
+          incidentStatus ? `Status: ${incidentStatus}` : '',
+          incidentSize ? `Size: ${incidentSize}` : ''
+        ]
+          .filter(Boolean)
+          .join(' · '),
         source: 'VicEmergency',
         sourceUrl: link,
         updatedAt,
         coordinates: [latitude, longitude],
         metadata: {
           incidentNo,
-          incidentName
+          incidentName,
+          rawSummary: parsed.plain
         }
       });
     })

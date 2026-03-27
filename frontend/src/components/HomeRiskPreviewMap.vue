@@ -24,6 +24,15 @@ let mapInstance
 let markersLayer
 let hasFittedOnce = false
 
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function markerRadius(severity) {
   if (severity === 'extreme') return 11
   if (severity === 'high') return 9
@@ -51,8 +60,8 @@ function drawHazards() {
 
     marker.bindPopup(
       `<div style="min-width:180px">
-        <div style="font-weight:700;margin-bottom:4px">${hazard.title}</div>
-        <div style="font-size:11px;color:#5d6b66">${meta.label} · ${hazard.severity}</div>
+        <div style="font-weight:700;margin-bottom:4px">${escapeHtml(hazard.title)}</div>
+        <div style="font-size:11px;color:#5d6b66">${escapeHtml(meta.label)} · ${escapeHtml(hazard.severity)}</div>
       </div>`
     )
     marker.addTo(markersLayer)
