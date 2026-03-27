@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css'
 import { useAuthState } from '../services/authStore'
 import { planSafeRoute } from '../services/routeApi'
 import { setLatestRoutePlan } from '../services/routePlanStore'
+import { fetchRealtimeHazards } from '../services/hazardApi'
 
 const router = useRouter()
 const { state: authState } = useAuthState()
@@ -15,11 +16,23 @@ const error = ref('')
 const startPoint = ref(null)
 const endPoint = ref(null)
 const planResult = ref(null)
+const hazards = ref([])
 
 let mapInstance
 let markerLayer
 let routeLayer
+let hazardLayer
 let inflightController
+let hazardInflightController
+let hazardRefreshTimer
+
+const layerMeta = {
+  fire: { label: 'Bushfire', color: '#D84727' },
+  flood: { label: 'Flood', color: '#2165B5' },
+  storm: { label: 'Storm', color: '#5A4B81' },
+  heat: { label: 'Heat', color: '#D08817' },
+  other: { label: 'Other', color: '#2E7D6B' },
+}
 
 const canPlan = computed(() => Boolean(startPoint.value && endPoint.value && !loading.value))
 
@@ -59,6 +72,76 @@ function renderMarkers() {
       fillOpacity: 0.9,
       weight: 2,
     }).bindPopup('Destination').addTo(markerLayer)
+  }
+}
+
+function zoneOpacitiesBySeverity(severity) {
+  if (severity === 'extreme') return { l1: 0.28, l2: 0.18, l3: 0.1 }
+  if (severity === 'high') return { l1: 0.23, l2: 0.14, l3: 0.08 }
+  if (severity === 'moderate') return { l1: 0.18, l2: 0.11, l3: 0.06 }
+  return { l1: 0.14, l2: 0.09, l3: 0.05 }
+}
+
+function markerRadiusBySeverity(severity) {
+  if (severity === 'extreme') return 9
+  if (severity === 'high') return 8
+  if (severity === 'moderate') return 7
+  return 6
+}
+
+function drawHazards() {
+  if (!hazardLayer) return
+  hazardLayer.clearLayers()
+
+  hazards.value.forEach((hazard) => {
+    if (!Array.isArray(hazard.coordinates) || hazard.coordinates.length !== 2) return
+    const meta = layerMeta[hazard.type] || layerMeta.other
+    const opacity = zoneOpacitiesBySeverity(hazard.severity)
+
+    ;[
+      { radius: 5000, fillOpacity: opacity.l3, weight: 1 },
+      { radius: 3000, fillOpacity: opacity.l2, weight: 1 },
+      { radius: 1000, fillOpacity: opacity.l1, weight: 2 },
+    ].forEach((zone) => {
+      L.circle(hazard.coordinates, {
+        radius: zone.radius,
+        color: meta.color,
+        fillColor: meta.color,
+        fillOpacity: zone.fillOpacity,
+        opacity: 0.4,
+        weight: zone.weight,
+        interactive: false,
+      }).addTo(hazardLayer)
+    })
+
+    L.circleMarker(hazard.coordinates, {
+      radius: markerRadiusBySeverity(hazard.severity),
+      color: meta.color,
+      fillColor: meta.color,
+      fillOpacity: 0.88,
+      weight: 2,
+    }).bindPopup(`${hazard.title}<br/>${meta.label} · ${hazard.severity}`).addTo(hazardLayer)
+  })
+}
+
+async function loadHazards() {
+  if (!mapInstance) return
+  if (hazardInflightController) hazardInflightController.abort()
+  hazardInflightController = new AbortController()
+
+  try {
+    const bounds = mapInstance.getBounds()
+    const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
+    const payload = await fetchRealtimeHazards({
+      bbox,
+      layers: ['fire', 'flood', 'storm', 'heat', 'other'],
+      signal: hazardInflightController.signal,
+    })
+    hazards.value = payload.hazards
+    drawHazards()
+  } catch (nextError) {
+    if (nextError?.name === 'AbortError') return
+    console.error('Failed to load hazards on planner map:', nextError)
   }
 }
 
@@ -155,7 +238,11 @@ onMounted(() => {
   }).addTo(mapInstance)
 
   markerLayer = L.layerGroup().addTo(mapInstance)
+  hazardLayer = L.layerGroup().addTo(mapInstance)
   routeLayer = L.layerGroup().addTo(mapInstance)
+  loadHazards()
+  hazardRefreshTimer = window.setInterval(loadHazards, 60_000)
+  mapInstance.on('moveend', loadHazards)
 
   mapInstance.on('click', (event) => {
     const point = {
@@ -186,6 +273,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (inflightController) inflightController.abort()
+  if (hazardInflightController) hazardInflightController.abort()
+  if (hazardRefreshTimer) window.clearInterval(hazardRefreshTimer)
   if (mapInstance) {
     mapInstance.remove()
     mapInstance = null
@@ -218,6 +307,15 @@ onUnmounted(() => {
           {{ loading ? 'Planning...' : 'Plan Safe Route' }}
         </button>
         <button class="ghost-btn" @click="resetSelection">Reset Points</button>
+      </div>
+
+      <div class="hazard-legend">
+        <p>Live Risk Layer</p>
+        <div class="legend-items">
+          <span v-for="(meta, id) in layerMeta" :key="id" class="legend-item">
+            <i :style="{ background: meta.color }"></i>{{ meta.label }}
+          </span>
+        </div>
       </div>
 
       <p v-if="error" class="planner-error">{{ error }}</p>
@@ -352,6 +450,47 @@ h1 {
   border-radius: 0.65rem;
   padding: 0.58rem;
   font-size: 0.84rem;
+}
+
+.hazard-legend {
+  border: 1px solid #d9e5dd;
+  border-radius: 0.68rem;
+  padding: 0.62rem;
+  background: #fbfffd;
+}
+
+.hazard-legend p {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #3d6658;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.legend-items {
+  margin-top: 0.45rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.34rem;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  border: 1px solid #dce6df;
+  border-radius: 999px;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.72rem;
+  color: #35574b;
+  background: #ffffff;
+}
+
+.legend-item i {
+  display: inline-block;
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 999px;
 }
 
 .planner-summary {
