@@ -1,9 +1,118 @@
-# backend
+# Hiking Risk Backend (Railway-ready)
 
-Main API service (planned for Railway).
+后端已提供前端所需最小可用接口：
+- `GET /api/hazards/realtime?bbox=west,south,east,north&layers=fire,flood,storm,heat`
+- `GET /api/health`
 
-## Suggested Next Step
+## 1) 本地启动
 
-- Create API bootstrap (`src/main.ts` or `src/main.py`)
-- Implement `GET /api/hazards/realtime`
-- Add adapters for official Victoria/BOM open data feeds
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
+
+默认地址：`http://localhost:8080/api/hazards/realtime`
+
+## 2) 返回结构（已对齐前端）
+
+```json
+{
+  "hazards": [
+    {
+      "id": "evt-123",
+      "type": "fire",
+      "severity": "high",
+      "title": "Smoke near Apollo Bay",
+      "description": "...",
+      "source": "VicEmergency",
+      "sourceUrl": "https://...",
+      "updatedAt": "2026-03-27T12:00:00Z",
+      "coordinates": [-38.75, 143.66]
+    }
+  ],
+  "fetchedAt": "2026-03-27T12:00:00Z",
+  "fromFallback": false,
+  "meta": {
+    "count": 1,
+    "totalBeforeFilter": 10,
+    "sourceStatus": [
+      { "name": "DataVic Road Disruptions", "ok": true, "count": 4, "error": null }
+    ],
+    "lastError": null
+  }
+}
+```
+
+`severity` 枚举：`extreme | high | moderate | low`
+
+## 3) 缓存和轮询策略
+
+- 定时抓取上游：`FETCH_INTERVAL_MS`（默认 45 秒）
+- API 返回缓存快照，不会每次请求都直连上游
+- 默认内存缓存；配置 `REDIS_URL` 后自动切 Redis（适合 Railway 多实例）
+- 上游异常时自动回退到 `fallback` 数据，前端仍可渲染
+
+## 4) Railway 部署
+
+### 4.1 新建服务
+
+1. Railway -> `New Project` -> `Deploy from GitHub Repo`
+2. 选择本仓库 `hiking_backEnd`
+3. Railway 会自动识别 Node 项目并执行：
+   - Build: `npm install`
+   - Start: `npm start`
+
+### 4.2 Railway 环境变量
+
+至少配置以下变量：
+
+- `PORT=8080`（Railway 也会自动注入，保留即可）
+- `CORS_ORIGIN=https://你的前端域名`
+- `FETCH_INTERVAL_MS=45000`
+- `REQUEST_TIMEOUT_MS=10000`
+- `DEFAULT_LAYERS=fire,flood,storm,heat`
+
+可选（建议逐步接入官方源）：
+
+- `VICROADS_API_URL=...`（DataVic Unplanned Disruption API）
+- `BOM_FEED_URL=...`（你申请/确认可用的 BoM 警报 feed）
+- `VIC_EMERGENCY_FEED_URL=...`（你申请/确认可用的 VicEmergency feed）
+- `VIC_EMERGENCY_API_KEY=...`（如果源要求鉴权）
+- `REDIS_URL=...`（若绑定 Railway Redis 插件）
+- `REDIS_TTL_SECONDS=90`
+
+### 4.3 对外地址
+
+部署后你会得到：
+`https://<railway-domain>/api/hazards/realtime`
+
+## 5) 前端配置
+
+前端 `.env`：
+
+```env
+VITE_HAZARD_API_BASE_URL=https://<railway-domain>/api
+```
+
+你现有前端会自动请求：
+- `/hazards/realtime`
+- 支持 `bbox` 与 `layers`
+- 60 秒轮询（已在前端实现）
+
+## 6) 当前已接的 API 能力
+
+- 聚合接口：`GET /api/hazards/realtime`
+- 查询参数：
+  - `bbox=west,south,east,north`
+  - `layers=fire,flood,storm,heat`
+- 数据源适配器：
+  - DataVic（默认 URL 已给）
+  - BoM（留可配置入口）
+  - VicEmergency（留可配置入口）
+
+## 7) 后续可加（你前端已兼容）
+
+- 增加 `SSE / WebSocket` 推送
+- 扩展 GeoJSON 原样返回模式
+- 增加上游健康检查和告警（例如 `/api/health/providers`）
