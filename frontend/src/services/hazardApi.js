@@ -1,4 +1,5 @@
-const DEFAULT_BASE_URL = import.meta.env.VITE_HAZARD_API_BASE_URL || '/api'
+const DEFAULT_BASE_URL =
+  import.meta.env.VITE_HAZARD_API_BASE_URL || 'https://backend-production-f55c.up.railway.app/api'
 const REALTIME_HAZARD_PATH = '/hazards/realtime'
 
 function normalizeType(rawType) {
