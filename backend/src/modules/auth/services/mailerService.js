@@ -15,6 +15,9 @@ function getTransport() {
     host: config.smtpHost,
     port: config.smtpPort,
     secure: config.smtpSecure,
+    connectionTimeout: 8000,
+    greetingTimeout: 7000,
+    socketTimeout: 10000,
     auth: {
       user: config.smtpUser,
       pass: config.smtpPass,
@@ -31,20 +34,25 @@ export async function sendVerificationCodeEmail({ to, code, actionLabel }) {
     return { sent: false };
   }
 
-  await mailTransport.sendMail({
-    from: config.smtpFrom,
-    to,
-    subject: `goHiking ${actionLabel} verification code`,
-    text: `Your goHiking ${actionLabel} code is ${code}. It expires in ${config.authCodeExpiresMinutes} minutes.`,
-    html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2>goHiking ${actionLabel}</h2>
-        <p>Your verification code is:</p>
-        <p style="font-size: 28px; font-weight: 700; letter-spacing: 4px;">${code}</p>
-        <p>This code expires in ${config.authCodeExpiresMinutes} minutes.</p>
-      </div>
-    `,
-  });
+  try {
+    await mailTransport.sendMail({
+      from: config.smtpFrom,
+      to,
+      subject: `goHiking ${actionLabel} verification code`,
+      text: `Your goHiking ${actionLabel} code is ${code}. It expires in ${config.authCodeExpiresMinutes} minutes.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h2>goHiking ${actionLabel}</h2>
+          <p>Your verification code is:</p>
+          <p style="font-size: 28px; font-weight: 700; letter-spacing: 4px;">${code}</p>
+          <p>This code expires in ${config.authCodeExpiresMinutes} minutes.</p>
+        </div>
+      `,
+    });
 
-  return { sent: true };
+    return { sent: true };
+  } catch (error) {
+    console.error(`[MAIL-ERROR] ${actionLabel} email failed for ${to}:`, error.message);
+    return { sent: false, error: error.message };
+  }
 }
