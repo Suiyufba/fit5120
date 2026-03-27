@@ -1,4 +1,4 @@
-# 🌿 EcoQuiz Australia
+# 🌿 goHiking Frontend
 
 > 让环保知识变得有趣，让行动变得简单
 
@@ -31,7 +31,7 @@
 ## 📁 项目结构
 
 ```
-eco-quiz-australia/
+goHiking-frontend/
 ├── src/
 │   ├── components/      # 组件
 │   │   └── Navbar.vue   # 导航栏

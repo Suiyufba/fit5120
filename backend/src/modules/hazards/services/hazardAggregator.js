@@ -1,10 +1,10 @@
-import { config } from '../config.js';
+import { config } from '../../../config/index.js';
 import { fetchBomHazards } from '../adapters/bomAdapter.js';
 import { fetchVicEmergencyHazards } from '../adapters/vicEmergencyAdapter.js';
 import { fetchVicRoadsHazards } from '../adapters/vicRoadsAdapter.js';
 import { fallbackHazards } from '../data/fallbackHazards.js';
-import { getCache } from '../cache/index.js';
-import { inBbox, parseBbox, parseLayers, sanitizeHazard } from './utils.js';
+import { getCache } from '../../../infrastructure/cache/index.js';
+import { inBbox, parseBbox, parseLayers, sanitizeHazard } from '../domain/hazardUtils.js';
 
 const CACHE_KEY = 'hazards:realtime';
 

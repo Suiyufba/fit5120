@@ -1,4 +1,4 @@
-import { config } from '../config.js';
+import { config } from '../../config/index.js';
 import { InMemoryCache } from './inMemoryCache.js';
 import { RedisCache } from './redisCache.js';
 

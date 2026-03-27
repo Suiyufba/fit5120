@@ -1,6 +1,6 @@
-import { config } from '../config.js';
-import { fetchJson } from '../services/fetchJson.js';
-import { inferType, sanitizeHazard, toSeverity } from '../services/utils.js';
+import { config } from '../../../config/index.js';
+import { fetchJson } from '../../../shared/http/fetchJson.js';
+import { inferType, sanitizeHazard, toSeverity } from '../domain/hazardUtils.js';
 
 export async function fetchVicEmergencyHazards() {
   if (!config.vicEmergencyFeedUrl) return [];

@@ -1,8 +1,28 @@
-# Hiking Risk Backend (Railway-ready)
+# goHiking Backend (Railway-ready)
 
 后端已提供前端所需最小可用接口：
 - `GET /api/hazards/realtime?bbox=west,south,east,north&layers=fire,flood,storm,heat`
 - `GET /api/health`
+
+## 项目分层（按功能）
+
+```text
+src/
+├── config/                      # 环境变量与全局配置
+├── controllers/                 # HTTP 控制器
+├── routes/                      # API 路由注册
+├── modules/
+│   └── hazards/
+│       ├── adapters/            # 上游数据源适配器
+│       ├── data/                # fallback 数据
+│       ├── domain/              # hazard 领域工具
+│       └── services/            # 聚合/缓存调度服务
+├── infrastructure/
+│   └── cache/                   # 缓存实现（memory/redis）
+├── shared/
+│   └── http/                    # 通用 HTTP 工具
+└── server.js                    # 应用入口
+```
 
 ## 1) 本地启动
 
