@@ -1,14 +1,21 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { restoreLatestRoutePlan } from '../services/routePlanStore'
+import { restoreLatestRoutePlan, setLatestRoutePlan } from '../services/routePlanStore'
 import { fetchRealtimeHazards } from '../services/hazardApi'
+import { useAuthState } from '../services/authStore'
+import { planSafeRoute } from '../services/routeApi'
 
 const router = useRouter()
+const route = useRoute()
+const { state: authState } = useAuthState()
 const mapElement = ref(null)
 const plan = ref(null)
+const planningFromShare = ref(false)
+const shareMessage = ref('')
+const shareError = ref('')
 
 let mapInstance
 let routeLayer
@@ -130,6 +137,100 @@ function drawRecommendedRoute() {
   mapInstance.fitBounds(L.latLngBounds(recommended.value.geometry).pad(0.2))
 }
 
+function parseSharedPoint() {
+  const slat = Number(route.query.slat)
+  const slng = Number(route.query.slng)
+  const elat = Number(route.query.elat)
+  const elng = Number(route.query.elng)
+
+  const allValid = [slat, slng, elat, elng].every((v) => Number.isFinite(v))
+  if (!allValid) return null
+  return {
+    start: { lat: slat, lng: slng },
+    end: { lat: elat, lng: elng },
+  }
+}
+
+function inferStartEndFromPlan() {
+  if (plan.value?.start && plan.value?.end) {
+    return { start: plan.value.start, end: plan.value.end }
+  }
+
+  const geometry = plan.value?.recommendedRoute?.geometry || []
+  if (geometry.length < 2) return null
+  const start = geometry[0]
+  const end = geometry[geometry.length - 1]
+  return {
+    start: { lat: start[0], lng: start[1] },
+    end: { lat: end[0], lng: end[1] },
+  }
+}
+
+function buildShareUrl() {
+  const points = inferStartEndFromPlan()
+  if (!points) return ''
+  const url = new URL(window.location.origin + '/route-detail')
+  url.searchParams.set('slat', String(points.start.lat))
+  url.searchParams.set('slng', String(points.start.lng))
+  url.searchParams.set('elat', String(points.end.lat))
+  url.searchParams.set('elng', String(points.end.lng))
+  return url.toString()
+}
+
+async function shareRoute() {
+  shareError.value = ''
+  const shareUrl = buildShareUrl()
+  if (!shareUrl) {
+    shareError.value = 'No route data available to share yet.'
+    return
+  }
+
+  const sharePayload = {
+    title: 'goHiking Route Plan',
+    text: 'Safer pre-hike route and risk detail',
+    url: shareUrl,
+  }
+
+  try {
+    if (navigator.share) {
+      await navigator.share(sharePayload)
+      shareMessage.value = 'Route shared successfully.'
+      return
+    }
+    await navigator.clipboard.writeText(shareUrl)
+    shareMessage.value = 'Share link copied to clipboard.'
+  } catch (error) {
+    shareError.value = error?.message || 'Failed to share route.'
+  }
+}
+
+async function hydrateFromSharedLink() {
+  const shared = parseSharedPoint()
+  if (!shared || !authState.token) return
+
+  planningFromShare.value = true
+  shareError.value = ''
+  try {
+    const payload = await planSafeRoute({
+      start: shared.start,
+      end: shared.end,
+      token: authState.token,
+    })
+    const nextPlan = {
+      ...payload,
+      start: shared.start,
+      end: shared.end,
+    }
+    setLatestRoutePlan(nextPlan)
+    plan.value = nextPlan
+    drawRecommendedRoute()
+  } catch (error) {
+    shareError.value = error?.message || 'Failed to load shared route.'
+  } finally {
+    planningFromShare.value = false
+  }
+}
+
 onMounted(() => {
   plan.value = restoreLatestRoutePlan()
 
@@ -150,6 +251,7 @@ onMounted(() => {
   loadHazards()
   hazardRefreshTimer = window.setInterval(loadHazards, 60_000)
   mapInstance.on('moveend', loadHazards)
+  hydrateFromSharedLink()
 })
 
 onUnmounted(() => {
@@ -172,6 +274,9 @@ onUnmounted(() => {
       <template v-if="recommended">
         <p class="detail-kicker">Route Safety Detail</p>
         <h1>Recommended Route</h1>
+        <p v-if="planningFromShare" class="detail-note">Loading shared route...</p>
+        <p v-if="shareMessage" class="detail-note detail-note--ok">{{ shareMessage }}</p>
+        <p v-if="shareError" class="detail-note detail-note--error">{{ shareError }}</p>
 
         <div class="metric-grid">
           <article><span>Distance</span><strong>{{ recommended.distanceKm.toFixed(1) }} km</strong></article>
@@ -210,8 +315,10 @@ onUnmounted(() => {
       <template v-else>
         <h1>No planned route yet</h1>
         <p class="detail-explain">Go to Plan Route and generate a safer route first.</p>
+        <p v-if="shareError" class="detail-note detail-note--error">{{ shareError }}</p>
       </template>
 
+      <button class="share-btn" @click="shareRoute">Share Route</button>
       <button class="back-btn" @click="router.push('/route-planner')">Back to Planner</button>
     </aside>
   </main>
@@ -349,13 +456,43 @@ h1 {
 }
 
 .back-btn {
-  margin-top: auto;
+  margin-top: 0.5rem;
   border: 1px solid #bcd0c5;
   border-radius: 0.65rem;
   background: #fff;
   padding: 0.66rem;
   font-weight: 700;
   color: #285046;
+}
+
+.share-btn {
+  margin-top: auto;
+  border: 0;
+  border-radius: 0.65rem;
+  background: #2e7d6b;
+  color: #fff;
+  padding: 0.66rem;
+  font-weight: 700;
+}
+
+.detail-note {
+  border: 1px solid #d9e4de;
+  border-radius: 0.55rem;
+  padding: 0.42rem 0.55rem;
+  font-size: 0.82rem;
+  color: #32564a;
+  background: #f6fbf8;
+}
+
+.detail-note--ok {
+  border-color: #c6dfd3;
+  background: #eef8f2;
+}
+
+.detail-note--error {
+  border-color: #eab8af;
+  color: #7d2a21;
+  background: #fff2ef;
 }
 
 @media (max-width: 980px) {
