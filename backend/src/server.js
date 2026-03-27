@@ -4,7 +4,6 @@ import { config } from './config/index.js';
 import { apiRouter } from './routes/index.js';
 import { startScheduler } from './modules/hazards/services/hazardAggregator.js';
 import { initHazardSnapshotStore } from './infrastructure/db/hazardSnapshotRepository.js';
-import { initAuthCodeStore } from './modules/auth/repositories/authCodeRepository.js';
 import { initUserStore } from './modules/auth/repositories/userRepository.js';
 
 const app = express();
@@ -17,7 +16,6 @@ async function boot() {
   try {
     const dbReady = await initHazardSnapshotStore();
     const userStoreReady = await initUserStore();
-    const authCodeStoreReady = await initAuthCodeStore();
     if (dbReady) {
       console.log('Postgres snapshot store ready');
     } else {
@@ -25,9 +23,6 @@ async function boot() {
     }
     if (userStoreReady) {
       console.log('User auth store ready');
-    }
-    if (authCodeStoreReady) {
-      console.log('Auth code store ready');
     }
   } catch (error) {
     console.error('Failed to initialize database stores:', error.message);

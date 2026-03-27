@@ -1,34 +1,16 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { requestResetCode, resetPassword } from '../services/authStore'
+import { resetPassword } from '../services/authStore'
 
 const router = useRouter()
 const loading = ref(false)
-const step = ref('request')
 const email = ref('')
-const code = ref('')
+const securityQuestion = ref('What is the name of your first hiking trail?')
+const securityAnswer = ref('')
 const newPassword = ref('')
 const errorMessage = ref('')
 const successMessage = ref('')
-const debugCode = ref('')
-
-async function handleRequestCode() {
-  loading.value = true
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  try {
-    const result = await requestResetCode({ email: email.value })
-    step.value = 'confirm'
-    successMessage.value = `如果邮箱存在，验证码已发送到 ${result.email}`
-    debugCode.value = result.debugCode || ''
-  } catch (error) {
-    errorMessage.value = error?.message || 'Failed to request reset code'
-  } finally {
-    loading.value = false
-  }
-}
 
 async function handleConfirmReset() {
   loading.value = true
@@ -38,10 +20,11 @@ async function handleConfirmReset() {
   try {
     await resetPassword({
       email: email.value,
-      code: code.value,
+      securityQuestion: securityQuestion.value,
+      securityAnswer: securityAnswer.value,
       newPassword: newPassword.value,
     })
-    successMessage.value = '密码已重置，请重新登录'
+    successMessage.value = 'Password reset successfully. Redirecting to sign in...'
     setTimeout(() => router.push('/login'), 900)
   } catch (error) {
     errorMessage.value = error?.message || 'Failed to reset password'
@@ -56,25 +39,27 @@ async function handleConfirmReset() {
     <section class="forgot-card">
       <p class="forgot-kicker">goHiking Account</p>
       <h1>Reset Password</h1>
-      <p class="forgot-subtitle">通过邮箱验证码重置你的账号密码。</p>
+      <p class="forgot-subtitle">Reset with your email and security answer.</p>
 
-      <form v-if="step === 'request'" class="forgot-form" @submit.prevent="handleRequestCode">
+      <form class="forgot-form" @submit.prevent="handleConfirmReset">
         <label>
           <span>Email</span>
           <input v-model="email" type="email" required autocomplete="email" />
         </label>
 
-        <p v-if="errorMessage" class="forgot-error">{{ errorMessage }}</p>
-
-        <button type="submit" :disabled="loading">
-          {{ loading ? 'Sending code...' : 'Send Reset Code' }}
-        </button>
-      </form>
-
-      <form v-else class="forgot-form" @submit.prevent="handleConfirmReset">
         <label>
-          <span>Verification Code</span>
-          <input v-model="code" type="text" minlength="6" maxlength="6" required />
+          <span>Security Question</span>
+          <select v-model="securityQuestion" required>
+            <option>What is the name of your first hiking trail?</option>
+            <option>Which city were you born in?</option>
+            <option>What is your favorite outdoor activity?</option>
+            <option>What was your childhood nickname?</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Security Answer</span>
+          <input v-model="securityAnswer" type="text" required />
         </label>
 
         <label>
@@ -82,15 +67,11 @@ async function handleConfirmReset() {
           <input v-model="newPassword" type="password" minlength="8" required />
         </label>
 
-        <p v-if="debugCode" class="forgot-tip">
-          当前未配置 SMTP，调试验证码：<strong>{{ debugCode }}</strong>
-        </p>
-
         <p v-if="successMessage" class="forgot-success">{{ successMessage }}</p>
         <p v-if="errorMessage" class="forgot-error">{{ errorMessage }}</p>
 
         <button type="submit" :disabled="loading">
-          {{ loading ? 'Resetting...' : 'Confirm Reset' }}
+          {{ loading ? 'Resetting...' : 'Reset Password' }}
         </button>
       </form>
     </section>
@@ -161,6 +142,13 @@ input {
   padding: 0.68rem 0.8rem;
 }
 
+select {
+  border: 1px solid #cfddd2;
+  border-radius: 0.7rem;
+  padding: 0.68rem 0.8rem;
+  background: #fff;
+}
+
 button {
   margin-top: 0.2rem;
   border: none;
@@ -181,8 +169,4 @@ button {
   font-size: 0.86rem;
 }
 
-.forgot-tip {
-  color: #7a5c1b;
-  font-size: 0.85rem;
-}
 </style>

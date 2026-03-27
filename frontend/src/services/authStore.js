@@ -4,8 +4,6 @@ import {
   fetchCurrentUser,
   loginUser,
   registerUser,
-  requestPasswordResetCode,
-  verifyRegisterCode,
 } from './authApi'
 
 const TOKEN_KEY = 'gohiking_auth_token'
@@ -60,22 +58,22 @@ export async function signIn({ email, password }) {
   return payload.user
 }
 
-export async function signUp({ email, password, age, region, assessmentAnswers }) {
-  return registerUser({ email, password, age, region, assessmentAnswers })
-}
-
-export async function confirmSignUp({ email, code }) {
-  const payload = await verifyRegisterCode({ email, code })
+export async function signUp({ email, password, age, region, securityQuestion, securityAnswer, assessmentAnswers }) {
+  const payload = await registerUser({
+    email,
+    password,
+    age,
+    region,
+    securityQuestion,
+    securityAnswer,
+    assessmentAnswers
+  })
   setSession(payload)
   return payload.user
 }
 
-export async function requestResetCode({ email }) {
-  return requestPasswordResetCode({ email })
-}
-
-export async function resetPassword({ email, code, newPassword }) {
-  return confirmPasswordReset({ email, code, newPassword })
+export async function resetPassword({ email, securityQuestion, securityAnswer, newPassword }) {
+  return confirmPasswordReset({ email, securityQuestion, securityAnswer, newPassword })
 }
 
 export function useAuthState() {

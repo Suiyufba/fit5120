@@ -24,11 +24,7 @@ async function requestJson(path, { method = 'GET', token, body } = {}) {
 }
 
 export function registerUser(payload) {
-  return requestJson('/auth/register/request-code', { method: 'POST', body: payload })
-}
-
-export function verifyRegisterCode(payload) {
-  return requestJson('/auth/register/verify', { method: 'POST', body: payload })
+  return requestJson('/auth/register', { method: 'POST', body: payload })
 }
 
 export function loginUser(payload) {
@@ -39,10 +35,6 @@ export function fetchCurrentUser(token) {
   return requestJson('/auth/me', { token })
 }
 
-export function requestPasswordResetCode(payload) {
-  return requestJson('/auth/password-reset/request-code', { method: 'POST', body: payload })
-}
-
 export function confirmPasswordReset(payload) {
-  return requestJson('/auth/password-reset/confirm', { method: 'POST', body: payload })
+  return requestJson('/auth/password-reset/security', { method: 'POST', body: payload })
 }

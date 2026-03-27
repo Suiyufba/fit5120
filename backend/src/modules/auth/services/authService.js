@@ -8,18 +8,6 @@ import {
   findUserById,
   updateUserPasswordByEmail
 } from '../repositories/userRepository.js';
-import {
-  createAuthCode,
-  getLatestActiveCode,
-  incrementAttempts,
-  invalidateCodes,
-  markCodeUsed
-} from '../repositories/authCodeRepository.js';
-import { sendVerificationCodeEmail } from './mailerService.js';
-
-const PURPOSE_REGISTER = 'register';
-const PURPOSE_PASSWORD_RESET = 'password_reset';
-const MAX_CODE_ATTEMPTS = 5;
 
 function sanitizeUser(user) {
   if (!user) return null;
@@ -28,6 +16,7 @@ function sanitizeUser(user) {
     email: user.email,
     age: user.age,
     region: user.region,
+    securityQuestion: user.securityQuestion,
     experienceLevel: user.experienceLevel,
     assessmentScore: user.assessmentScore,
     createdAt: user.createdAt,
@@ -44,15 +33,11 @@ function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
 
-function getCodeExpiryDate() {
-  return new Date(Date.now() + config.authCodeExpiresMinutes * 60 * 1000);
+function normalizeSecurityAnswer(answer) {
+  return String(answer || '').trim().toLowerCase();
 }
 
-function generateCode() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-function validateRegisterInput({ email, password, age, region }) {
+function validateRegisterInput({ email, password, age, region, securityQuestion, securityAnswer }) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail || !normalizedEmail.includes('@')) {
     throw new Error('Please provide a valid email');
@@ -71,52 +56,33 @@ function validateRegisterInput({ email, password, age, region }) {
     throw new Error('Region is required');
   }
 
+  if (!String(securityQuestion || '').trim()) {
+    throw new Error('Security question is required');
+  }
+
+  const normalizedSecurityAnswer = normalizeSecurityAnswer(securityAnswer);
+  if (!normalizedSecurityAnswer || normalizedSecurityAnswer.length < 2) {
+    throw new Error('Security answer is required');
+  }
+
   return {
     normalizedEmail,
     ageNumber,
     normalizedRegion: String(region).trim(),
+    normalizedSecurityQuestion: String(securityQuestion).trim(),
+    normalizedSecurityAnswer,
   };
 }
 
-async function saveAuthCode({ email, purpose, payload }) {
-  const rawCode = generateCode();
-  const codeHash = await bcrypt.hash(rawCode, 8);
+export async function registerUser(input) {
+  const {
+    normalizedEmail,
+    ageNumber,
+    normalizedRegion,
+    normalizedSecurityQuestion,
+    normalizedSecurityAnswer,
+  } = validateRegisterInput(input);
 
-  await invalidateCodes({ email, purpose });
-  await createAuthCode({
-    email,
-    purpose,
-    codeHash,
-    payload,
-    expiresAt: getCodeExpiryDate().toISOString(),
-  });
-
-  return rawCode;
-}
-
-function isCodeExpired(codeRow) {
-  const expiryTs = Date.parse(codeRow?.expires_at || '');
-  if (Number.isNaN(expiryTs)) return true;
-  return Date.now() > expiryTs;
-}
-
-async function readValidCodeOrThrow({ email, purpose, code }) {
-  const codeRow = await getLatestActiveCode({ email, purpose });
-  if (!codeRow) throw new Error('Verification code not found or expired');
-  if (isCodeExpired(codeRow)) throw new Error('Verification code expired');
-  if ((codeRow.attempts || 0) >= MAX_CODE_ATTEMPTS) throw new Error('Too many invalid attempts');
-
-  const ok = await bcrypt.compare(String(code || ''), codeRow.code_hash);
-  if (!ok) {
-    await incrementAttempts(codeRow.id);
-    throw new Error('Invalid verification code');
-  }
-
-  return codeRow;
-}
-
-export async function requestRegisterCode(input) {
-  const { normalizedEmail, ageNumber, normalizedRegion } = validateRegisterInput(input);
   const existing = await findUserByEmail(normalizedEmail);
   if (existing) {
     throw new Error('Email already registered');
@@ -124,62 +90,23 @@ export async function requestRegisterCode(input) {
 
   const { level, score } = assessHikerLevel(input.assessmentAnswers || {});
   const passwordHash = await bcrypt.hash(String(input.password), 10);
-  const rawCode = await saveAuthCode({
-    email: normalizedEmail,
-    purpose: PURPOSE_REGISTER,
-    payload: {
-      email: normalizedEmail,
-      passwordHash,
-      age: ageNumber,
-      region: normalizedRegion,
-      level,
-      score,
-      answers: input.assessmentAnswers || {},
-    },
-  });
+  const securityAnswerHash = await bcrypt.hash(normalizedSecurityAnswer, 10);
 
-  const delivery = await sendVerificationCodeEmail({
-    to: normalizedEmail,
-    code: rawCode,
-    actionLabel: 'registration',
-  });
-
-  return {
-    email: normalizedEmail,
-    expiresInMinutes: config.authCodeExpiresMinutes,
-    delivery,
-    debugCode: delivery.sent ? undefined : rawCode,
-  };
-}
-
-export async function verifyRegisterCode({ email, code }) {
-  const normalizedEmail = normalizeEmail(email);
-  if (!normalizedEmail || !code) {
-    throw new Error('Email and verification code are required');
-  }
-
-  const codeRow = await readValidCodeOrThrow({
-    email: normalizedEmail,
-    purpose: PURPOSE_REGISTER,
-    code,
-  });
-
-  const registration = codeRow.payload_json || {};
   const user = await createUser({
-    email: registration.email,
-    passwordHash: registration.passwordHash,
-    age: registration.age,
-    region: registration.region,
-    level: registration.level,
-    score: registration.score,
-    answers: registration.answers || {},
+    email: normalizedEmail,
+    passwordHash,
+    age: ageNumber,
+    region: normalizedRegion,
+    securityQuestion: normalizedSecurityQuestion,
+    securityAnswerHash,
+    level,
+    score,
+    answers: input.assessmentAnswers || {},
   });
 
   if (!user) {
     throw new Error('User store unavailable');
   }
-
-  await markCodeUsed(codeRow.id);
 
   const token = signToken(user.id);
   return {
@@ -211,67 +138,37 @@ export async function loginUser({ email, password }) {
   };
 }
 
-export async function requestPasswordResetCode({ email }) {
+export async function resetPasswordWithSecurityAnswer({ email, securityQuestion, securityAnswer, newPassword }) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail || !normalizedEmail.includes('@')) {
     throw new Error('Please provide a valid email');
-  }
-
-  const user = await findUserByEmail(normalizedEmail);
-  if (!user) {
-    return {
-      email: normalizedEmail,
-      expiresInMinutes: config.authCodeExpiresMinutes,
-      delivery: { sent: true },
-    };
-  }
-
-  const rawCode = await saveAuthCode({
-    email: normalizedEmail,
-    purpose: PURPOSE_PASSWORD_RESET,
-    payload: { email: normalizedEmail },
-  });
-
-  const delivery = await sendVerificationCodeEmail({
-    to: normalizedEmail,
-    code: rawCode,
-    actionLabel: 'password reset',
-  });
-
-  return {
-    email: normalizedEmail,
-    expiresInMinutes: config.authCodeExpiresMinutes,
-    delivery,
-    debugCode: delivery.sent ? undefined : rawCode,
-  };
-}
-
-export async function confirmPasswordReset({ email, code, newPassword }) {
-  const normalizedEmail = normalizeEmail(email);
-  if (!normalizedEmail || !code) {
-    throw new Error('Email and verification code are required');
   }
   if (!newPassword || String(newPassword).length < 8) {
     throw new Error('New password must be at least 8 characters');
   }
 
-  const codeRow = await readValidCodeOrThrow({
-    email: normalizedEmail,
-    purpose: PURPOSE_PASSWORD_RESET,
-    code,
-  });
+  const user = await findUserByEmail(normalizedEmail);
+  if (!user || !user.securityAnswerHash) {
+    throw new Error('Invalid credentials for password reset');
+  }
+  if (!String(securityQuestion || '').trim() || user.securityQuestion !== String(securityQuestion).trim()) {
+    throw new Error('Invalid credentials for password reset');
+  }
+
+  const isValidAnswer = await bcrypt.compare(
+    normalizeSecurityAnswer(securityAnswer),
+    user.securityAnswerHash
+  );
+  if (!isValidAnswer) {
+    throw new Error('Invalid credentials for password reset');
+  }
 
   const passwordHash = await bcrypt.hash(String(newPassword), 10);
-  const user = await updateUserPasswordByEmail({
+  await updateUserPasswordByEmail({
     email: normalizedEmail,
     passwordHash,
   });
 
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  await markCodeUsed(codeRow.id);
   return { ok: true };
 }
 

@@ -4,11 +4,9 @@
 - `GET /api/hazards/realtime?bbox=west,south,east,north&layers=fire,flood,storm,heat`
 - `GET /api/health`
 - `POST /api/auth/register`
-- `POST /api/auth/register/request-code`
-- `POST /api/auth/register/verify`
+- `POST /api/auth/register`
 - `POST /api/auth/login`
-- `POST /api/auth/password-reset/request-code`
-- `POST /api/auth/password-reset/confirm`
+- `POST /api/auth/password-reset/security`
 - `GET /api/auth/me`
 
 ## 项目分层（按功能）
@@ -105,13 +103,6 @@ npm run dev
 - `DATABASE_SSL=true`
 - `AUTH_JWT_SECRET=<strong-random-secret>`
 - `AUTH_JWT_EXPIRES_IN=7d`
-- `AUTH_CODE_EXPIRES_MINUTES=10`
-- `SMTP_HOST=...`
-- `SMTP_PORT=587`
-- `SMTP_SECURE=false`
-- `SMTP_USER=...`
-- `SMTP_PASS=...`
-- `SMTP_FROM=goHiking <no-reply@your-domain.com>`
 
 可选（建议逐步接入官方源）：
 
@@ -159,7 +150,7 @@ VITE_HAZARD_API_BASE_URL=https://<railway-domain>/api
 
 ## 8) 用户认证接口
 
-`POST /api/auth/register/request-code`
+`POST /api/auth/register`
 
 ```json
 {
@@ -176,15 +167,6 @@ VITE_HAZARD_API_BASE_URL=https://<railway-domain>/api
 }
 ```
 
-`POST /api/auth/register/verify`
-
-```json
-{
-  "email": "user@example.com",
-  "code": "123456"
-}
-```
-
 `POST /api/auth/login`
 
 ```json
@@ -198,20 +180,13 @@ VITE_HAZARD_API_BASE_URL=https://<railway-domain>/api
 
 Header: `Authorization: Bearer <token>`
 
-`POST /api/auth/password-reset/request-code`
-
-```json
-{
-  "email": "user@example.com"
-}
-```
-
-`POST /api/auth/password-reset/confirm`
+`POST /api/auth/password-reset/security`
 
 ```json
 {
   "email": "user@example.com",
-  "code": "123456",
+  "securityQuestion": "What is your favorite outdoor activity?",
+  "securityAnswer": "hiking",
   "newPassword": "newPassword123"
 }
 ```

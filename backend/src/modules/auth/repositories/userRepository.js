@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS app_users (
   password_hash TEXT NOT NULL,
   age INTEGER,
   region TEXT,
+  security_question TEXT,
+  security_answer_hash TEXT,
   experience_level TEXT NOT NULL DEFAULT 'newcomer',
   assessment_score INTEGER NOT NULL DEFAULT 0,
   assessment_answers_json JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -20,6 +22,8 @@ export async function initUserStore() {
   if (!pool) return false;
 
   await pool.query(CREATE_USERS_TABLE_SQL);
+  await pool.query(`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS security_question TEXT`);
+  await pool.query(`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS security_answer_hash TEXT`);
   return true;
 }
 
@@ -31,6 +35,7 @@ function mapUserRow(row) {
     email: row.email,
     age: row.age,
     region: row.region,
+    securityQuestion: row.security_question || '',
     experienceLevel: row.experience_level,
     assessmentScore: row.assessment_score,
     assessmentAnswers: row.assessment_answers_json || {},
@@ -45,7 +50,7 @@ export async function findUserByEmail(email) {
 
   const result = await pool.query(
     `
-    SELECT id, email, password_hash, age, region, experience_level, assessment_score,
+    SELECT id, email, password_hash, age, region, security_question, security_answer_hash, experience_level, assessment_score,
            assessment_answers_json, created_at, updated_at
     FROM app_users
     WHERE email = $1
@@ -58,6 +63,7 @@ export async function findUserByEmail(email) {
   return {
     ...mapUserRow(row),
     passwordHash: row.password_hash,
+    securityAnswerHash: row.security_answer_hash,
   };
 }
 
@@ -67,7 +73,7 @@ export async function findUserById(userId) {
 
   const result = await pool.query(
     `
-    SELECT id, email, age, region, experience_level, assessment_score,
+    SELECT id, email, age, region, security_question, experience_level, assessment_score,
            assessment_answers_json, created_at, updated_at
     FROM app_users
     WHERE id = $1
@@ -79,16 +85,16 @@ export async function findUserById(userId) {
   return mapUserRow(result.rows[0]);
 }
 
-export async function createUser({ email, passwordHash, age, region, level, score, answers }) {
+export async function createUser({ email, passwordHash, age, region, securityQuestion, securityAnswerHash, level, score, answers }) {
   const pool = getPgPool();
   if (!pool) return null;
 
   const result = await pool.query(
     `
     INSERT INTO app_users (
-      email, password_hash, age, region, experience_level, assessment_score, assessment_answers_json
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
-    RETURNING id, email, age, region, experience_level, assessment_score,
+      email, password_hash, age, region, security_question, security_answer_hash, experience_level, assessment_score, assessment_answers_json
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
+    RETURNING id, email, age, region, security_question, experience_level, assessment_score,
               assessment_answers_json, created_at, updated_at
     `,
     [
@@ -96,6 +102,8 @@ export async function createUser({ email, passwordHash, age, region, level, scor
       passwordHash,
       age,
       region,
+      securityQuestion,
+      securityAnswerHash,
       level,
       score,
       JSON.stringify(answers || {}),
@@ -114,7 +122,7 @@ export async function updateUserPasswordByEmail({ email, passwordHash }) {
     UPDATE app_users
     SET password_hash = $2, updated_at = NOW()
     WHERE email = $1
-    RETURNING id, email, age, region, experience_level, assessment_score,
+    RETURNING id, email, age, region, security_question, experience_level, assessment_score,
               assessment_answers_json, created_at, updated_at
     `,
     [email, passwordHash]

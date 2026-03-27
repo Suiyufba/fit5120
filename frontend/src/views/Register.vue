@@ -1,21 +1,19 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { confirmSignUp, signUp } from '../services/authStore'
+import { signUp } from '../services/authStore'
 
 const router = useRouter()
 const loading = ref(false)
 const errorMessage = ref('')
-const successMessage = ref('')
-const step = ref('form')
-const verificationCode = ref('')
-const debugCode = ref('')
 
 const form = reactive({
   email: '',
   password: '',
   age: '',
   region: '',
+  securityQuestion: 'What is the name of your first hiking trail?',
+  securityAnswer: '',
   assessmentAnswers: {
     q_weather: '',
     q_injury: '',
@@ -66,38 +64,19 @@ const assessmentQuestions = [
 async function handleSubmit() {
   loading.value = true
   errorMessage.value = ''
-  successMessage.value = ''
   try {
-    const result = await signUp({
+    await signUp({
       email: form.email,
       password: form.password,
       age: form.age,
       region: form.region,
+      securityQuestion: form.securityQuestion,
+      securityAnswer: form.securityAnswer,
       assessmentAnswers: form.assessmentAnswers,
-    })
-    step.value = 'verify'
-    successMessage.value = `Verification code sent to ${result.email}`
-    debugCode.value = result.debugCode || ''
-  } catch (error) {
-    errorMessage.value = error?.message || 'Registration failed'
-  } finally {
-    loading.value = false
-  }
-}
-
-async function handleVerify() {
-  loading.value = true
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  try {
-    await confirmSignUp({
-      email: form.email,
-      code: verificationCode.value,
     })
     router.push('/profile')
   } catch (error) {
-    errorMessage.value = error?.message || 'Verification failed'
+    errorMessage.value = error?.message || 'Registration failed'
   } finally {
     loading.value = false
   }
@@ -109,9 +88,9 @@ async function handleVerify() {
     <section class="register-card">
       <p class="register-kicker">goHiking Membership</p>
       <h1>Create Your Hiking Profile</h1>
-      <p class="register-subtitle">Complete your profile and safety scenario quiz to get your hiking level.</p>
+      <p class="register-subtitle">Complete your profile, safety quiz, and security question to get your hiking level.</p>
 
-      <form v-if="step === 'form'" class="register-form" @submit.prevent="handleSubmit">
+      <form class="register-form" @submit.prevent="handleSubmit">
         <div class="register-grid">
           <label>
             <span>Email</span>
@@ -128,6 +107,19 @@ async function handleVerify() {
           <label>
             <span>Region</span>
             <input v-model="form.region" type="text" placeholder="e.g. Melbourne, VIC" required />
+          </label>
+          <label>
+            <span>Security Question</span>
+            <select v-model="form.securityQuestion" required>
+              <option>What is the name of your first hiking trail?</option>
+              <option>Which city were you born in?</option>
+              <option>What is your favorite outdoor activity?</option>
+              <option>What was your childhood nickname?</option>
+            </select>
+          </label>
+          <label>
+            <span>Security Answer</span>
+            <input v-model="form.securityAnswer" type="text" required />
           </label>
         </div>
 
@@ -153,29 +145,7 @@ async function handleVerify() {
         <p v-if="errorMessage" class="register-error">{{ errorMessage }}</p>
 
         <button type="submit" :disabled="loading">
-          {{ loading ? 'Sending code...' : 'Send Verification Code' }}
-        </button>
-      </form>
-
-      <form v-else class="register-form" @submit.prevent="handleVerify">
-        <section class="quiz-panel">
-          <h2>Email Verification</h2>
-          <p class="verify-tip">
-            {{ successMessage || 'Enter the 6-digit verification code sent to your email.' }}
-          </p>
-          <p v-if="debugCode" class="verify-tip verify-tip--debug">
-            SMTP is not configured yet. Debug code: <strong>{{ debugCode }}</strong>
-          </p>
-          <label>
-            <span>Verification Code</span>
-            <input v-model="verificationCode" type="text" minlength="6" maxlength="6" required />
-          </label>
-        </section>
-
-        <p v-if="errorMessage" class="register-error">{{ errorMessage }}</p>
-
-        <button type="submit" :disabled="loading">
-          {{ loading ? 'Verifying...' : 'Verify & Create Account' }}
+          {{ loading ? 'Creating account...' : 'Create Account' }}
         </button>
       </form>
     </section>
@@ -248,6 +218,7 @@ label > span {
 input[type="email"],
 input[type="password"],
 input[type="number"],
+select,
 input[type="text"] {
   border: 1px solid #cfddd1;
   border-radius: 0.7rem;
@@ -316,17 +287,6 @@ button:disabled {
 .register-error {
   color: #b63030;
   font-size: 0.84rem;
-}
-
-.verify-tip {
-  margin-top: 0.6rem;
-  color: #49655d;
-  font-size: 0.9rem;
-}
-
-.verify-tip--debug {
-  margin-top: 0.4rem;
-  color: #6a4f13;
 }
 
 @media (max-width: 800px) {
