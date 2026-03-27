@@ -1,140 +1,442 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import * as L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import { useAuthState } from '../services/authStore'
+import { planSafeRoute } from '../services/routeApi'
+import { setLatestRoutePlan } from '../services/routePlanStore'
 
 const router = useRouter()
-const startPoint = ref('Melbourne CBD')
-const destination = ref('Erskine Falls')
+const { state: authState } = useAuthState()
+const mapElement = ref(null)
+const loading = ref(false)
+const error = ref('')
+const startPoint = ref(null)
+const endPoint = ref(null)
+const planResult = ref(null)
+
+let mapInstance
+let markerLayer
+let routeLayer
+let inflightController
+
+const canPlan = computed(() => Boolean(startPoint.value && endPoint.value && !loading.value))
+
+const summary = computed(() => {
+  if (!planResult.value?.recommendedRoute) return null
+  const route = planResult.value.recommendedRoute
+  return {
+    distance: `${route.distanceKm.toFixed(1)} km`,
+    duration: `${Math.round(route.durationMin)} min`,
+    difficulty: route.difficulty,
+    risk: `${route.riskLevel} (${route.riskScore.toFixed(1)})`,
+    goNoGo: route.goNoGo,
+    explanation: route.explanation
+  }
+})
+
+function renderMarkers() {
+  if (!markerLayer) return
+  markerLayer.clearLayers()
+
+  if (startPoint.value) {
+    L.circleMarker([startPoint.value.lat, startPoint.value.lng], {
+      radius: 8,
+      color: '#1F6E57',
+      fillColor: '#2E9D7A',
+      fillOpacity: 0.9,
+      weight: 2,
+    }).bindPopup('Start point').addTo(markerLayer)
+  }
+
+  if (endPoint.value) {
+    L.circleMarker([endPoint.value.lat, endPoint.value.lng], {
+      radius: 8,
+      color: '#A6382A',
+      fillColor: '#D84727',
+      fillOpacity: 0.9,
+      weight: 2,
+    }).bindPopup('Destination').addTo(markerLayer)
+  }
+}
+
+function drawRoutes() {
+  if (!routeLayer) return
+  routeLayer.clearLayers()
+
+  const recommended = planResult.value?.recommendedRoute
+  const alternatives = planResult.value?.alternatives || []
+
+  if (recommended?.geometry?.length) {
+    L.polyline(recommended.geometry, {
+      color: '#1F6E57',
+      weight: 6,
+      opacity: 0.9,
+    }).addTo(routeLayer)
+  }
+
+  alternatives.forEach((alt) => {
+    if (!Array.isArray(alt.geometry) || alt.geometry.length < 2) return
+    L.polyline(alt.geometry, {
+      color: '#5f6b66',
+      weight: 4,
+      opacity: 0.45,
+      dashArray: '8 8',
+    }).addTo(routeLayer)
+  })
+
+  if (recommended?.geometry?.length) {
+    const bounds = L.latLngBounds(recommended.geometry)
+    mapInstance.fitBounds(bounds.pad(0.2))
+  }
+}
+
+function resetSelection() {
+  startPoint.value = null
+  endPoint.value = null
+  error.value = ''
+  planResult.value = null
+  setLatestRoutePlan(null)
+  renderMarkers()
+  drawRoutes()
+}
+
+async function handlePlanRoute() {
+  if (!canPlan.value) return
+  if (inflightController) inflightController.abort()
+  inflightController = new AbortController()
+
+  loading.value = true
+  error.value = ''
+
+  try {
+    const payload = await planSafeRoute({
+      start: startPoint.value,
+      end: endPoint.value,
+      token: authState.token,
+      signal: inflightController.signal,
+    })
+
+    planResult.value = payload
+
+    setLatestRoutePlan({
+      ...payload,
+      start: startPoint.value,
+      end: endPoint.value,
+    })
+
+    drawRoutes()
+  } catch (nextError) {
+    if (nextError?.name === 'AbortError') return
+    error.value = nextError.message || 'Failed to generate a safe route'
+  } finally {
+    loading.value = false
+  }
+}
+
+function goToDetails() {
+  if (!planResult.value?.recommendedRoute) return
+  router.push('/route-detail')
+}
+
+onMounted(() => {
+  mapInstance = L.map(mapElement.value, {
+    zoomControl: true,
+    attributionControl: true,
+  }).setView([-37.8136, 144.9631], 7)
+
+  mapInstance.attributionControl.setPrefix(false)
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors',
+  }).addTo(mapInstance)
+
+  markerLayer = L.layerGroup().addTo(mapInstance)
+  routeLayer = L.layerGroup().addTo(mapInstance)
+
+  mapInstance.on('click', (event) => {
+    const point = {
+      lat: Number(event.latlng.lat.toFixed(6)),
+      lng: Number(event.latlng.lng.toFixed(6)),
+    }
+
+    if (!startPoint.value) {
+      startPoint.value = point
+      renderMarkers()
+      return
+    }
+
+    if (!endPoint.value) {
+      endPoint.value = point
+      renderMarkers()
+      return
+    }
+
+    startPoint.value = endPoint.value
+    endPoint.value = point
+    planResult.value = null
+    error.value = ''
+    renderMarkers()
+    drawRoutes()
+  })
+})
+
+onUnmounted(() => {
+  if (inflightController) inflightController.abort()
+  if (mapInstance) {
+    mapInstance.remove()
+    mapInstance = null
+  }
+})
 </script>
 
 <template>
-  <main class="relative flex flex-col md:flex-row" style="height: calc(100vh - 72px)">
-    <!-- Left Control Panel -->
-    <aside class="w-full md:w-[400px] z-20 h-full bg-surface-container-low p-6 flex flex-col gap-8 shadow-xl overflow-y-auto">
-      <div class="space-y-2">
-        <h1 class="text-3xl font-headline font-extrabold tracking-tight text-primary">Plan Route</h1>
-        <p class="text-on-surface-variant text-sm">Calculate the safest path through Victoria's rugged terrain.</p>
+  <main class="planner-layout">
+    <aside class="planner-panel">
+      <div>
+        <p class="planner-kicker">Pre-Hike Safety Planner</p>
+        <h1>Plan Route</h1>
+        <p class="planner-sub">Click map to set start and destination. Route safety is personalized by your level.</p>
       </div>
 
-      <div class="space-y-6">
-        <div class="space-y-4">
-          <div class="relative group">
-            <label class="block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-outline mb-1.5 ml-1">Start Point</label>
-            <div class="flex items-center bg-surface-container-high rounded-xl px-4 py-3 focus-within:bg-surface-container-highest transition-colors border-b-2 border-transparent focus-within:border-primary">
-              <span class="material-symbols-outlined text-primary mr-3 text-sm">my_location</span>
-              <input v-model="startPoint" class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-medium placeholder-outline" placeholder="Enter starting point" type="text" />
-            </div>
-          </div>
-          <div class="relative group">
-            <label class="block text-[0.7rem] font-bold uppercase tracking-[0.1em] text-outline mb-1.5 ml-1">Destination</label>
-            <div class="flex items-center bg-surface-container-high rounded-xl px-4 py-3 focus-within:bg-surface-container-highest transition-colors border-b-2 border-transparent focus-within:border-primary">
-              <span class="material-symbols-outlined text-error mr-3 text-sm">location_on</span>
-              <input v-model="destination" class="bg-transparent border-none focus:ring-0 w-full text-on-surface font-medium placeholder-outline" placeholder="Enter destination" type="text" />
-            </div>
-          </div>
+      <div class="planner-points">
+        <div class="point-card">
+          <p>Start</p>
+          <strong>{{ startPoint ? `${startPoint.lat}, ${startPoint.lng}` : 'Click map to set start point' }}</strong>
         </div>
-
-        <!-- Safe Route Summary -->
-        <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm flex flex-col gap-4 relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16"></div>
-          <div class="flex justify-between items-start">
-            <div>
-              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-3">
-                <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1">verified_user</span> Recommended Safe Route
-              </span>
-              <h2 class="text-xl font-headline font-bold text-on-surface leading-tight">Inland Safety Deviation</h2>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="bg-surface-container-low rounded-lg p-3">
-              <div class="text-[0.65rem] font-bold uppercase text-outline mb-1">Duration</div>
-              <div class="text-lg font-bold text-on-surface">2h 30m</div>
-            </div>
-            <div class="bg-surface-container-low rounded-lg p-3">
-              <div class="text-[0.65rem] font-bold uppercase text-outline mb-1">Distance</div>
-              <div class="text-lg font-bold text-on-surface">145km</div>
-            </div>
-            <div class="bg-surface-container-low rounded-lg p-3">
-              <div class="text-[0.65rem] font-bold uppercase text-outline mb-1">Difficulty</div>
-              <div class="text-lg font-bold text-on-surface">Moderate</div>
-            </div>
-            <div class="bg-surface-container-low rounded-lg p-3">
-              <div class="text-[0.65rem] font-bold uppercase text-outline mb-1">Risk Status</div>
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span class="text-lg font-bold text-on-surface">Low</span>
-              </div>
-            </div>
-          </div>
-          <div class="bg-surface-container-high/50 p-4 rounded-lg border-l-4 border-primary">
-            <p class="text-sm text-on-surface-variant leading-relaxed">
-              We've rerouted you 15 mins inland to avoid current moderate bushfire activity near the coast.
-            </p>
-          </div>
-          <button
-            class="w-full py-3.5 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-lg font-bold text-sm tracking-wide shadow-lg hover:brightness-110 transition-all active:scale-[0.98]"
-            @click="router.push('/route-detail')"
-          >
-            View Route Details
-          </button>
+        <div class="point-card">
+          <p>Destination</p>
+          <strong>{{ endPoint ? `${endPoint.lat}, ${endPoint.lng}` : 'Click map to set destination' }}</strong>
         </div>
       </div>
 
-      <!-- Legend -->
-      <div class="mt-auto pt-6">
-        <div class="text-[0.65rem] font-bold uppercase text-outline mb-3 tracking-widest">Active Hazards</div>
-        <div class="flex flex-wrap gap-2">
-          <span class="flex items-center gap-2 px-3 py-1.5 bg-surface rounded-full text-xs font-semibold text-error">
-            <span class="w-2 h-2 rounded-full bg-error"></span> Bushfire Warning
-          </span>
-          <span class="flex items-center gap-2 px-3 py-1.5 bg-surface rounded-full text-xs font-semibold text-on-surface-variant">
-            <span class="w-2 h-2 rounded-full bg-surface-dim"></span> Road Closure
-          </span>
-        </div>
+      <div class="planner-actions">
+        <button class="primary-btn" :disabled="!canPlan" @click="handlePlanRoute">
+          {{ loading ? 'Planning...' : 'Plan Safe Route' }}
+        </button>
+        <button class="ghost-btn" @click="resetSelection">Reset Points</button>
       </div>
+
+      <p v-if="error" class="planner-error">{{ error }}</p>
+
+      <section v-if="summary" class="planner-summary">
+        <p class="summary-kicker">Recommended Safer Route</p>
+        <div class="summary-grid">
+          <article><span>Distance</span><strong>{{ summary.distance }}</strong></article>
+          <article><span>Duration</span><strong>{{ summary.duration }}</strong></article>
+          <article><span>Difficulty</span><strong>{{ summary.difficulty }}</strong></article>
+          <article><span>Risk</span><strong>{{ summary.risk }}</strong></article>
+        </div>
+
+        <div class="go-tag" :class="{ 'go-tag--danger': summary.goNoGo === 'No-Go' }">
+          {{ summary.goNoGo }}
+        </div>
+        <p class="summary-explain">{{ summary.explanation }}</p>
+        <button class="primary-btn" @click="goToDetails">View Route Details</button>
+      </section>
     </aside>
 
-    <!-- Map Area -->
-    <section class="flex-1 relative bg-surface-dim overflow-hidden">
-      <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAur3_tDNdSZZ4CywO5iu-4F4rmNZoxMuwhpEAT2XNlb_DqZlFe0hpKK4xdtsgGbWRIjl6cnVoi4YIAWyc15wz1MUjED5tG3Ln2yaF6Krsvcye1yZplU5mZpk70SjPOwVWNJC8Q7z95Y87hOHjCrXAW5ZQcIQaWg7oUNNVpR026wj02m6TBF-eAv6dmbk-_NAZneNISeuhlymXZPEBYJf0sL6y_ZWxoakYICh5DHpj3Z_3on1PqtXIG9iA-PwxVFgkhwG9yq2pWXeQ')">
-        <svg class="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 1000 1000">
-          <path d="M200,100 C250,200 300,450 450,550 S700,650 850,850" fill="none" opacity="0.1" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="12" />
-          <path d="M200,100 C250,200 300,450 450,550 S700,650 850,850" fill="none" stroke="#334f2b" stroke-dasharray="1,12" stroke-linecap="round" stroke-linejoin="round" stroke-width="6" />
-          <circle cx="200" cy="100" fill="#334f2b" r="8" />
-          <circle cx="850" cy="850" fill="#ba1a1a" r="8" />
-        </svg>
-
-        <!-- Bushfire Risk Zone -->
-        <div class="absolute top-[60%] right-[10%] w-[30%] h-[25%] bg-error/20 backdrop-blur-[2px] rounded-full border-2 border-dashed border-error flex items-center justify-center">
-          <div class="text-center">
-            <span class="material-symbols-outlined text-error text-3xl mb-1">local_fire_department</span>
-            <div class="text-error font-black uppercase tracking-tighter text-xs">High Risk Area</div>
-            <div class="text-error text-[10px] font-bold">Bushfire Activity - Lorne Coast</div>
-          </div>
-        </div>
-
-        <!-- Map Controls -->
-        <div class="absolute bottom-8 right-8 flex flex-col gap-3">
-          <button class="w-12 h-12 glass-panel rounded-full flex items-center justify-center text-on-surface shadow-lg hover:bg-white transition-all">
-            <span class="material-symbols-outlined">add</span>
-          </button>
-          <button class="w-12 h-12 glass-panel rounded-full flex items-center justify-center text-on-surface shadow-lg hover:bg-white transition-all">
-            <span class="material-symbols-outlined">remove</span>
-          </button>
-          <button class="w-12 h-12 glass-panel rounded-full flex items-center justify-center text-on-surface shadow-lg hover:bg-white transition-all">
-            <span class="material-symbols-outlined">layers</span>
-          </button>
-        </div>
-
-        <!-- Safe Point Marker -->
-        <div class="absolute top-[48%] left-[42%] glass-panel px-4 py-2 rounded-xl shadow-2xl flex items-center gap-3 border border-white/20">
-          <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1">eco</span>
-          <div>
-            <div class="text-[10px] font-bold uppercase text-outline leading-none">Safe Point</div>
-            <div class="text-xs font-bold text-on-surface">Winchelsea Deviation</div>
-          </div>
-        </div>
-      </div>
+    <section class="planner-map-wrap">
+      <div ref="mapElement" class="planner-map"></div>
     </section>
   </main>
 </template>
+
+<style scoped>
+.planner-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  height: calc(100vh - 72px);
+  background: linear-gradient(130deg, #f3f8f5 0%, #e6f2ee 45%, #eef4fb 100%);
+}
+
+.planner-panel {
+  border-right: 1px solid #d8e3dc;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(7px);
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  overflow: auto;
+}
+
+.planner-kicker {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #40695c;
+  font-weight: 700;
+}
+
+h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1d3932;
+}
+
+.planner-sub {
+  color: #4c635d;
+  font-size: 0.88rem;
+  margin-top: 0.4rem;
+}
+
+.planner-points {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.point-card {
+  border: 1px solid #dbe5de;
+  border-radius: 0.7rem;
+  padding: 0.7rem;
+  background: #fcfffd;
+}
+
+.point-card p {
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 0.68rem;
+  color: #4f6b63;
+  font-weight: 700;
+}
+
+.point-card strong {
+  display: block;
+  margin-top: 0.3rem;
+  color: #213e37;
+  font-size: 0.86rem;
+  word-break: break-word;
+}
+
+.planner-actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.primary-btn,
+.ghost-btn {
+  border: 0;
+  border-radius: 0.65rem;
+  padding: 0.72rem 0.82rem;
+  font-weight: 700;
+}
+
+.primary-btn {
+  background: #2e7d6b;
+  color: #fff;
+}
+
+.primary-btn:disabled {
+  opacity: 0.6;
+}
+
+.ghost-btn {
+  border: 1px solid #bfd1c8;
+  background: #fff;
+  color: #2f5448;
+}
+
+.planner-error {
+  background: #fff1ef;
+  border: 1px solid #e9b7ae;
+  color: #7c271f;
+  border-radius: 0.65rem;
+  padding: 0.58rem;
+  font-size: 0.84rem;
+}
+
+.planner-summary {
+  border: 1px solid #d7e4dc;
+  border-radius: 0.8rem;
+  background: #ffffff;
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.summary-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.67rem;
+  color: #3c6558;
+  font-weight: 800;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.summary-grid article {
+  border: 1px solid #e0e9e2;
+  border-radius: 0.6rem;
+  padding: 0.5rem;
+  background: #fbfefc;
+}
+
+.summary-grid span {
+  font-size: 0.64rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #4b6860;
+  font-weight: 700;
+}
+
+.summary-grid strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: #1f3931;
+}
+
+.go-tag {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #dbf5ea;
+  color: #166645;
+  font-weight: 800;
+  font-size: 0.78rem;
+}
+
+.go-tag--danger {
+  background: #ffe4df;
+  color: #8b2a1f;
+}
+
+.summary-explain {
+  color: #3f5a54;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.planner-map-wrap {
+  position: relative;
+}
+
+.planner-map {
+  width: 100%;
+  height: 100%;
+}
+
+.planner-map :deep(.leaflet-control-attribution) {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+@media (max-width: 980px) {
+  .planner-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(320px, auto) 1fr;
+  }
+
+  .planner-panel {
+    border-right: 0;
+    border-bottom: 1px solid #d8e3dc;
+  }
+}
+</style>

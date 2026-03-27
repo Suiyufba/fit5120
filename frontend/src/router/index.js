@@ -21,12 +21,14 @@ const router = createRouter({
     {
       path: '/route-planner',
       name: 'route-planner',
-      component: () => import('../views/RoutePlanner.vue')
+      component: () => import('../views/RoutePlanner.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/route-detail',
       name: 'route-detail',
-      component: () => import('../views/RouteDetail.vue')
+      component: () => import('../views/RouteDetail.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/community-reports',

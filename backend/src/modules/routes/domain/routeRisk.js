@@ -1,0 +1,242 @@
+const SEVERITY_BASE = {
+  low: 20,
+  moderate: 50,
+  high: 80,
+  extreme: 100
+};
+
+const TYPE_FACTOR = {
+  fire: 1.2,
+  flood: 1.0,
+  storm: 1.0,
+  heat: 0.9,
+  other: 0.7
+};
+
+const WEATHER_TYPES = new Set(['heat', 'flood', 'storm']);
+
+function clamp(value, min = 0, max = 100) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function toRad(degrees) {
+  return (degrees * Math.PI) / 180;
+}
+
+function haversineKm([lat1, lon1], [lat2, lon2]) {
+  const earthRadiusKm = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2
+    + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function toLocalXY([lat, lng], referenceLat) {
+  const x = lng * 111.32 * Math.cos(toRad(referenceLat));
+  const y = lat * 111.32;
+  return [x, y];
+}
+
+function pointToSegmentDistanceKm(point, segmentStart, segmentEnd) {
+  const refLat = (point[0] + segmentStart[0] + segmentEnd[0]) / 3;
+  const [px, py] = toLocalXY(point, refLat);
+  const [ax, ay] = toLocalXY(segmentStart, refLat);
+  const [bx, by] = toLocalXY(segmentEnd, refLat);
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lengthSquared = dx * dx + dy * dy;
+
+  if (lengthSquared === 0) {
+    return Math.hypot(px - ax, py - ay);
+  }
+
+  const t = clamp(((px - ax) * dx + (py - ay) * dy) / lengthSquared, 0, 1);
+  const nearestX = ax + t * dx;
+  const nearestY = ay + t * dy;
+  return Math.hypot(px - nearestX, py - nearestY);
+}
+
+export function distanceToRouteKm(point, geometry) {
+  if (!Array.isArray(geometry) || geometry.length < 2) return Infinity;
+
+  let minDistance = Infinity;
+  for (let i = 0; i < geometry.length - 1; i += 1) {
+    const nextDistance = pointToSegmentDistanceKm(point, geometry[i], geometry[i + 1]);
+    if (nextDistance < minDistance) minDistance = nextDistance;
+  }
+  return minDistance;
+}
+
+function distanceFactor(distanceKm) {
+  if (distanceKm <= 1) return 1.0;
+  if (distanceKm <= 3) return 0.6;
+  if (distanceKm <= 5) return 0.3;
+  return 0;
+}
+
+function toHazardImpact(hazard, distanceKm) {
+  const base = SEVERITY_BASE[hazard.severity] ?? 20;
+  const factor = TYPE_FACTOR[hazard.type] ?? TYPE_FACTOR.other;
+  const impact = base * distanceFactor(distanceKm) * factor;
+  return clamp(impact);
+}
+
+function topImpactAverage(hazards, geometry, filterFn) {
+  const impacts = hazards
+    .filter(filterFn)
+    .map((hazard) => {
+      const distanceKm = distanceToRouteKm(hazard.coordinates, geometry);
+      return {
+        hazard,
+        distanceKm,
+        impact: toHazardImpact(hazard, distanceKm)
+      };
+    })
+    .filter((item) => Number.isFinite(item.distanceKm) && item.distanceKm <= 10 && item.impact > 0)
+    .sort((a, b) => b.impact - a.impact)
+    .slice(0, 5);
+
+  if (!impacts.length) {
+    return {
+      score: 0,
+      impacts: []
+    };
+  }
+
+  const avg = impacts.reduce((sum, item) => sum + item.impact, 0) / impacts.length;
+  return {
+    score: clamp(avg),
+    impacts
+  };
+}
+
+function difficultyScore(distanceKm, durationMin) {
+  const distanceComponent = clamp((distanceKm / 25) * 100);
+  const durationComponent = clamp((durationMin / 240) * 100);
+  return clamp(0.6 * distanceComponent + 0.4 * durationComponent);
+}
+
+function riskLevelByScore(score) {
+  if (score >= 75) return 'Extreme';
+  if (score >= 50) return 'High';
+  if (score >= 25) return 'Moderate';
+  return 'Low';
+}
+
+function difficultyLabel(score) {
+  if (score >= 70) return 'Hard';
+  if (score >= 40) return 'Moderate';
+  return 'Easy';
+}
+
+function isOpenWeatherHazard(hazard) {
+  return String(hazard.source || '').toLowerCase().includes('openweather') && WEATHER_TYPES.has(hazard.type);
+}
+
+function goNoGoDecision({ userLevel, riskScore, impacts }) {
+  const thresholds = {
+    newcomer: { score: 55, extremeDistanceKm: 2 },
+    intermediate: { score: 70, extremeDistanceKm: 1.5 },
+    advanced: { score: 80, extremeDistanceKm: 1 }
+  };
+  const current = thresholds[userLevel] || thresholds.newcomer;
+
+  const hasExtremeTooClose = impacts.some(
+    (item) => item.hazard.severity === 'extreme' && item.distanceKm <= current.extremeDistanceKm
+  );
+  if (hasExtremeTooClose || riskScore >= current.score) return 'No-Go';
+  return 'Go';
+}
+
+function buildExplanation({ chosenRoute, fastestRoute, topHazards, goNoGo }) {
+  if (!topHazards.length) {
+    return goNoGo === 'Go'
+      ? 'No high-impact hazards were detected close to the selected path. Conditions are comparatively stable.'
+      : 'Risk remains elevated for your current profile despite limited nearby hazard overlap.';
+  }
+
+  const first = topHazards[0];
+  const reason = `${first.hazard.type} risk is near the route (${first.distanceKm.toFixed(1)} km)`;
+  const detourMinutes = Math.max(0, Math.round(chosenRoute.durationMin - fastestRoute.durationMin));
+  if (detourMinutes > 0) {
+    return `This route is recommended because it reduces exposure where ${reason}. It adds about ${detourMinutes} minutes for safer conditions.`;
+  }
+  return `This route is recommended because ${reason} and overall risk is lower for your profile.`;
+}
+
+export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute }) {
+  const geometry = route.geometry || [];
+  const hazardAgg = topImpactAverage(hazards, geometry, () => true);
+  const weatherAgg = topImpactAverage(hazards, geometry, (hazard) => isOpenWeatherHazard(hazard));
+
+  const routeDifficultyScore = difficultyScore(route.distanceKm, route.durationMin);
+  const weightedTotal = clamp(
+    (0.55 * hazardAgg.score) + (0.25 * weatherAgg.score) + (0.20 * routeDifficultyScore)
+  );
+  const riskLevel = riskLevelByScore(weightedTotal);
+
+  const goNoGo = goNoGoDecision({
+    userLevel,
+    riskScore: weightedTotal,
+    impacts: hazardAgg.impacts
+  });
+
+  const keyRisks = hazardAgg.impacts.slice(0, 3).map((item) => ({
+    id: item.hazard.id,
+    title: item.hazard.title,
+    type: item.hazard.type,
+    severity: item.hazard.severity,
+    distanceKm: Number(item.distanceKm.toFixed(2)),
+    source: item.hazard.source
+  }));
+
+  const explanation = buildExplanation({
+    chosenRoute: route,
+    fastestRoute,
+    topHazards: hazardAgg.impacts.slice(0, 2),
+    goNoGo
+  });
+
+  return {
+    ...route,
+    difficulty: difficultyLabel(routeDifficultyScore),
+    riskScore: Number(weightedTotal.toFixed(1)),
+    riskLevel,
+    goNoGo,
+    explanation,
+    keyRisks,
+    scoringBreakdown: {
+      hazardScore: Number(hazardAgg.score.toFixed(1)),
+      weatherScore: Number(weatherAgg.score.toFixed(1)),
+      difficultyScore: Number(routeDifficultyScore.toFixed(1)),
+      weightedTotal: Number(weightedTotal.toFixed(1))
+    }
+  };
+}
+
+export function buildDetourWaypointCandidates(start, end) {
+  const mid = [(start.lat + end.lat) / 2, (start.lng + end.lng) / 2];
+  const dLat = end.lat - start.lat;
+  const dLng = end.lng - start.lng;
+  const length = Math.hypot(dLat, dLng) || 1;
+  const perpLat = -dLng / length;
+  const perpLng = dLat / length;
+
+  const lineDistanceKm = haversineKm([start.lat, start.lng], [end.lat, end.lng]);
+  const offsetKm = clamp(lineDistanceKm * 0.25, 5, 25);
+  const latDeg = offsetKm / 111.32;
+  const lngDeg = offsetKm / (111.32 * Math.cos(toRad(mid[0])) || 1);
+
+  return [
+    {
+      lat: mid[0] + (perpLat * latDeg),
+      lng: mid[1] + (perpLng * lngDeg)
+    },
+    {
+      lat: mid[0] - (perpLat * latDeg),
+      lng: mid[1] - (perpLng * lngDeg)
+    }
+  ];
+}

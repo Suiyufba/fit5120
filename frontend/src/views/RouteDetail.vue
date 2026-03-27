@@ -1,124 +1,279 @@
 <script setup>
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import * as L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import { restoreLatestRoutePlan } from '../services/routePlanStore'
 
 const router = useRouter()
+const mapElement = ref(null)
+const plan = ref(null)
+
+let mapInstance
+let routeLayer
+
+const recommended = computed(() => plan.value?.recommendedRoute || null)
+
+const prepTips = computed(() => {
+  const risks = recommended.value?.keyRisks || []
+  if (!risks.length) {
+    return [
+      'Carry at least 2L water per person.',
+      'Check live alerts again before departure.',
+      'Share your route with one trusted contact.'
+    ]
+  }
+  const hasHeat = risks.some((risk) => risk.type === 'heat')
+  const hasFire = risks.some((risk) => risk.type === 'fire')
+  const hasFloodOrStorm = risks.some((risk) => ['flood', 'storm'].includes(risk.type))
+
+  const tips = ['Check official alerts one more time right before you leave.']
+  if (hasHeat) tips.push('Bring extra water and avoid midday exposed sections.')
+  if (hasFire) tips.push('Prepare a no-go fallback if fire status escalates.')
+  if (hasFloodOrStorm) tips.push('Carry waterproof layers and avoid low-lying crossings.')
+  return tips.slice(0, 3)
+})
+
+function drawRecommendedRoute() {
+  if (!routeLayer || !recommended.value?.geometry?.length) return
+  routeLayer.clearLayers()
+
+  L.polyline(recommended.value.geometry, {
+    color: '#1F6E57',
+    weight: 6,
+    opacity: 0.9,
+  }).addTo(routeLayer)
+
+  const start = recommended.value.geometry[0]
+  const end = recommended.value.geometry[recommended.value.geometry.length - 1]
+  L.circleMarker(start, {
+    radius: 7,
+    color: '#1F6E57',
+    fillColor: '#2E9D7A',
+    fillOpacity: 0.95,
+    weight: 2,
+  }).bindPopup('Start').addTo(routeLayer)
+
+  L.circleMarker(end, {
+    radius: 7,
+    color: '#A6382A',
+    fillColor: '#D84727',
+    fillOpacity: 0.95,
+    weight: 2,
+  }).bindPopup('Destination').addTo(routeLayer)
+
+  mapInstance.fitBounds(L.latLngBounds(recommended.value.geometry).pad(0.2))
+}
+
+onMounted(() => {
+  plan.value = restoreLatestRoutePlan()
+
+  mapInstance = L.map(mapElement.value, {
+    zoomControl: true,
+    attributionControl: true,
+  }).setView([-37.8136, 144.9631], 7)
+
+  mapInstance.attributionControl.setPrefix(false)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors',
+  }).addTo(mapInstance)
+
+  routeLayer = L.layerGroup().addTo(mapInstance)
+  drawRecommendedRoute()
+})
+
+onUnmounted(() => {
+  if (mapInstance) {
+    mapInstance.remove()
+    mapInstance = null
+  }
+})
 </script>
 
 <template>
-  <main class="relative flex" style="height: calc(100vh - 72px)">
-    <!-- Background Map -->
-    <div class="absolute inset-0 z-0">
-      <img
-        class="w-full h-full object-cover"
-        alt="Topographical map of Victorian coastline"
-        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCT-kbIVTLci5tQc6_tyx_qQAns9NxIieBvnKCrvFs_HAZkZRIzRMGl0uHG27jrpW6SGHynDz4MgBgt9xQU0PwZbI2Mlk-ICqR0LL97fUT5rB1ns4L0nqCvpwKIN5IkEciS8YS2AOlWktsUyw34GWb-AScdUzumxNaZJt5mx1grRInl7eJG5WceFmmA2BliW_beYxb3cHff7zRNdR4RV6Gf6kvyjOBxHQEZPKgjal__578mux6B1zYAk5b7dzCEUqO9aYu_5y_N_vQ"
-      />
-      <div class="absolute inset-0 bg-primary/5 pointer-events-none"></div>
-    </div>
-
-    <!-- Side Panel -->
-    <section class="relative z-10 w-full max-w-md h-full bg-surface-container-lowest/95 backdrop-blur-md shadow-2xl flex flex-col custom-scrollbar overflow-y-auto border-r border-outline-variant/20">
-      <div class="p-8 space-y-8">
-        <header class="space-y-2">
-          <div class="flex items-center gap-2 text-primary font-bold tracking-widest text-[0.65rem] uppercase">
-            <span class="material-symbols-outlined text-sm">route</span>
-            Route Planning Detail
-          </div>
-          <h1 class="font-headline text-3xl font-extrabold text-on-surface leading-tight tracking-tight">Erskine Falls via Deans Marsh</h1>
-        </header>
-
-        <!-- Hero Image -->
-        <div class="relative rounded-xl overflow-hidden aspect-video bg-surface-dim shadow-inner group">
-          <img
-            class="w-full h-full object-cover grayscale-[0.2] transition-transform duration-700 group-hover:scale-105"
-            alt="Birds-eye view of winding rural highway through eucalyptus forest"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAoMTEGeMvONGjz2L2diXrU7CnuOMe1rDDEewqXXsFo8yjrn2QLJKqFI35HiP1vN7Qj5_3Ml2D-3BOub7uhHh4fppGhxcZTvxB25odczqLZ8FJwaZtmpJzLFFFc9HhIZoFh7Rw88MCm3lcdmzPhP8woOVxoG5M2-EYGn1m1Ys1WLvhGF1ThFim8YYrjNm5JVy8u3dEPepY0OMFewOz75UYJfgxd_mB9kQTrkxVusSiPr2QnISuQ0MDpeouqVt3Ujd-MEVgdw5byURk"
-          />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-          <div class="absolute bottom-4 left-4 flex gap-2">
-            <span class="bg-primary px-3 py-1 rounded-full text-white text-xs font-bold shadow-lg">145 KM</span>
-            <span class="bg-surface-container-lowest/90 px-3 py-1 rounded-full text-on-surface text-xs font-bold shadow-lg">2h 15m</span>
-          </div>
-        </div>
-
-        <!-- Safety Status -->
-        <div class="bg-surface-container-low p-6 rounded-xl space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="font-headline text-lg font-bold text-on-surface">Overall Safety</h3>
-            <div class="flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full">
-              <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-              <span class="text-xs font-bold">Recommended for today</span>
-            </div>
-          </div>
-          <p class="text-sm text-on-surface-variant leading-relaxed italic">
-            "Conditions are currently stable. Minimal wind speed and clear visibility across the Otways segment."
-          </p>
-        </div>
-
-        <!-- Risk Sections -->
-        <div class="space-y-6">
-          <h3 class="font-headline text-lg font-bold text-on-surface border-l-4 border-tertiary pl-4">Key Risk Sections</h3>
-          <div class="space-y-4">
-            <div class="bg-error-container/30 p-5 rounded-xl border-l-4 border-error">
-              <div class="flex items-start gap-4">
-                <span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1">local_fire_department</span>
-                <div class="space-y-1">
-                  <p class="text-sm font-bold text-on-error-container">Lorne Segment Alert</p>
-                  <p class="text-sm text-on-surface-variant leading-relaxed">
-                    15km section near Lorne has <span class="text-error font-bold">moderate fire risk</span>. We recommend using the <span class="underline decoration-error/30">C151</span> instead of the coastal road.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div class="bg-secondary-container/30 p-5 rounded-xl border-l-4 border-secondary">
-              <div class="flex items-start gap-4">
-                <span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1">texture</span>
-                <div class="space-y-1">
-                  <p class="text-sm font-bold text-on-secondary-container">Surface Warning</p>
-                  <p class="text-sm text-on-surface-variant leading-relaxed">
-                    Recent grading near Deans Marsh. Expect loose gravel for approximately 4km.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Suggested Prep -->
-        <div class="space-y-4">
-          <h3 class="font-headline text-lg font-bold text-on-surface">Suggested Prep</h3>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="bg-surface-container p-4 rounded-xl flex flex-col items-center text-center space-y-2">
-              <span class="material-symbols-outlined text-primary">wb_sunny</span>
-              <p class="text-[0.65rem] font-bold uppercase tracking-wider text-on-surface-variant">Protection</p>
-              <p class="text-xs font-semibold text-on-surface">Sunscreen 50+</p>
-            </div>
-            <div class="bg-surface-container p-4 rounded-xl flex flex-col items-center text-center space-y-2">
-              <span class="material-symbols-outlined text-primary">water_drop</span>
-              <p class="text-[0.65rem] font-bold uppercase tracking-wider text-on-surface-variant">Hydration</p>
-              <p class="text-xs font-semibold text-on-surface">3L per person</p>
-            </div>
-            <div class="bg-surface-container p-4 rounded-xl flex flex-col items-center text-center space-y-2 col-span-2">
-              <span class="material-symbols-outlined text-primary">notification_important</span>
-              <p class="text-[0.65rem] font-bold uppercase tracking-wider text-on-surface-variant">Monitoring</p>
-              <p class="text-xs font-semibold text-on-surface">Check for alerts again in 2 hours</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="space-y-4 pb-12">
-          <button class="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold py-4 rounded-lg shadow-xl hover:shadow-2xl transition-all active:scale-95 duration-200 flex justify-center items-center gap-2">
-            <span class="material-symbols-outlined">navigation</span>
-            START ROUTE NOW
-          </button>
-          <button class="w-full bg-surface-container-high text-primary font-headline font-bold py-4 rounded-lg hover:bg-surface-container-highest transition-all duration-300">
-            SAVE TO OFFLINE MAPS
-          </button>
-        </div>
-      </div>
+  <main class="detail-layout">
+    <section class="detail-map-wrap">
+      <div ref="mapElement" class="detail-map"></div>
     </section>
 
-    <div class="flex-grow hidden lg:block"></div>
+    <aside class="detail-panel">
+      <template v-if="recommended">
+        <p class="detail-kicker">Route Safety Detail</p>
+        <h1>Recommended Route</h1>
+
+        <div class="metric-grid">
+          <article><span>Distance</span><strong>{{ recommended.distanceKm.toFixed(1) }} km</strong></article>
+          <article><span>Duration</span><strong>{{ Math.round(recommended.durationMin) }} min</strong></article>
+          <article><span>Difficulty</span><strong>{{ recommended.difficulty }}</strong></article>
+          <article><span>Risk</span><strong>{{ recommended.riskLevel }} ({{ recommended.riskScore.toFixed(1) }})</strong></article>
+        </div>
+
+        <div class="status-tag" :class="{ 'status-tag--danger': recommended.goNoGo === 'No-Go' }">
+          {{ recommended.goNoGo }}
+        </div>
+        <p class="detail-explain">{{ recommended.explanation }}</p>
+
+        <section class="risk-block">
+          <h2>Key Risk Sections</h2>
+          <article v-for="risk in recommended.keyRisks" :key="risk.id" class="risk-item">
+            <strong>{{ risk.title }}</strong>
+            <p>{{ risk.type }} · {{ risk.severity }} · {{ risk.distanceKm }} km away</p>
+            <small>Source: {{ risk.source }}</small>
+          </article>
+        </section>
+
+        <section class="risk-block">
+          <h2>Suggested Prep</h2>
+          <article v-for="tip in prepTips" :key="tip" class="tip-item">{{ tip }}</article>
+        </section>
+      </template>
+
+      <template v-else>
+        <h1>No planned route yet</h1>
+        <p class="detail-explain">Go to Plan Route and generate a safer route first.</p>
+      </template>
+
+      <button class="back-btn" @click="router.push('/route-planner')">Back to Planner</button>
+    </aside>
   </main>
 </template>
+
+<style scoped>
+.detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  height: calc(100vh - 72px);
+  background: #f0f6f3;
+}
+
+.detail-map-wrap {
+  position: relative;
+}
+
+.detail-map {
+  width: 100%;
+  height: 100%;
+}
+
+.detail-panel {
+  border-left: 1px solid #d5e1d8;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(7px);
+  padding: 1rem;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.detail-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  color: #3f6558;
+  font-weight: 700;
+}
+
+h1 {
+  font-size: 1.5rem;
+  color: #1f3b33;
+  font-weight: 800;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.metric-grid article {
+  border: 1px solid #dbe6df;
+  border-radius: 0.65rem;
+  background: #fbfefc;
+  padding: 0.55rem;
+}
+
+.metric-grid span {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4f6a63;
+  font-weight: 700;
+}
+
+.metric-grid strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: #23433b;
+}
+
+.status-tag {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  background: #def6ea;
+  color: #136844;
+  font-weight: 800;
+}
+
+.status-tag--danger {
+  background: #ffe5e0;
+  color: #8a2b20;
+}
+
+.detail-explain {
+  color: #43605a;
+  line-height: 1.45;
+  font-size: 0.9rem;
+}
+
+.risk-block h2 {
+  font-size: 0.92rem;
+  color: #28473f;
+  font-weight: 800;
+  margin-bottom: 0.45rem;
+}
+
+.risk-item,
+.tip-item {
+  border: 1px solid #dce6df;
+  border-radius: 0.65rem;
+  padding: 0.56rem;
+  background: #fff;
+  margin-bottom: 0.45rem;
+}
+
+.risk-item strong {
+  color: #203d35;
+}
+
+.risk-item p,
+.risk-item small,
+.tip-item {
+  color: #48635c;
+  font-size: 0.84rem;
+}
+
+.back-btn {
+  margin-top: auto;
+  border: 1px solid #bcd0c5;
+  border-radius: 0.65rem;
+  background: #fff;
+  padding: 0.66rem;
+  font-weight: 700;
+  color: #285046;
+}
+
+@media (max-width: 980px) {
+  .detail-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 48vh 1fr;
+  }
+
+  .detail-panel {
+    border-left: 0;
+    border-top: 1px solid #d5e1d8;
+  }
+}
+</style>

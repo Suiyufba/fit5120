@@ -25,6 +25,7 @@ export const config = {
   bomFeedUrl: process.env.BOM_FEED_URL || '',
   openWeatherApiKey: process.env.OPENWEATHER_API_KEY || '',
   openWeatherApiUrl: process.env.OPENWEATHER_API_URL || 'https://api.openweathermap.org/data/2.5/weather',
+  osrmApiBaseUrl: process.env.OSRM_API_BASE_URL || 'https://router.project-osrm.org',
   vicEmergencyFeedUrl: process.env.VIC_EMERGENCY_FEED_URL || '',
   vicEmergencyApiKey: process.env.VIC_EMERGENCY_API_KEY || ''
 };

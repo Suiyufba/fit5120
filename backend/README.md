@@ -8,6 +8,7 @@
 - `POST /api/auth/login`
 - `POST /api/auth/password-reset/security`
 - `GET /api/auth/me`
+- `POST /api/routes/plan`（JWT required）
 
 ## 项目分层（按功能）
 
@@ -110,6 +111,7 @@ npm run dev
 - `VICROADS_API_KEY=...`（Transport Victoria Open Data Portal 账号生成）
 - `OPENWEATHER_API_KEY=...`（OpenWeather API Key）
 - `OPENWEATHER_API_URL=https://api.openweathermap.org/data/2.5/weather`
+- `OSRM_API_BASE_URL=https://router.project-osrm.org`
 - `VIC_EMERGENCY_FEED_URL=...`（你申请/确认可用的 VicEmergency feed）
 - `VIC_EMERGENCY_API_KEY=...`（如果源要求鉴权）
 - `REDIS_URL=...`（若绑定 Railway Redis 插件）
@@ -192,3 +194,21 @@ Header: `Authorization: Bearer <token>`
   "newPassword": "newPassword123"
 }
 ```
+
+## 9) 路线规划接口（按用户等级风控）
+
+`POST /api/routes/plan`
+
+Header: `Authorization: Bearer <token>`
+
+```json
+{
+  "start": { "lat": -37.8136, "lng": 144.9631 },
+  "end": { "lat": -38.687, "lng": 143.391 }
+}
+```
+
+返回：
+- `recommendedRoute`：包含 `geometry / distanceKm / durationMin / difficulty / riskScore / riskLevel / goNoGo / explanation / keyRisks`
+- `alternatives`：备选路线摘要
+- `scoringBreakdown`：`hazardScore / weatherScore / difficultyScore / weightedTotal`
