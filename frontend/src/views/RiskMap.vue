@@ -235,8 +235,9 @@ watch(filteredHazards, () => {
 .risk-map-page {
   display: grid;
   grid-template-columns: 360px 1fr;
-  min-height: calc(100vh - 72px);
+  height: calc(100vh - 72px);
   background: linear-gradient(140deg, #f5fbf5 0%, #e7f2fb 46%, #f6f3ef 100%);
+  overflow: hidden;
 }
 
 .risk-map-sidebar {
@@ -247,6 +248,8 @@ watch(filteredHazards, () => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .risk-map-kicker {
@@ -368,10 +371,12 @@ watch(filteredHazards, () => {
 .risk-map-canvas-wrap {
   position: relative;
   overflow: hidden;
+  height: 100%;
+  min-height: 0;
 }
 
 .risk-map-canvas {
-  height: calc(100vh - 72px);
+  height: 100%;
   width: 100%;
 }
 
@@ -399,15 +404,24 @@ watch(filteredHazards, () => {
 @media (max-width: 1024px) {
   .risk-map-page {
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: calc(100vh - 72px);
+    overflow: visible;
   }
 
   .risk-map-sidebar {
     border-right: none;
     border-bottom: 1px solid #d7e2d9;
+    max-height: none;
   }
 
   .risk-map-feed-list {
     max-height: 24vh;
+  }
+
+  .risk-map-canvas-wrap {
+    height: 58vh;
+    min-height: 420px;
   }
 }
 </style>
