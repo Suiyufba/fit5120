@@ -82,7 +82,7 @@ router.beforeEach(async (to) => {
   const { isAuthenticated } = useAuthState()
 
   if (to.meta.requiresAuth && !isAuthenticated.value) {
-    return { name: 'login', query: { redirect: to.fullPath } }
+    return { name: 'login', query: { redirect: encodeURIComponent(to.fullPath) } }
   }
 
   if (to.meta.guestOnly && isAuthenticated.value) {

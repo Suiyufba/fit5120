@@ -19,7 +19,9 @@ async function handleSubmit() {
       password: password.value,
     })
 
-    const redirectPath = route.query.redirect ? String(route.query.redirect) : '/profile'
+    const redirectPath = route.query.redirect
+      ? decodeURIComponent(String(route.query.redirect))
+      : '/profile'
     router.push(redirectPath)
   } catch (error) {
     errorMessage.value = error?.message || 'Login failed'

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -138,10 +138,11 @@ function drawRecommendedRoute() {
 }
 
 function parseSharedPoint() {
-  const slat = Number(route.query.slat)
-  const slng = Number(route.query.slng)
-  const elat = Number(route.query.elat)
-  const elng = Number(route.query.elng)
+  const asValue = (value) => Array.isArray(value) ? value[0] : value
+  const slat = Number(asValue(route.query.slat))
+  const slng = Number(asValue(route.query.slng))
+  const elat = Number(asValue(route.query.elat))
+  const elng = Number(asValue(route.query.elng))
 
   const allValid = [slat, slng, elat, elng].every((v) => Number.isFinite(v))
   if (!allValid) return null
@@ -206,7 +207,11 @@ async function shareRoute() {
 
 async function hydrateFromSharedLink() {
   const shared = parseSharedPoint()
-  if (!shared || !authState.token) return
+  if (!shared) return
+  if (!authState.token) {
+    shareError.value = 'Sign in to open shared route details.'
+    return
+  }
 
   planningFromShare.value = true
   shareError.value = ''
@@ -253,6 +258,14 @@ onMounted(() => {
   mapInstance.on('moveend', loadHazards)
   hydrateFromSharedLink()
 })
+
+watch(
+  () => [authState.token, route.fullPath],
+  () => {
+    if (plan.value?.recommendedRoute) return
+    hydrateFromSharedLink()
+  }
+)
 
 onUnmounted(() => {
   if (hazardInflightController) hazardInflightController.abort()
