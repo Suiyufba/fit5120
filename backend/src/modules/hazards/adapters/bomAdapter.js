@@ -1,33 +1,117 @@
 import { config } from '../../../config/index.js';
 import { fetchJson } from '../../../shared/http/fetchJson.js';
-import { inferType, sanitizeHazard, toSeverity } from '../domain/hazardUtils.js';
+import { sanitizeHazard } from '../domain/hazardUtils.js';
 
 export async function fetchBomHazards() {
-  if (!config.bomFeedUrl) return [];
+  if (!config.openWeatherApiKey) return [];
 
-  const payload = await fetchJson(config.bomFeedUrl);
-  const items = payload?.hazards || payload?.features || payload?.items || [];
+  // Major Victoria population centers for point-based weather risk sampling.
+  const checkpoints = [
+    { id: 'melbourne', name: 'Melbourne CBD', lat: -37.8136, lon: 144.9631 },
+    { id: 'geelong', name: 'Geelong', lat: -38.1499, lon: 144.3617 },
+    { id: 'ballarat', name: 'Ballarat', lat: -37.5622, lon: 143.8503 },
+    { id: 'bendigo', name: 'Bendigo', lat: -36.757, lon: 144.2794 },
+    { id: 'warrnambool', name: 'Warrnambool', lat: -38.3833, lon: 142.4833 },
+    { id: 'sale', name: 'Sale', lat: -38.1092, lon: 147.0684 },
+    { id: 'mildura', name: 'Mildura', lat: -34.208, lon: 142.1245 },
+    { id: 'mount_hotham', name: 'Mount Hotham', lat: -37.0483, lon: 147.3347 }
+  ];
 
-  return items
-    .map((item, index) => {
-      const coords = item.coordinates || item?.geometry?.coordinates;
-      if (!Array.isArray(coords) || coords.length < 2) return null;
-
-      const maybeLngLat = Math.abs(coords[0]) <= 90 && Math.abs(coords[1]) > 90 ? [coords[1], coords[0]] : coords;
-      const normalized = [maybeLngLat[1], maybeLngLat[0]];
-
-      const title = item.title || item.name || 'BoM warning';
-      return sanitizeHazard({
-        id: `bom-${item.id || index}`,
-        type: item.type || inferType(title),
-        severity: toSeverity(item.severity || item.level),
-        title,
-        description: item.description || item.summary || '',
-        source: 'BoM',
-        sourceUrl: item.sourceUrl || 'https://www.bom.gov.au/',
-        updatedAt: item.updatedAt || item.updated || new Date().toISOString(),
-        coordinates: normalized
-      });
+  const payloads = await Promise.allSettled(
+    checkpoints.map((point) => {
+      const url = new URL(config.openWeatherApiUrl);
+      url.searchParams.set('lat', String(point.lat));
+      url.searchParams.set('lon', String(point.lon));
+      url.searchParams.set('appid', config.openWeatherApiKey);
+      url.searchParams.set('units', 'metric');
+      return fetchJson(url.toString());
     })
-    .filter(Boolean);
+  );
+
+  const hazards = [];
+  for (let index = 0; index < payloads.length; index += 1) {
+    const result = payloads[index];
+    const point = checkpoints[index];
+
+    if (result.status !== 'fulfilled') continue;
+
+    const weather = result.value;
+    const main = weather?.main || {};
+    const wind = weather?.wind || {};
+    const rain = weather?.rain || {};
+    const snow = weather?.snow || {};
+    const condition = (weather?.weather?.[0]?.main || '').toLowerCase();
+    const description = weather?.weather?.[0]?.description || '';
+    const updatedAt = weather?.dt ? new Date(weather.dt * 1000).toISOString() : new Date().toISOString();
+    const windKmh = Number(wind.speed || 0) * 3.6;
+    const rainMm = Number(rain['1h'] || rain['3h'] || snow['1h'] || snow['3h'] || 0);
+    const feelsLike = Number(main.feels_like);
+    const temp = Number(main.temp);
+
+    if (Number.isFinite(feelsLike) && feelsLike >= 38) {
+      hazards.push(
+        sanitizeHazard({
+          id: `ow-heat-${point.id}-${weather.dt || index}`,
+          type: 'heat',
+          severity: feelsLike >= 42 ? 'extreme' : 'high',
+          title: `Extreme heat near ${point.name}`,
+          description: `Feels like ${Math.round(feelsLike)}°C. ${description}`,
+          source: 'OpenWeather',
+          sourceUrl: `https://openweathermap.org/city/${weather?.id || ''}`,
+          updatedAt,
+          coordinates: [point.lat, point.lon]
+        })
+      );
+    }
+
+    if (windKmh >= 45 || condition.includes('storm') || condition.includes('thunder')) {
+      hazards.push(
+        sanitizeHazard({
+          id: `ow-wind-${point.id}-${weather.dt || index}`,
+          type: 'storm',
+          severity: windKmh >= 70 ? 'extreme' : windKmh >= 55 ? 'high' : 'moderate',
+          title: `Strong wind warning near ${point.name}`,
+          description: `Wind ${Math.round(windKmh)} km/h. ${description}`,
+          source: 'OpenWeather',
+          sourceUrl: `https://openweathermap.org/city/${weather?.id || ''}`,
+          updatedAt,
+          coordinates: [point.lat, point.lon]
+        })
+      );
+    }
+
+    if (rainMm >= 8 || condition.includes('rain') || condition.includes('drizzle')) {
+      hazards.push(
+        sanitizeHazard({
+          id: `ow-rain-${point.id}-${weather.dt || index}`,
+          type: 'flood',
+          severity: rainMm >= 20 ? 'high' : 'moderate',
+          title: `Heavy rain watch near ${point.name}`,
+          description: `Estimated precipitation ${rainMm.toFixed(1)} mm. ${description}`,
+          source: 'OpenWeather',
+          sourceUrl: `https://openweathermap.org/city/${weather?.id || ''}`,
+          updatedAt,
+          coordinates: [point.lat, point.lon]
+        })
+      );
+    }
+
+    if (Number.isFinite(temp) && temp <= 0) {
+      hazards.push(
+        sanitizeHazard({
+          id: `ow-freeze-${point.id}-${weather.dt || index}`,
+          type: 'other',
+          severity: 'moderate',
+          title: `Freezing conditions near ${point.name}`,
+          description: `Temperature ${Math.round(temp)}°C. ${description}`,
+          source: 'OpenWeather',
+          sourceUrl: `https://openweathermap.org/city/${weather?.id || ''}`,
+          updatedAt,
+          coordinates: [point.lat, point.lon]
+        })
+      );
+    }
+  }
+
+  return hazards;
 }

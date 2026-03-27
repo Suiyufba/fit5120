@@ -73,11 +73,11 @@ npm run dev
 
 ## 3) 缓存和轮询策略
 
-- 定时抓取上游：`FETCH_INTERVAL_MS`（默认 45 秒）
+- 定时抓取上游：`FETCH_INTERVAL_MS`（默认 2 小时）
 - API 返回快照，不会每次请求都直连上游
 - 若配置 `DATABASE_URL`，快照会持久化到 Postgres，仅存一条最新数据（无历史）
 - 默认内存缓存；配置 `REDIS_URL` 后自动切 Redis（适合 Railway 多实例）
-- 上游异常时自动回退到 `fallback` 数据，前端仍可渲染
+- 上游异常时不会回退示例数据，直接返回空列表并标记 `lastError`
 
 ## 4) Railway 部署
 
@@ -95,7 +95,7 @@ npm run dev
 
 - `PORT=8080`（Railway 也会自动注入，保留即可）
 - `CORS_ORIGIN=https://你的前端域名`
-- `FETCH_INTERVAL_MS=45000`
+- `FETCH_INTERVAL_MS=7200000`
 - `REQUEST_TIMEOUT_MS=10000`
 - `STALE_THRESHOLD_MS=600000`
 - `DEFAULT_LAYERS=fire,flood,storm,heat`
@@ -108,7 +108,8 @@ npm run dev
 
 - `VICROADS_API_URL=...`（DataVic Unplanned Disruption API）
 - `VICROADS_API_KEY=...`（Transport Victoria Open Data Portal 账号生成）
-- `BOM_FEED_URL=...`（你申请/确认可用的 BoM 警报 feed）
+- `OPENWEATHER_API_KEY=...`（OpenWeather API Key）
+- `OPENWEATHER_API_URL=https://api.openweathermap.org/data/2.5/weather`
 - `VIC_EMERGENCY_FEED_URL=...`（你申请/确认可用的 VicEmergency feed）
 - `VIC_EMERGENCY_API_KEY=...`（如果源要求鉴权）
 - `REDIS_URL=...`（若绑定 Railway Redis 插件）

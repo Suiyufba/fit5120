@@ -16,7 +16,7 @@ let latestSnapshot = {
 async function pullProviders() {
   const providers = [
     { name: 'DataVic Road Disruptions', run: fetchVicRoadsHazards },
-    { name: 'BoM Warnings', run: fetchBomHazards },
+    { name: 'OpenWeather Conditions', run: fetchBomHazards },
     { name: 'VicEmergency', run: fetchVicEmergencyHazards }
   ];
   const providerResults = await Promise.allSettled(providers.map((provider) => provider.run()));

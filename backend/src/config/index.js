@@ -9,7 +9,7 @@ const toInt = (value, fallback) => {
 
 export const config = {
   port: toInt(process.env.PORT, 8080),
-  fetchIntervalMs: toInt(process.env.FETCH_INTERVAL_MS, 60000),
+  fetchIntervalMs: toInt(process.env.FETCH_INTERVAL_MS, 7200000),
   requestTimeoutMs: toInt(process.env.REQUEST_TIMEOUT_MS, 10000),
   staleThresholdMs: toInt(process.env.STALE_THRESHOLD_MS, 600000),
   defaultLayers: (process.env.DEFAULT_LAYERS || 'fire,flood,storm,heat').split(',').map((s) => s.trim()).filter(Boolean),
@@ -23,6 +23,8 @@ export const config = {
   vicroadsApiUrl: process.env.VICROADS_API_URL || '',
   vicroadsApiKey: process.env.VICROADS_API_KEY || '',
   bomFeedUrl: process.env.BOM_FEED_URL || '',
+  openWeatherApiKey: process.env.OPENWEATHER_API_KEY || '',
+  openWeatherApiUrl: process.env.OPENWEATHER_API_URL || 'https://api.openweathermap.org/data/2.5/weather',
   vicEmergencyFeedUrl: process.env.VIC_EMERGENCY_FEED_URL || '',
   vicEmergencyApiKey: process.env.VIC_EMERGENCY_API_KEY || ''
 };
