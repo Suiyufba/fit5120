@@ -10,7 +10,7 @@
     "shared"
   ],
   "scripts": {
-    "build": "npm --workspace frontend run build && rm -rf dist && cp -R frontend/dist dist",
+    "build": "npm --prefix frontend install --include=dev && npm --prefix frontend run build && rm -rf dist && cp -R frontend/dist dist",
     "dev:frontend": "npm --workspace frontend run dev",
     "build:frontend": "npm --workspace frontend run build",
     "preview:frontend": "npm --workspace frontend run preview"
