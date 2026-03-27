@@ -71,6 +71,8 @@ onMounted(() => {
     attributionControl: true,
   }).setView([-37.8136, 144.9631], 6)
 
+  mapInstance.attributionControl.setPrefix(false)
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: '&copy; OpenStreetMap contributors',

@@ -142,6 +142,8 @@ onMounted(async () => {
     attributionControl: true,
   }).setView(VICTORIA_VIEW.center, VICTORIA_VIEW.zoom)
 
+  mapInstance.attributionControl.setPrefix(false)
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: '&copy; OpenStreetMap contributors',
