@@ -45,6 +45,7 @@ const mapStats = computed(() => {
 
 let mapInstance
 let markersLayer
+let userLocationLayer
 let refreshTimer
 let inflightController
 
@@ -153,6 +154,61 @@ function selectHazard(hazard) {
   mapInstance?.setView(hazard.coordinates, Math.max(mapInstance.getZoom(), 9), { animate: true })
 }
 
+function getCurrentPosition() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation not supported'))
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 10_000,
+      maximumAge: 300_000,
+    })
+  })
+}
+
+function renderUserLocation(lat, lng, accuracy) {
+  if (!mapInstance || !userLocationLayer) return
+  userLocationLayer.clearLayers()
+
+  const marker = L.circleMarker([lat, lng], {
+    radius: 7,
+    color: '#134E4A',
+    fillColor: '#14B8A6',
+    fillOpacity: 0.95,
+    weight: 2,
+  })
+
+  marker.bindPopup('Your current location')
+  marker.addTo(userLocationLayer)
+
+  if (Number.isFinite(accuracy) && accuracy > 0) {
+    L.circle([lat, lng], {
+      radius: Math.min(accuracy, 1500),
+      color: '#0F766E',
+      fillColor: '#5EEAD4',
+      fillOpacity: 0.14,
+      weight: 1,
+    }).addTo(userLocationLayer)
+  }
+}
+
+async function centerOnUserLocation() {
+  try {
+    const position = await getCurrentPosition()
+    const lat = position.coords.latitude
+    const lng = position.coords.longitude
+    const accuracy = position.coords.accuracy
+
+    mapInstance?.setView([lat, lng], 11, { animate: true })
+    renderUserLocation(lat, lng, accuracy)
+  } catch (error) {
+    console.info('User location unavailable, fallback to default view:', error?.message || error)
+  }
+}
+
 onMounted(async () => {
   mapInstance = L.map(mapElement.value, {
     zoomControl: false,
@@ -167,6 +223,9 @@ onMounted(async () => {
   }).addTo(mapInstance)
 
   markersLayer = L.layerGroup().addTo(mapInstance)
+  userLocationLayer = L.layerGroup().addTo(mapInstance)
+
+  await centerOnUserLocation()
 
   await loadHazards()
   refreshTimer = window.setInterval(loadHazards, REFRESH_EVERY_MS)
@@ -179,6 +238,7 @@ onUnmounted(() => {
     mapInstance.remove()
     mapInstance = null
   }
+  userLocationLayer = null
 })
 
 watch(filteredHazards, () => {
