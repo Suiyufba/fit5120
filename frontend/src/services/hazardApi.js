@@ -1,0 +1,99 @@
+const DEFAULT_BASE_URL = import.meta.env.VITE_HAZARD_API_BASE_URL || '/api'
+const REALTIME_HAZARD_PATH = '/hazards/realtime'
+
+function normalizeType(rawType) {
+  const value = (rawType || '').toString().toLowerCase()
+  if (value.includes('fire')) return 'fire'
+  if (value.includes('flood')) return 'flood'
+  if (value.includes('storm') || value.includes('rain') || value.includes('wind')) return 'storm'
+  if (value.includes('heat') || value.includes('temperature')) return 'heat'
+  return 'other'
+}
+
+function normalizeSeverity(rawSeverity) {
+  const value = (rawSeverity || '').toString().toLowerCase()
+  if (['extreme', 'severe', 'emergency'].includes(value)) return 'extreme'
+  if (['high', 'watch-and-act', 'warning'].includes(value)) return 'high'
+  if (['moderate', 'advice'].includes(value)) return 'moderate'
+  return 'low'
+}
+
+function normalizeFeature(feature) {
+  if (!feature || feature.type !== 'Feature') return null
+
+  const [lng, lat] = feature.geometry?.coordinates || []
+  if (typeof lat !== 'number' || typeof lng !== 'number') return null
+
+  const props = feature.properties || {}
+  return {
+    id: props.id || feature.id || `${lat}-${lng}-${Date.now()}`,
+    title: props.title || props.event || 'Unnamed hazard',
+    description: props.description || props.headline || 'No detail provided',
+    source: props.source || props.provider || 'Official open data',
+    sourceUrl: props.sourceUrl || props.link || '',
+    updatedAt: props.updatedAt || props.updated || props.published || null,
+    type: normalizeType(props.type || props.category || props.hazardType),
+    severity: normalizeSeverity(props.severity || props.level || props.warningLevel),
+    coordinates: [lat, lng],
+  }
+}
+
+function normalizeRecord(record) {
+  if (!record || !Array.isArray(record.coordinates) || record.coordinates.length !== 2) return null
+
+  const [lat, lng] = record.coordinates
+  if (typeof lat !== 'number' || typeof lng !== 'number') return null
+
+  return {
+    id: record.id || `${lat}-${lng}-${Date.now()}`,
+    title: record.title || 'Unnamed hazard',
+    description: record.description || 'No detail provided',
+    source: record.source || 'Official open data',
+    sourceUrl: record.sourceUrl || '',
+    updatedAt: record.updatedAt || null,
+    type: normalizeType(record.type),
+    severity: normalizeSeverity(record.severity),
+    coordinates: [lat, lng],
+  }
+}
+
+function normalizePayload(payload) {
+  if (payload?.type === 'FeatureCollection' && Array.isArray(payload.features)) {
+    return payload.features.map(normalizeFeature).filter(Boolean)
+  }
+
+  if (Array.isArray(payload?.hazards)) {
+    return payload.hazards.map(normalizeRecord).filter(Boolean)
+  }
+
+  return []
+}
+
+export function getHazardApiConfig() {
+  return {
+    baseUrl: DEFAULT_BASE_URL,
+    realtimeEndpoint: `${DEFAULT_BASE_URL}${REALTIME_HAZARD_PATH}`,
+  }
+}
+
+export async function fetchRealtimeHazards({ bbox, layers, signal } = {}) {
+  const params = new URLSearchParams()
+  if (bbox?.length === 4) params.set('bbox', bbox.join(','))
+  if (layers?.length) params.set('layers', layers.join(','))
+
+  const { realtimeEndpoint } = getHazardApiConfig()
+  const url = params.size ? `${realtimeEndpoint}?${params.toString()}` : realtimeEndpoint
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`Realtime hazard API failed with status ${response.status}`)
+  }
+
+  const payload = await response.json()
+  return normalizePayload(payload)
+}
