@@ -24,9 +24,9 @@ const isActive = (path) => {
 const accountLabel = computed(() => {
   if (!isAuthenticated.value) return 'Sign In'
   const level = state.user?.experienceLevel || 'newcomer'
-  if (level === 'advanced') return 'Profile · 老手'
-  if (level === 'intermediate') return 'Profile · 中等'
-  return 'Profile · 新人'
+  if (level === 'advanced') return 'Profile · Advanced'
+  if (level === 'intermediate') return 'Profile · Intermediate'
+  return 'Profile · Newcomer'
 })
 
 function goAccount() {

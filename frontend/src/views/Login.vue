@@ -34,7 +34,7 @@ async function handleSubmit() {
     <section class="auth-card">
       <p class="auth-kicker">goHiking Account</p>
       <h1>Welcome Back</h1>
-      <p class="auth-subtitle">登录后即可查看个人等级、风险偏好与线路建议。</p>
+      <p class="auth-subtitle">Sign in to view your level, risk profile, and route recommendations.</p>
 
       <form class="auth-form" @submit.prevent="handleSubmit">
         <label>
@@ -59,8 +59,8 @@ async function handleSubmit() {
       </form>
 
       <p class="auth-footer">
-        还没有账号？
-        <router-link to="/register">立即注册</router-link>
+        Don't have an account yet?
+        <router-link to="/register">Create one</router-link>
       </p>
     </section>
   </main>

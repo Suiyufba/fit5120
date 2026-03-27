@@ -9,12 +9,12 @@ const { state } = useAuthState()
 const levelMeta = computed(() => {
   const level = state.user?.experienceLevel || 'newcomer'
   if (level === 'advanced') {
-    return { label: '老手', desc: '可以承担复杂线路，建议开启高阶路线规划。', badge: '#1f6e57' }
+    return { label: 'Advanced', desc: 'You can handle complex trails. Advanced planning is recommended.', badge: '#1f6e57' }
   }
   if (level === 'intermediate') {
-    return { label: '中等', desc: '具备基本风控能力，建议挑战中级路线。', badge: '#8c6b23' }
+    return { label: 'Intermediate', desc: 'You have solid risk awareness. Intermediate routes are a good fit.', badge: '#8c6b23' }
   }
-  return { label: '新人', desc: '建议先走基础路线，优先学习风险识别。', badge: '#3d5b7d' }
+  return { label: 'Newcomer', desc: 'Start with basic routes and focus on hazard awareness first.', badge: '#3d5b7d' }
 })
 
 function handleLogout() {

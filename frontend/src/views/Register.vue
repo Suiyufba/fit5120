@@ -27,38 +27,38 @@ const form = reactive({
 const assessmentQuestions = [
   {
     id: 'q_weather',
-    title: '出发前看到天气预警，你会怎么做？',
+    title: 'You see a weather warning before departure. What do you do?',
     options: [
-      { value: 'a', label: '照常出发，路上再说' },
-      { value: 'b', label: '推迟行程并检查官方预警' },
-      { value: 'c', label: '问朋友看法再决定' },
+      { value: 'a', label: 'Go as planned and decide on the trail.' },
+      { value: 'b', label: 'Delay the trip and review official alerts.' },
+      { value: 'c', label: 'Ask friends first, then decide.' },
     ],
   },
   {
     id: 'q_injury',
-    title: '队友脚踝扭伤，附近无信号时你会？',
+    title: 'A teammate sprains an ankle and there is no signal nearby. What do you do?',
     options: [
-      { value: 'a', label: '原地处理、保暖并安排两人找信号求援' },
-      { value: 'b', label: '继续前进到目的地再处理' },
-      { value: 'c', label: '让队友自己慢慢走' },
+      { value: 'a', label: 'Stabilize, keep warm, and send two people to find signal for help.' },
+      { value: 'b', label: 'Keep moving and deal with it later at destination.' },
+      { value: 'c', label: 'Let the injured teammate walk alone slowly.' },
     ],
   },
   {
     id: 'q_lost',
-    title: '偏离轨迹后，你的优先动作是？',
+    title: 'You realize your group is off-route. What is your first action?',
     options: [
-      { value: 'a', label: '停下定位、回到已知路点并记录轨迹' },
-      { value: 'b', label: '继续往高处走看能不能找到路' },
-      { value: 'c', label: '随机选一个方向尝试' },
+      { value: 'a', label: 'Stop, re-check position, and return to a known waypoint.' },
+      { value: 'b', label: 'Keep climbing and hope to spot the route.' },
+      { value: 'c', label: 'Pick a random direction and continue.' },
     ],
   },
   {
     id: 'q_fire',
-    title: '徒步途中发现远处山火烟柱，你会？',
+    title: 'You spot a distant bushfire smoke column while hiking. What do you do?',
     options: [
-      { value: 'a', label: '靠近观察，确定火势后再决定' },
-      { value: 'b', label: '立即远离并通知相关部门' },
-      { value: 'c', label: '先拍照发社交媒体' },
+      { value: 'a', label: 'Move closer to assess the fire before deciding.' },
+      { value: 'b', label: 'Move away immediately and notify authorities.' },
+      { value: 'c', label: 'Take photos and post on social media first.' },
     ],
   },
 ]
@@ -76,7 +76,7 @@ async function handleSubmit() {
       assessmentAnswers: form.assessmentAnswers,
     })
     step.value = 'verify'
-    successMessage.value = `验证码已发送到 ${result.email}`
+    successMessage.value = `Verification code sent to ${result.email}`
     debugCode.value = result.debugCode || ''
   } catch (error) {
     errorMessage.value = error?.message || 'Registration failed'
@@ -109,7 +109,7 @@ async function handleVerify() {
     <section class="register-card">
       <p class="register-kicker">goHiking Membership</p>
       <h1>Create Your Hiking Profile</h1>
-      <p class="register-subtitle">填写基础信息与安全情景题，系统会给你分配徒步等级。</p>
+      <p class="register-subtitle">Complete your profile and safety scenario quiz to get your hiking level.</p>
 
       <form v-if="step === 'form'" class="register-form" @submit.prevent="handleSubmit">
         <div class="register-grid">
@@ -160,10 +160,10 @@ async function handleVerify() {
         <section class="quiz-panel">
           <h2>Email Verification</h2>
           <p class="verify-tip">
-            {{ successMessage || '请输入你邮箱收到的 6 位验证码。' }}
+            {{ successMessage || 'Enter the 6-digit verification code sent to your email.' }}
           </p>
           <p v-if="debugCode" class="verify-tip verify-tip--debug">
-            当前未配置 SMTP，调试验证码：<strong>{{ debugCode }}</strong>
+            SMTP is not configured yet. Debug code: <strong>{{ debugCode }}</strong>
           </p>
           <label>
             <span>Verification Code</span>
