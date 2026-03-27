@@ -17,10 +17,10 @@ const form = reactive({
   age: '',
   region: '',
   assessmentAnswers: {
-    q_weather: 'b',
-    q_injury: 'a',
-    q_lost: 'a',
-    q_fire: 'b',
+    q_weather: '',
+    q_injury: '',
+    q_lost: '',
+    q_fire: '',
   },
 })
 
@@ -142,6 +142,7 @@ async function handleVerify() {
                   type="radio"
                   :name="question.id"
                   :value="option.value"
+                  required
                 />
                 <span>{{ option.label }}</span>
               </label>
