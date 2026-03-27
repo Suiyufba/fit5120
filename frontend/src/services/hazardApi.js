@@ -78,6 +78,12 @@ function normalizePayload(payload) {
   return []
 }
 
+function normalizeFetchedAt(rawFetchedAt) {
+  const timestamp = Date.parse(rawFetchedAt || '')
+  if (Number.isNaN(timestamp)) return null
+  return new Date(timestamp)
+}
+
 export function getHazardApiConfig() {
   return {
     baseUrl: DEFAULT_BASE_URL,
@@ -104,5 +110,9 @@ export async function fetchRealtimeHazards({ bbox, layers, signal } = {}) {
   }
 
   const payload = await response.json()
-  return normalizePayload(payload)
+  return {
+    hazards: normalizePayload(payload),
+    fetchedAt: normalizeFetchedAt(payload?.fetchedAt),
+    isStale: Boolean(payload?.isStale),
+  }
 }

@@ -69,7 +69,8 @@ npm run dev
 ## 3) 缓存和轮询策略
 
 - 定时抓取上游：`FETCH_INTERVAL_MS`（默认 45 秒）
-- API 返回缓存快照，不会每次请求都直连上游
+- API 返回快照，不会每次请求都直连上游
+- 若配置 `DATABASE_URL`，快照会持久化到 Postgres，仅存一条最新数据（无历史）
 - 默认内存缓存；配置 `REDIS_URL` 后自动切 Redis（适合 Railway 多实例）
 - 上游异常时自动回退到 `fallback` 数据，前端仍可渲染
 
@@ -91,7 +92,10 @@ npm run dev
 - `CORS_ORIGIN=https://你的前端域名`
 - `FETCH_INTERVAL_MS=45000`
 - `REQUEST_TIMEOUT_MS=10000`
+- `STALE_THRESHOLD_MS=600000`
 - `DEFAULT_LAYERS=fire,flood,storm,heat`
+- `DATABASE_URL=<Railway Postgres URL>`
+- `DATABASE_SSL=true`
 
 可选（建议逐步接入官方源）：
 

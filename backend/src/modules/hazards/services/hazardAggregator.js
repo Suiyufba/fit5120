@@ -3,10 +3,8 @@ import { fetchBomHazards } from '../adapters/bomAdapter.js';
 import { fetchVicEmergencyHazards } from '../adapters/vicEmergencyAdapter.js';
 import { fetchVicRoadsHazards } from '../adapters/vicRoadsAdapter.js';
 import { fallbackHazards } from '../data/fallbackHazards.js';
-import { getCache } from '../../../infrastructure/cache/index.js';
+import { getLatestHazardSnapshot, saveLatestHazardSnapshot } from '../../../infrastructure/db/hazardSnapshotRepository.js';
 import { inBbox, parseBbox, parseLayers, sanitizeHazard } from '../domain/hazardUtils.js';
-
-const CACHE_KEY = 'hazards:realtime';
 
 let latestSnapshot = {
   hazards: fallbackHazards,
@@ -15,8 +13,6 @@ let latestSnapshot = {
   sourceStatus: [],
   lastError: null
 };
-
-const cache = getCache();
 
 async function pullProviders() {
   const providers = [
@@ -78,7 +74,7 @@ async function pullProviders() {
 export async function refreshHazardSnapshot() {
   try {
     latestSnapshot = await pullProviders();
-    await cache.set(CACHE_KEY, latestSnapshot);
+    await saveLatestHazardSnapshot(latestSnapshot);
   } catch (error) {
     console.error('Failed to refresh hazard snapshot:', error.message);
   }
@@ -89,22 +85,25 @@ export async function refreshHazardSnapshot() {
 export async function getHazardsForRequest({ bboxParam, layersParam }) {
   const bbox = parseBbox(bboxParam);
   const layers = parseLayers(layersParam, config.defaultLayers);
+  const snapshot = (await getLatestHazardSnapshot()) || latestSnapshot;
 
-  const cached = (await cache.get(CACHE_KEY)) || latestSnapshot;
-
-  const hazards = cached.hazards
+  const hazards = snapshot.hazards
     .filter((hazard) => layers.has(hazard.type))
     .filter((hazard) => inBbox(hazard.coordinates, bbox));
+  const fetchedAtTs = Date.parse(snapshot.fetchedAt);
+  const ageMs = Number.isNaN(fetchedAtTs) ? null : Math.max(Date.now() - fetchedAtTs, 0);
 
   return {
     hazards,
-    fetchedAt: cached.fetchedAt,
-    fromFallback: cached.fromFallback,
+    fetchedAt: snapshot.fetchedAt,
+    fromFallback: snapshot.fromFallback,
+    isStale: ageMs !== null ? ageMs > config.staleThresholdMs : true,
     meta: {
       count: hazards.length,
-      totalBeforeFilter: cached.hazards.length,
-      sourceStatus: cached.sourceStatus || [],
-      lastError: cached.lastError || null
+      totalBeforeFilter: snapshot.hazards.length,
+      sourceStatus: snapshot.sourceStatus || [],
+      lastError: snapshot.lastError || null,
+      ageMs
     }
   };
 }

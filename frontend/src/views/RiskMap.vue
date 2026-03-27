@@ -115,19 +115,17 @@ async function loadHazards() {
         ]
       : undefined
 
-    const nextHazards = await fetchRealtimeHazards({
+    const nextPayload = await fetchRealtimeHazards({
       bbox,
       layers: activeLayers.value,
       signal: inflightController.signal,
     })
 
-    hazards.value = nextHazards
-    lastUpdatedAt.value = new Date()
+    hazards.value = nextPayload.hazards
+    lastUpdatedAt.value = nextPayload.fetchedAt || new Date()
   } catch (error) {
     if (error?.name === 'AbortError') return
     console.error('Failed to load realtime hazards:', error)
-    hazards.value = []
-    lastUpdatedAt.value = new Date()
   } finally {
     loading.value = false
   }
