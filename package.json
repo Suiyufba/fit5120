@@ -10,7 +10,7 @@
     "shared"
   ],
   "scripts": {
-    "build": "npm --prefix frontend ci --include=dev --include=optional && npm --prefix frontend run build && rm -rf dist && cp -R frontend/dist dist",
+    "build": "rm -rf frontend/node_modules frontend/package-lock.json && npm --prefix frontend install --include=dev --include=optional && npm --prefix frontend run build && rm -rf dist && cp -R frontend/dist dist",
     "dev:frontend": "npm --workspace frontend run dev",
     "build:frontend": "npm --workspace frontend run build",
     "preview:frontend": "npm --workspace frontend run preview"
