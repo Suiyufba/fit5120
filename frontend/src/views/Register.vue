@@ -86,7 +86,7 @@ async function handleSubmit() {
 <template>
   <main class="register-page">
     <section class="register-card">
-      <p class="register-kicker">goHiking Membership</p>
+      <p class="register-kicker">GoHiking Membership</p>
       <h1>Create Your Hiking Profile</h1>
       <p class="register-subtitle">Complete your profile, safety quiz, and security question to get your hiking level.</p>
 
