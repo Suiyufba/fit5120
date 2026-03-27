@@ -13,6 +13,7 @@ function normalizeRoute(route) {
     goNoGo: route?.goNoGo || 'Go',
     explanation: route?.explanation || '',
     keyRisks: Array.isArray(route?.keyRisks) ? route.keyRisks : [],
+    suggestedPrep: Array.isArray(route?.suggestedPrep) ? route.suggestedPrep : [],
   }
 }
 

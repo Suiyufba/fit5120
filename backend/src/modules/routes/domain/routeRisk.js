@@ -166,6 +166,69 @@ function buildExplanation({ chosenRoute, fastestRoute, topHazards, goNoGo }) {
   return `This route is recommended because ${reason} and overall risk is lower for your profile.`;
 }
 
+function levelNoun(userLevel) {
+  if (userLevel === 'advanced') return 'advanced hiker';
+  if (userLevel === 'intermediate') return 'intermediate hiker';
+  return 'newcomer hiker';
+}
+
+function riskAdviceByType({ type, severity, distanceKm, userLevel }) {
+  const prefix = `${severity} ${type} risk ~${distanceKm.toFixed(1)} km from route`;
+  if (type === 'fire') {
+    return `${prefix}. As a ${levelNoun(userLevel)}, keep a hard turnaround trigger if alert level increases.`;
+  }
+  if (type === 'flood') {
+    return `${prefix}. Avoid creek crossings after rainfall peaks and keep alternate exit points.`;
+  }
+  if (type === 'storm') {
+    return `${prefix}. Delay exposed ridge sections and monitor lightning/wind updates before departure.`;
+  }
+  if (type === 'heat') {
+    return `${prefix}. Shift to earlier start times and increase hydration/rest frequency.`;
+  }
+  return `${prefix}. Keep route flexibility and check nearby official incident updates.`;
+}
+
+function buildSuggestedPrep({ route, userLevel, keyRisks, riskScore, goNoGo }) {
+  const tips = [];
+  const distanceKm = route.distanceKm || 0;
+  const durationMin = route.durationMin || 0;
+
+  if (durationMin >= 180) {
+    tips.push('Long-duration route: carry a headlamp, power bank, and spare warm layer.');
+  }
+  if (distanceKm >= 20) {
+    tips.push('Long-distance route: bring enough food, blister care, and at least 2.5L water per person.');
+  }
+  if (distanceKm >= 30 || durationMin >= 300) {
+    tips.push('Extended outing: pack emergency shelter (tent/bivy), thermal blanket, and offline map.');
+  }
+
+  if (keyRisks.some((risk) => risk.type === 'fire')) {
+    tips.push('Fire-aware prep: verify evacuation roads and set a strict no-go trigger before departure.');
+  }
+  if (keyRisks.some((risk) => risk.type === 'heat')) {
+    tips.push('Heat-aware prep: include electrolytes, sun protection, and reduce midday exposure.');
+  }
+  if (keyRisks.some((risk) => ['flood', 'storm'].includes(risk.type))) {
+    tips.push('Rain/storm prep: waterproof gear, dry bag for phone, and avoid low-lying shortcuts.');
+  }
+
+  if (userLevel === 'newcomer') {
+    tips.push('Newcomer safety: hike with a partner and share ETA/check-in time with a trusted contact.');
+  } else if (userLevel === 'intermediate') {
+    tips.push('Intermediate safety: keep one fallback route and reassess alerts at midpoint.');
+  } else {
+    tips.push('Advanced safety: define objective turnaround thresholds before committing to exposed sections.');
+  }
+
+  if (goNoGo === 'No-Go' || riskScore >= 70) {
+    tips.push('Current risk is elevated: postpone or switch to a shorter low-exposure route today.');
+  }
+
+  return [...new Set(tips)].slice(0, 6);
+}
+
 export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute }) {
   const geometry = route.geometry || [];
   const hazardAgg = topImpactAverage(hazards, geometry, () => true);
@@ -189,7 +252,13 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute })
     type: item.hazard.type,
     severity: item.hazard.severity,
     distanceKm: Number(item.distanceKm.toFixed(2)),
-    source: item.hazard.source
+    source: item.hazard.source,
+    advice: riskAdviceByType({
+      type: item.hazard.type,
+      severity: item.hazard.severity,
+      distanceKm: item.distanceKm,
+      userLevel
+    })
   }));
 
   const explanation = buildExplanation({
@@ -207,6 +276,13 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute })
     goNoGo,
     explanation,
     keyRisks,
+    suggestedPrep: buildSuggestedPrep({
+      route,
+      userLevel,
+      keyRisks,
+      riskScore: weightedTotal,
+      goNoGo
+    }),
     scoringBreakdown: {
       hazardScore: Number(hazardAgg.score.toFixed(1)),
       weatherScore: Number(weatherAgg.score.toFixed(1)),

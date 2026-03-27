@@ -42,6 +42,7 @@ test('scoreRouteCandidate computes weighted scores and risk level', () => {
   assert.equal(typeof scored.riskScore, 'number');
   assert.equal(typeof scored.scoringBreakdown.weightedTotal, 'number');
   assert.ok(['Low', 'Moderate', 'High', 'Extreme'].includes(scored.riskLevel));
+  assert.ok(Array.isArray(scored.suggestedPrep));
 });
 
 test('newcomer becomes No-Go when extreme hazard is close', () => {
@@ -64,6 +65,7 @@ test('newcomer becomes No-Go when extreme hazard is close', () => {
   });
 
   assert.equal(scored.goNoGo, 'No-Go');
+  assert.ok(scored.keyRisks[0]?.advice);
 });
 
 test('advanced user gets Go for low exposure route', () => {

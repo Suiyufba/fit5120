@@ -1,5 +1,4 @@
 import { getLatestHazardSnapshot } from '../../../infrastructure/db/hazardSnapshotRepository.js';
-import { getHazardsForRequest } from '../../hazards/services/hazardAggregator.js';
 import { getProfileByUserId } from '../../auth/services/authService.js';
 import { fetchOsrmRoutes } from '../adapters/osrmAdapter.js';
 import { buildDetourWaypointCandidates, scoreRouteCandidate } from '../domain/routeRisk.js';
@@ -18,12 +17,8 @@ function assertCoordinate(point, fieldName) {
 
 async function loadLatestHazards() {
   const snapshot = await getLatestHazardSnapshot();
-  if (snapshot?.hazards?.length) return snapshot.hazards;
-
-  const payload = await getHazardsForRequest({
-    layersParam: 'fire,flood,storm,heat,other'
-  });
-  return payload.hazards || [];
+  if (!snapshot?.hazards?.length) return [];
+  return snapshot.hazards;
 }
 
 async function buildCandidateRoutes(start, end) {
@@ -100,7 +95,8 @@ export async function planSaferRoute({ userId, start, end }) {
       riskLevel: recommendedRoute.riskLevel,
       goNoGo: recommendedRoute.goNoGo,
       explanation: recommendedRoute.explanation,
-      keyRisks: recommendedRoute.keyRisks
+      keyRisks: recommendedRoute.keyRisks,
+      suggestedPrep: recommendedRoute.suggestedPrep
     },
     alternatives,
     scoringBreakdown: recommendedRoute.scoringBreakdown

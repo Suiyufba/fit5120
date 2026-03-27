@@ -13,26 +13,7 @@ let mapInstance
 let routeLayer
 
 const recommended = computed(() => plan.value?.recommendedRoute || null)
-
-const prepTips = computed(() => {
-  const risks = recommended.value?.keyRisks || []
-  if (!risks.length) {
-    return [
-      'Carry at least 2L water per person.',
-      'Check live alerts again before departure.',
-      'Share your route with one trusted contact.'
-    ]
-  }
-  const hasHeat = risks.some((risk) => risk.type === 'heat')
-  const hasFire = risks.some((risk) => risk.type === 'fire')
-  const hasFloodOrStorm = risks.some((risk) => ['flood', 'storm'].includes(risk.type))
-
-  const tips = ['Check official alerts one more time right before you leave.']
-  if (hasHeat) tips.push('Bring extra water and avoid midday exposed sections.')
-  if (hasFire) tips.push('Prepare a no-go fallback if fire status escalates.')
-  if (hasFloodOrStorm) tips.push('Carry waterproof layers and avoid low-lying crossings.')
-  return tips.slice(0, 3)
-})
+const prepTips = computed(() => recommended.value?.suggestedPrep || [])
 
 function drawRecommendedRoute() {
   if (!routeLayer || !recommended.value?.geometry?.length) return
@@ -119,6 +100,7 @@ onUnmounted(() => {
           <article v-for="risk in recommended.keyRisks" :key="risk.id" class="risk-item">
             <strong>{{ risk.title }}</strong>
             <p>{{ risk.type }} · {{ risk.severity }} · {{ risk.distanceKm }} km away</p>
+            <p class="risk-advice">{{ risk.advice }}</p>
             <small>Source: {{ risk.source }}</small>
           </article>
         </section>
@@ -253,6 +235,11 @@ h1 {
 .tip-item {
   color: #48635c;
   font-size: 0.84rem;
+}
+
+.risk-advice {
+  margin-top: 0.3rem;
+  color: #35544b;
 }
 
 .back-btn {
