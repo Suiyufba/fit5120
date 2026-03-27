@@ -1,11 +1,15 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { signUp } from '../services/authStore'
+import { confirmSignUp, signUp } from '../services/authStore'
 
 const router = useRouter()
 const loading = ref(false)
 const errorMessage = ref('')
+const successMessage = ref('')
+const step = ref('form')
+const verificationCode = ref('')
+const debugCode = ref('')
 
 const form = reactive({
   email: '',
@@ -62,17 +66,38 @@ const assessmentQuestions = [
 async function handleSubmit() {
   loading.value = true
   errorMessage.value = ''
+  successMessage.value = ''
   try {
-    await signUp({
+    const result = await signUp({
       email: form.email,
       password: form.password,
       age: form.age,
       region: form.region,
       assessmentAnswers: form.assessmentAnswers,
     })
-    router.push('/profile')
+    step.value = 'verify'
+    successMessage.value = `验证码已发送到 ${result.email}`
+    debugCode.value = result.debugCode || ''
   } catch (error) {
     errorMessage.value = error?.message || 'Registration failed'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleVerify() {
+  loading.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  try {
+    await confirmSignUp({
+      email: form.email,
+      code: verificationCode.value,
+    })
+    router.push('/profile')
+  } catch (error) {
+    errorMessage.value = error?.message || 'Verification failed'
   } finally {
     loading.value = false
   }
@@ -86,7 +111,7 @@ async function handleSubmit() {
       <h1>Create Your Hiking Profile</h1>
       <p class="register-subtitle">填写基础信息与安全情景题，系统会给你分配徒步等级。</p>
 
-      <form class="register-form" @submit.prevent="handleSubmit">
+      <form v-if="step === 'form'" class="register-form" @submit.prevent="handleSubmit">
         <div class="register-grid">
           <label>
             <span>Email</span>
@@ -127,7 +152,29 @@ async function handleSubmit() {
         <p v-if="errorMessage" class="register-error">{{ errorMessage }}</p>
 
         <button type="submit" :disabled="loading">
-          {{ loading ? 'Creating account...' : 'Create Account' }}
+          {{ loading ? 'Sending code...' : 'Send Verification Code' }}
+        </button>
+      </form>
+
+      <form v-else class="register-form" @submit.prevent="handleVerify">
+        <section class="quiz-panel">
+          <h2>Email Verification</h2>
+          <p class="verify-tip">
+            {{ successMessage || '请输入你邮箱收到的 6 位验证码。' }}
+          </p>
+          <p v-if="debugCode" class="verify-tip verify-tip--debug">
+            当前未配置 SMTP，调试验证码：<strong>{{ debugCode }}</strong>
+          </p>
+          <label>
+            <span>Verification Code</span>
+            <input v-model="verificationCode" type="text" minlength="6" maxlength="6" required />
+          </label>
+        </section>
+
+        <p v-if="errorMessage" class="register-error">{{ errorMessage }}</p>
+
+        <button type="submit" :disabled="loading">
+          {{ loading ? 'Verifying...' : 'Verify & Create Account' }}
         </button>
       </form>
     </section>
@@ -268,6 +315,17 @@ button:disabled {
 .register-error {
   color: #b63030;
   font-size: 0.84rem;
+}
+
+.verify-tip {
+  margin-top: 0.6rem;
+  color: #49655d;
+  font-size: 0.9rem;
+}
+
+.verify-tip--debug {
+  margin-top: 0.4rem;
+  color: #6a4f13;
 }
 
 @media (max-width: 800px) {

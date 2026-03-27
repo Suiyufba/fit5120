@@ -1,5 +1,12 @@
 import { computed, reactive } from 'vue'
-import { fetchCurrentUser, loginUser, registerUser } from './authApi'
+import {
+  confirmPasswordReset,
+  fetchCurrentUser,
+  loginUser,
+  registerUser,
+  requestPasswordResetCode,
+  verifyRegisterCode,
+} from './authApi'
 
 const TOKEN_KEY = 'gohiking_auth_token'
 
@@ -54,9 +61,21 @@ export async function signIn({ email, password }) {
 }
 
 export async function signUp({ email, password, age, region, assessmentAnswers }) {
-  const payload = await registerUser({ email, password, age, region, assessmentAnswers })
+  return registerUser({ email, password, age, region, assessmentAnswers })
+}
+
+export async function confirmSignUp({ email, code }) {
+  const payload = await verifyRegisterCode({ email, code })
   setSession(payload)
   return payload.user
+}
+
+export async function requestResetCode({ email }) {
+  return requestPasswordResetCode({ email })
+}
+
+export async function resetPassword({ email, code, newPassword }) {
+  return confirmPasswordReset({ email, code, newPassword })
 }
 
 export function useAuthState() {

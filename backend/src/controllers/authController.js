@@ -1,8 +1,15 @@
-import { getProfileByUserId, loginUser, registerUser } from '../modules/auth/services/authService.js';
+import {
+  confirmPasswordReset,
+  getProfileByUserId,
+  loginUser,
+  requestPasswordResetCode,
+  requestRegisterCode,
+  verifyRegisterCode
+} from '../modules/auth/services/authService.js';
 
-export async function register(req, res) {
+export async function requestRegisterVerificationCode(req, res) {
   try {
-    const result = await registerUser({
+    const result = await requestRegisterCode({
       email: req.body?.email,
       password: req.body?.password,
       age: req.body?.age,
@@ -10,10 +17,23 @@ export async function register(req, res) {
       assessmentAnswers: req.body?.assessmentAnswers || {},
     });
 
-    res.status(201).json(result);
+    res.status(202).json(result);
   } catch (error) {
     const isConflict = error.message === 'Email already registered';
-    res.status(isConflict ? 409 : 400).json({ error: error.message || 'Failed to register' });
+    res.status(isConflict ? 409 : 400).json({ error: error.message || 'Failed to request register code' });
+  }
+}
+
+export async function verifyRegister(req, res) {
+  try {
+    const result = await verifyRegisterCode({
+      email: req.body?.email,
+      code: req.body?.code,
+    });
+    res.status(201).json(result);
+  } catch (error) {
+    const status = error.message?.includes('Invalid') || error.message?.includes('expired') ? 400 : 500;
+    res.status(status).json({ error: error.message || 'Failed to verify register code' });
   }
 }
 
@@ -41,5 +61,30 @@ export async function me(req, res) {
     res.json({ user });
   } catch (error) {
     res.status(500).json({ error: error.message || 'Failed to fetch profile' });
+  }
+}
+
+export async function requestPasswordReset(req, res) {
+  try {
+    const result = await requestPasswordResetCode({
+      email: req.body?.email,
+    });
+    res.status(202).json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message || 'Failed to request reset code' });
+  }
+}
+
+export async function resetPassword(req, res) {
+  try {
+    const result = await confirmPasswordReset({
+      email: req.body?.email,
+      code: req.body?.code,
+      newPassword: req.body?.newPassword,
+    });
+    res.json(result);
+  } catch (error) {
+    const status = error.message?.includes('Invalid') || error.message?.includes('expired') ? 400 : 500;
+    res.status(status).json({ error: error.message || 'Failed to reset password' });
   }
 }

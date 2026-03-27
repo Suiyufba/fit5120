@@ -104,3 +104,22 @@ export async function createUser({ email, passwordHash, age, region, level, scor
 
   return mapUserRow(result.rows[0]);
 }
+
+export async function updateUserPasswordByEmail({ email, passwordHash }) {
+  const pool = getPgPool();
+  if (!pool) return null;
+
+  const result = await pool.query(
+    `
+    UPDATE app_users
+    SET password_hash = $2, updated_at = NOW()
+    WHERE email = $1
+    RETURNING id, email, age, region, experience_level, assessment_score,
+              assessment_answers_json, created_at, updated_at
+    `,
+    [email, passwordHash]
+  );
+
+  if (!result.rowCount) return null;
+  return mapUserRow(result.rows[0]);
+}

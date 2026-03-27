@@ -47,6 +47,10 @@ async function handleSubmit() {
           <input v-model="password" type="password" required minlength="8" autocomplete="current-password" />
         </label>
 
+        <p class="auth-forgot">
+          <router-link to="/forgot-password">Forgot password?</router-link>
+        </p>
+
         <p v-if="errorMessage" class="auth-error">{{ errorMessage }}</p>
 
         <button type="submit" :disabled="loading">
@@ -156,5 +160,10 @@ button:disabled {
 .auth-footer a {
   color: #2e6b55;
   font-weight: 700;
+}
+
+.auth-forgot a {
+  color: #4b5f58;
+  font-size: 0.84rem;
 }
 </style>
