@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { fetchRealtimeHazards, getHazardApiConfig } from '../services/hazardApi'
+import { fetchRealtimeHazards } from '../services/hazardApi'
 
 const VICTORIA_VIEW = {
   center: [-37.8136, 144.9631],
@@ -19,60 +19,15 @@ const layerMeta = {
   other: { label: 'Other', color: '#2E7D6B' },
 }
 
-const mockHazards = [
-  {
-    id: 'mock-1',
-    type: 'fire',
-    severity: 'high',
-    title: 'Smoke near Apollo Bay',
-    description: 'Visibility reduced on selected tracks. Avoid non-essential travel.',
-    source: 'VicEmergency (Mock Fallback)',
-    sourceUrl: 'https://emergency.vic.gov.au/',
-    updatedAt: new Date().toISOString(),
-    coordinates: [-38.7547, 143.6693],
-  },
-  {
-    id: 'mock-2',
-    type: 'flood',
-    severity: 'moderate',
-    title: 'Flash flood warning in Gippsland',
-    description: 'Creek crossings may become unsafe after intense rainfall.',
-    source: 'BOM Warnings (Mock Fallback)',
-    sourceUrl: 'https://www.bom.gov.au/',
-    updatedAt: new Date().toISOString(),
-    coordinates: [-37.8524, 146.3936],
-  },
-  {
-    id: 'mock-3',
-    type: 'heat',
-    severity: 'high',
-    title: 'Extreme heat in Mallee district',
-    description: 'Heat stress risk elevated for daytime hiking windows.',
-    source: 'Vic Open Data (Mock Fallback)',
-    sourceUrl: 'https://discover.data.vic.gov.au/',
-    updatedAt: new Date().toISOString(),
-    coordinates: [-35.9063, 142.3323],
-  },
-]
-
 const mapElement = ref(null)
 const selectedHazardId = ref('')
 const activeLayers = ref(['fire', 'flood', 'storm', 'heat'])
 const hazards = ref([])
 const loading = ref(false)
-const errorMessage = ref('')
 const lastUpdatedAt = ref(null)
-const usingFallback = ref(false)
 
 const severityOrder = { extreme: 4, high: 3, moderate: 2, low: 1 }
 const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
-
-const apiConfig = getHazardApiConfig()
-const mapStatus = computed(() => {
-  if (errorMessage.value) return 'error'
-  if (loading.value) return 'loading'
-  return 'ready'
-})
 
 const filteredHazards = computed(() => {
   return hazards.value
@@ -148,7 +103,6 @@ async function loadHazards() {
   if (inflightController) inflightController.abort()
   inflightController = new AbortController()
   loading.value = true
-  errorMessage.value = ''
 
   try {
     const mapBounds = mapInstance?.getBounds()
@@ -168,13 +122,11 @@ async function loadHazards() {
     })
 
     hazards.value = nextHazards
-    usingFallback.value = false
     lastUpdatedAt.value = new Date()
   } catch (error) {
     if (error?.name === 'AbortError') return
-    hazards.value = mockHazards
-    usingFallback.value = true
-    errorMessage.value = 'Realtime API unavailable. Showing fallback sample data.'
+    console.error('Failed to load realtime hazards:', error)
+    hazards.value = []
     lastUpdatedAt.value = new Date()
   } finally {
     loading.value = false
@@ -223,24 +175,6 @@ watch(filteredHazards, () => {
       <div>
         <p class="risk-map-kicker">Real-time Victoria Risk Map</p>
         <h1 class="risk-map-title">Official Open Data Monitoring</h1>
-        <p class="risk-map-subtitle">
-          前端已接入实时接口轮询能力（60秒刷新），后续只需后端聚合官方数据源即可上线。
-        </p>
-      </div>
-
-      <div class="risk-map-status-grid">
-        <div class="risk-map-status-card">
-          <p class="risk-map-status-label">API Endpoint</p>
-          <p class="risk-map-status-value">{{ apiConfig.realtimeEndpoint }}</p>
-        </div>
-        <div class="risk-map-status-card">
-          <p class="risk-map-status-label">Sync Status</p>
-          <p class="risk-map-status-value">
-            <span v-if="mapStatus === 'loading'">Syncing...</span>
-            <span v-else-if="mapStatus === 'error'">Fallback Mode</span>
-            <span v-else>Live</span>
-          </p>
-        </div>
       </div>
 
       <div class="risk-map-layers">
@@ -266,9 +200,6 @@ watch(filteredHazards, () => {
         </p>
         <p class="risk-map-subline">
           Last update: {{ lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString() : '—' }}
-        </p>
-        <p v-if="usingFallback" class="risk-map-fallback">
-          {{ errorMessage }}
         </p>
       </div>
 
@@ -340,34 +271,6 @@ watch(filteredHazards, () => {
   line-height: 1.45;
 }
 
-.risk-map-status-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
-}
-
-.risk-map-status-card {
-  background: #f8fbf8;
-  border: 1px solid #dfe7df;
-  border-radius: 0.75rem;
-  padding: 0.7rem;
-}
-
-.risk-map-status-label {
-  font-size: 0.64rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #65817a;
-}
-
-.risk-map-status-value {
-  margin-top: 0.4rem;
-  font-size: 0.75rem;
-  color: #29423c;
-  font-weight: 700;
-  word-break: break-word;
-}
-
 .risk-map-layers,
 .risk-map-summary,
 .risk-map-feed {
@@ -419,16 +322,6 @@ watch(filteredHazards, () => {
   margin-top: 0.55rem;
   font-size: 0.8rem;
   color: #48605a;
-}
-
-.risk-map-fallback {
-  margin-top: 0.55rem;
-  font-size: 0.74rem;
-  color: #8f3f2e;
-  background: #fff6f1;
-  border: 1px solid #f2d5c6;
-  border-radius: 0.45rem;
-  padding: 0.4rem 0.45rem;
 }
 
 .risk-map-feed-list {
