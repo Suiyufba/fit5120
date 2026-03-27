@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { restoreLatestRoutePlan } from '../services/routePlanStore'
+import { fetchRealtimeHazards } from '../services/hazardApi'
 
 const router = useRouter()
 const mapElement = ref(null)
@@ -11,9 +12,92 @@ const plan = ref(null)
 
 let mapInstance
 let routeLayer
+let hazardLayer
+let hazardInflightController
+let hazardRefreshTimer
+
+const hazards = ref([])
+
+const layerMeta = {
+  fire: { label: 'Bushfire', color: '#D84727' },
+  flood: { label: 'Flood', color: '#2165B5' },
+  storm: { label: 'Storm', color: '#5A4B81' },
+  heat: { label: 'Heat', color: '#D08817' },
+  other: { label: 'Other', color: '#2E7D6B' },
+}
 
 const recommended = computed(() => plan.value?.recommendedRoute || null)
 const prepTips = computed(() => recommended.value?.suggestedPrep || [])
+
+function zoneOpacitiesBySeverity(severity) {
+  if (severity === 'extreme') return { l1: 0.28, l2: 0.18, l3: 0.1 }
+  if (severity === 'high') return { l1: 0.23, l2: 0.14, l3: 0.08 }
+  if (severity === 'moderate') return { l1: 0.18, l2: 0.11, l3: 0.06 }
+  return { l1: 0.14, l2: 0.09, l3: 0.05 }
+}
+
+function markerRadiusBySeverity(severity) {
+  if (severity === 'extreme') return 9
+  if (severity === 'high') return 8
+  if (severity === 'moderate') return 7
+  return 6
+}
+
+function drawHazards() {
+  if (!hazardLayer) return
+  hazardLayer.clearLayers()
+
+  hazards.value.forEach((hazard) => {
+    if (!Array.isArray(hazard.coordinates) || hazard.coordinates.length !== 2) return
+    const meta = layerMeta[hazard.type] || layerMeta.other
+    const opacity = zoneOpacitiesBySeverity(hazard.severity)
+
+    ;[
+      { radius: 5000, fillOpacity: opacity.l3, weight: 1 },
+      { radius: 3000, fillOpacity: opacity.l2, weight: 1 },
+      { radius: 1000, fillOpacity: opacity.l1, weight: 2 },
+    ].forEach((zone) => {
+      L.circle(hazard.coordinates, {
+        radius: zone.radius,
+        color: meta.color,
+        fillColor: meta.color,
+        fillOpacity: zone.fillOpacity,
+        opacity: 0.4,
+        weight: zone.weight,
+        interactive: false,
+      }).addTo(hazardLayer)
+    })
+
+    L.circleMarker(hazard.coordinates, {
+      radius: markerRadiusBySeverity(hazard.severity),
+      color: meta.color,
+      fillColor: meta.color,
+      fillOpacity: 0.88,
+      weight: 2,
+    }).bindPopup(`${hazard.title}<br/>${meta.label} · ${hazard.severity}`).addTo(hazardLayer)
+  })
+}
+
+async function loadHazards() {
+  if (!mapInstance) return
+  if (hazardInflightController) hazardInflightController.abort()
+  hazardInflightController = new AbortController()
+
+  try {
+    const bounds = mapInstance.getBounds()
+    const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
+    const payload = await fetchRealtimeHazards({
+      bbox,
+      layers: ['fire', 'flood', 'storm', 'heat', 'other'],
+      signal: hazardInflightController.signal,
+    })
+    hazards.value = payload.hazards
+    drawHazards()
+  } catch (error) {
+    if (error?.name === 'AbortError') return
+    console.error('Failed to load hazards on route detail map:', error)
+  }
+}
 
 function drawRecommendedRoute() {
   if (!routeLayer || !recommended.value?.geometry?.length) return
@@ -61,10 +145,16 @@ onMounted(() => {
   }).addTo(mapInstance)
 
   routeLayer = L.layerGroup().addTo(mapInstance)
+  hazardLayer = L.layerGroup().addTo(mapInstance)
   drawRecommendedRoute()
+  loadHazards()
+  hazardRefreshTimer = window.setInterval(loadHazards, 60_000)
+  mapInstance.on('moveend', loadHazards)
 })
 
 onUnmounted(() => {
+  if (hazardInflightController) hazardInflightController.abort()
+  if (hazardRefreshTimer) window.clearInterval(hazardRefreshTimer)
   if (mapInstance) {
     mapInstance.remove()
     mapInstance = null
