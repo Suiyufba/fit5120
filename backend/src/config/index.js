@@ -32,4 +32,5 @@ export const config = {
     .split(',')
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean),
+  localAdminToken: process.env.LOCAL_ADMIN_TOKEN || 'local-admin-token',
 };

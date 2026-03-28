@@ -93,3 +93,5 @@ Base path: `/api/admin`
   - Username: `admin`
   - Password: `123456`
   - After successful sign-in, user is redirected to `/admin-dashboard`.
+- Backend now accepts `LOCAL_ADMIN_TOKEN` (default `local-admin-token`) for the local admin shortcut,
+  so dashboard refresh/admin API operations do not return Unauthorized for that mode.
