@@ -187,3 +187,17 @@ Reason:
 
 - The homepage still shows recent community alerts as a public preview.
 - Report creation and the full community report experience are now restricted to signed-in users.
+
+## Mobile UX Update (2026-03-28)
+
+Improved the phone-web interaction model for `Community Reports`:
+
+- Reduced the mobile bottom-sheet peek height so the map remains more usable.
+- Added mobile-only `Submit / Feed` tabs to avoid showing the full form and report list at the same time.
+- Added a compact mobile summary row for:
+  - report count
+  - map point selection state
+  - last sync time
+- Compressed the mobile legend into a smaller overlay.
+- Moved map zoom controls away from the bottom-sheet conflict zone on mobile.
+- Auto-opens the submit tab after tapping the map on mobile, so placing a point immediately leads into report entry.

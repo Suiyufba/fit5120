@@ -21,6 +21,8 @@ const submitSuccess = ref('')
 
 const selectedPoint = ref(null)
 const isSheetExpanded = ref(false)
+const activeMobileTab = ref('submit')
+const isMobileViewport = ref(false)
 
 const form = reactive({
   title: '',
@@ -69,6 +71,15 @@ let selectedPointLayer
 let inflightReportController
 let inflightHazardController
 let refreshTimer
+
+function syncViewportMode() {
+  if (typeof window === 'undefined') return
+  isMobileViewport.value = window.innerWidth <= 1000
+  if (!isMobileViewport.value) {
+    isSheetExpanded.value = false
+    return
+  }
+}
 
 function severityLabel(value) {
   if (value === 'extreme') return 'Extreme'
@@ -255,6 +266,7 @@ async function handleSubmit() {
 
     submitSuccess.value = 'Report submitted successfully.'
     isSheetExpanded.value = true
+    activeMobileTab.value = 'feed'
     form.title = ''
     form.description = ''
     form.locationName = ''
@@ -273,13 +285,16 @@ function toggleSheet() {
 }
 
 onMounted(async () => {
+  syncViewportMode()
+  window.addEventListener('resize', syncViewportMode)
+
   mapInstance = L.map(mapElement.value, {
     zoomControl: false,
     attributionControl: true,
   }).setView([-37.8136, 144.9631], 7)
 
   mapInstance.attributionControl.setPrefix(false)
-  L.control.zoom({ position: 'bottomright' }).addTo(mapInstance)
+  L.control.zoom({ position: isMobileViewport.value ? 'topright' : 'bottomright' }).addTo(mapInstance)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
@@ -294,6 +309,10 @@ onMounted(async () => {
     selectedPoint.value = {
       lat: Number(event.latlng.lat.toFixed(6)),
       lng: Number(event.latlng.lng.toFixed(6)),
+    }
+    if (isMobileViewport.value) {
+      isSheetExpanded.value = true
+      activeMobileTab.value = 'submit'
     }
   })
 
@@ -311,6 +330,7 @@ watch(sortedReports, drawReports, { deep: true })
 watch(selectedPoint, drawSelectedPoint, { deep: true })
 
 onUnmounted(() => {
+  window.removeEventListener('resize', syncViewportMode)
   if (refreshTimer) window.clearInterval(refreshTimer)
   if (inflightReportController) inflightReportController.abort()
   if (inflightHazardController) inflightHazardController.abort()
@@ -328,7 +348,7 @@ onUnmounted(() => {
       <div class="community-mobile-actions">
         <button class="mobile-sheet-toggle" @click="toggleSheet">
           <span class="material-symbols-outlined text-[18px]">{{ isSheetExpanded ? 'expand_more' : 'expand_less' }}</span>
-          {{ isSheetExpanded ? 'Show Less' : 'Reports & Form' }}
+          {{ isSheetExpanded ? 'Show Less' : 'Open Community Panel' }}
         </button>
       </div>
       <div class="mobile-sheet__body community-panel__body">
@@ -338,7 +358,39 @@ onUnmounted(() => {
         <p class="community-sub">Pick location on map, fill report on left, submit in same page.</p>
       </div>
 
-      <section class="community-form">
+      <section class="community-mobile-summary" v-if="isMobileViewport">
+        <article>
+          <span>Reports</span>
+          <strong>{{ stats.total }}</strong>
+        </article>
+        <article>
+          <span>Point</span>
+          <strong>{{ selectedPoint ? 'Selected' : 'Tap map' }}</strong>
+        </article>
+        <article>
+          <span>Sync</span>
+          <strong>{{ fetchedAt ? fetchedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—' }}</strong>
+        </article>
+      </section>
+
+      <div class="community-mobile-tabs" v-if="isMobileViewport">
+        <button
+          class="community-mobile-tab"
+          :class="{ 'community-mobile-tab--active': activeMobileTab === 'submit' }"
+          @click="activeMobileTab = 'submit'"
+        >
+          Submit
+        </button>
+        <button
+          class="community-mobile-tab"
+          :class="{ 'community-mobile-tab--active': activeMobileTab === 'feed' }"
+          @click="activeMobileTab = 'feed'"
+        >
+          Feed
+        </button>
+      </div>
+
+      <section class="community-form" v-show="!isMobileViewport || activeMobileTab === 'submit'">
         <div class="point-card">
           <p>Selected Map Point</p>
           <strong>{{ selectedPointLabel }}</strong>
@@ -384,7 +436,7 @@ onUnmounted(() => {
         <p>Last sync: {{ fetchedAt ? fetchedAt.toLocaleTimeString() : '—' }}</p>
       </section>
 
-      <section class="feed-card">
+      <section class="feed-card" v-show="!isMobileViewport || activeMobileTab === 'feed'">
         <p class="summary-title">Latest Reports</p>
         <p v-if="loading && !sortedReports.length" class="muted">Loading reports...</p>
         <div v-for="report in sortedReports.slice(0, 8)" :key="report.id" class="feed-item">
@@ -402,12 +454,14 @@ onUnmounted(() => {
       <div ref="mapElement" class="community-map"></div>
       <div class="legend-overlay">
         <p>Map Layers</p>
-        <span class="legend-item"><i style="background:#1F6E57"></i>User Report</span>
-        <span class="legend-item"><i style="background:#D84727"></i>Fire Risk</span>
-        <span class="legend-item"><i style="background:#2165B5"></i>Flood Risk</span>
-        <span class="legend-item"><i style="background:#5A4B81"></i>Storm Risk</span>
-        <span class="legend-item"><i style="background:#D08817"></i>Heat Risk</span>
-        <span class="legend-item"><i style="background:#2E7D6B"></i>Other Risk</span>
+        <div class="legend-grid">
+          <span class="legend-item"><i style="background:#1F6E57"></i>User</span>
+          <span class="legend-item"><i style="background:#D84727"></i>Fire</span>
+          <span class="legend-item"><i style="background:#2165B5"></i>Flood</span>
+          <span class="legend-item"><i style="background:#5A4B81"></i>Storm</span>
+          <span class="legend-item"><i style="background:#D08817"></i>Heat</span>
+          <span class="legend-item"><i style="background:#2E7D6B"></i>Other</span>
+        </div>
       </div>
     </section>
   </main>
@@ -424,7 +478,7 @@ onUnmounted(() => {
 }
 
 .community-panel {
-  --mobile-sheet-peek: 280px;
+  --mobile-sheet-peek: 168px;
   border-right: 1px solid rgba(31, 111, 87, 0.15);
   padding: 1rem;
   display: flex;
@@ -442,6 +496,11 @@ onUnmounted(() => {
 }
 
 .community-mobile-actions {
+  display: none;
+}
+
+.community-mobile-summary,
+.community-mobile-tabs {
   display: none;
 }
 
@@ -618,6 +677,12 @@ h1 {
   margin-top: 0.3rem;
 }
 
+.legend-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.2rem 0.8rem;
+}
+
 .legend-item i {
   width: 10px;
   height: 10px;
@@ -670,11 +735,77 @@ h1 {
     padding-bottom: 0.4rem;
   }
 
+  .community-mobile-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .community-mobile-summary article {
+    border: 1px solid #dde7e7;
+    border-radius: 0.8rem;
+    padding: 0.55rem 0.6rem;
+    background: #fbfefd;
+  }
+
+  .community-mobile-summary span {
+    display: block;
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #55716b;
+    font-weight: 800;
+  }
+
+  .community-mobile-summary strong {
+    display: block;
+    margin-top: 0.18rem;
+    font-size: 0.88rem;
+    color: #173a34;
+  }
+
+  .community-mobile-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45rem;
+  }
+
+  .community-mobile-tab {
+    border: 1px solid #d9e5e5;
+    border-radius: 999px;
+    background: #f8fbfb;
+    padding: 0.62rem 0.78rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #35524d;
+  }
+
+  .community-mobile-tab--active {
+    background: #21493f;
+    border-color: #21493f;
+    color: #fff;
+  }
+
   .legend-overlay {
-    top: 1rem;
-    left: 1rem;
-    right: 1rem;
-    max-width: none;
+    top: 0.8rem;
+    left: 0.8rem;
+    right: auto;
+    max-width: min(210px, calc(100vw - 1.6rem));
+    padding: 0.55rem 0.65rem;
+  }
+
+  .legend-overlay p {
+    margin-bottom: 0.3rem;
+    font-size: 0.68rem;
+  }
+
+  .legend-item {
+    margin-top: 0.12rem;
+    font-size: 0.69rem;
+  }
+
+  .field-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>
