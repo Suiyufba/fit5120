@@ -228,11 +228,12 @@ function goToDetails() {
 
 onMounted(() => {
   mapInstance = L.map(mapElement.value, {
-    zoomControl: true,
+    zoomControl: false,
     attributionControl: true,
   }).setView([-37.8136, 144.9631], 7)
 
   mapInstance.attributionControl.setPrefix(false)
+  L.control.zoom({ position: 'bottomright' }).addTo(mapInstance)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,

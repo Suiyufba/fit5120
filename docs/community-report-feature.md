@@ -11,6 +11,8 @@ Implemented an end-to-end `community report` workflow:
 - Community report page now supports same-page submission with map point selection.
 - Right-side map now overlays official risk layers and user submitted report markers.
 - Community report API now supports multi-endpoint fallback to reduce 404 from stale base URLs.
+- Map zoom controls were moved to bottom-right on both Community Reports and Plan Route pages.
+- Community Reports legend now explicitly includes Heat and Other risk layer color classification.
 
 ## Frontend Changes
 

@@ -265,11 +265,12 @@ async function handleSubmit() {
 
 onMounted(async () => {
   mapInstance = L.map(mapElement.value, {
-    zoomControl: true,
+    zoomControl: false,
     attributionControl: true,
   }).setView([-37.8136, 144.9631], 7)
 
   mapInstance.attributionControl.setPrefix(false)
+  L.control.zoom({ position: 'bottomright' }).addTo(mapInstance)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
@@ -387,6 +388,8 @@ onUnmounted(() => {
         <span class="legend-item"><i style="background:#D84727"></i>Fire Risk</span>
         <span class="legend-item"><i style="background:#2165B5"></i>Flood Risk</span>
         <span class="legend-item"><i style="background:#5A4B81"></i>Storm Risk</span>
+        <span class="legend-item"><i style="background:#D08817"></i>Heat Risk</span>
+        <span class="legend-item"><i style="background:#2E7D6B"></i>Other Risk</span>
       </div>
     </section>
   </main>
