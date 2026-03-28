@@ -257,3 +257,59 @@ export async function deleteCommunityReportById(reportId) {
   );
   return { ok: result.rowCount > 0, storage: 'database' };
 }
+
+export async function updateCommunityReportById(reportId, payload = {}) {
+  const id = text(reportId);
+  if (!id) return { error: 'Invalid report id' };
+
+  const parsed = normalizeInput(payload);
+  if (parsed.error) return parsed;
+
+  const pool = getPgPool();
+  const input = parsed.input;
+
+  if (!pool) {
+    const index = memoryReports.findIndex((item) => item.id === id);
+    if (index < 0) return { ok: false, storage: 'memory' };
+    memoryReports[index] = {
+      ...memoryReports[index],
+      ...input,
+    };
+    return { ok: true, report: memoryReports[index], storage: 'memory' };
+  }
+
+  const result = await pool.query(
+    `
+    UPDATE community_reports
+    SET title = $2,
+        description = $3,
+        hazard_type = $4,
+        severity = $5,
+        location_name = $6,
+        latitude = $7,
+        longitude = $8,
+        image_url = $9,
+        reporter_name = $10,
+        updated_at = NOW()
+    WHERE id = $1
+      AND is_deleted = FALSE
+    RETURNING id, title, description, hazard_type, severity, location_name,
+              latitude, longitude, image_url, reporter_name, likes, views, reported_at
+    `,
+    [
+      id,
+      input.title,
+      input.description,
+      input.hazardType,
+      input.severity,
+      input.locationName,
+      input.latitude,
+      input.longitude,
+      input.imageUrl || null,
+      input.reporterName,
+    ]
+  );
+
+  if (!result.rowCount) return { ok: false, storage: 'database' };
+  return { ok: true, report: mapRow(result.rows[0]), storage: 'database' };
+}

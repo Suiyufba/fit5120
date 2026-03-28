@@ -8,6 +8,8 @@ import {
   updateAdminManualRisk,
   archiveAdminManualRisk,
   getAdminCommunityReports,
+  createAdminCommunityReport,
+  updateAdminCommunityReport,
   deleteAdminCommunityReport,
   getAdminUsers,
   deleteAdminUser,
@@ -29,6 +31,8 @@ adminRoutes.put('/admin/risks/:id', updateAdminManualRisk);
 adminRoutes.delete('/admin/risks/:id', archiveAdminManualRisk);
 
 adminRoutes.get('/admin/community-reports', getAdminCommunityReports);
+adminRoutes.post('/admin/community-reports', createAdminCommunityReport);
+adminRoutes.put('/admin/community-reports/:id', updateAdminCommunityReport);
 adminRoutes.delete('/admin/community-reports/:id', deleteAdminCommunityReport);
 
 adminRoutes.get('/admin/users', getAdminUsers);

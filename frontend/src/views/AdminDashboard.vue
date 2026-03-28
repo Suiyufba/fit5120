@@ -11,6 +11,8 @@ import {
   updateAdminRisk,
   archiveAdminRisk,
   fetchAdminCommunityReports,
+  createAdminCommunityReport,
+  updateAdminCommunityReport,
   deleteAdminCommunityReport,
   fetchAdminUsers,
   deleteAdminUser,
@@ -21,7 +23,7 @@ import {
 
 const { state: authState } = useAuthState()
 
-const activeTab = ref('risk')
+const activeTab = ref('map')
 const loading = ref(false)
 const error = ref('')
 const info = ref('')
@@ -34,15 +36,19 @@ const articles = ref([])
 const officialHazards = ref([])
 
 const mapElement = ref(null)
-const selectedRiskId = ref('')
+const selectedEntity = ref({ kind: '', id: '' })
 
-const riskForm = reactive({
+const entityForm = reactive({
+  sourceKind: 'risk',
   title: '',
   description: '',
   type: 'fire',
   severity: 'high',
   latitude: '',
   longitude: '',
+  locationName: '',
+  reporterName: '',
+  imageUrl: '',
 })
 
 const articleForm = reactive({
@@ -61,18 +67,37 @@ const riskMeta = {
   flood: { color: '#2165B5', label: 'Flood' },
   storm: { color: '#5A4B81', label: 'Storm' },
   heat: { color: '#D08817', label: 'Heat' },
+  trail: { color: '#6B5C4F', label: 'Trail' },
   other: { color: '#2E7D6B', label: 'Other' },
 }
 
-const isEditMode = computed(() => Boolean(selectedRiskId.value))
+const isEditMode = computed(() => Boolean(selectedEntity.value.id))
 const selectedPointLabel = computed(() => {
-  if (!riskForm.latitude || !riskForm.longitude) return 'Click map to select location'
-  return `${riskForm.latitude}, ${riskForm.longitude}`
+  if (!entityForm.latitude || !entityForm.longitude) return 'Click map to select location'
+  return `${entityForm.latitude}, ${entityForm.longitude}`
+})
+
+const mapEntities = computed(() => {
+  const manual = risks.value.map((risk) => ({ kind: 'risk', ...risk }))
+  const community = reports.value.map((report) => ({
+    kind: 'report',
+    id: report.id,
+    title: report.title,
+    description: report.description,
+    type: report.hazardType,
+    severity: report.severity,
+    coordinates: [report.latitude, report.longitude],
+    locationName: report.locationName,
+    reporterName: report.reporterName,
+    imageUrl: report.imageUrl,
+  }))
+  return [...manual, ...community]
 })
 
 let mapInstance
 let officialLayer
-let manualLayer
+let riskLayer
+let reportLayer
 let draftLayer
 let hazardInflightController
 
@@ -82,24 +107,32 @@ function tokenOrThrow() {
   return token
 }
 
-function clearRiskForm() {
-  selectedRiskId.value = ''
-  riskForm.title = ''
-  riskForm.description = ''
-  riskForm.type = 'fire'
-  riskForm.severity = 'high'
-  riskForm.latitude = ''
-  riskForm.longitude = ''
+function clearEntityForm() {
+  selectedEntity.value = { kind: '', id: '' }
+  entityForm.sourceKind = 'risk'
+  entityForm.title = ''
+  entityForm.description = ''
+  entityForm.type = 'fire'
+  entityForm.severity = 'high'
+  entityForm.latitude = ''
+  entityForm.longitude = ''
+  entityForm.locationName = ''
+  entityForm.reporterName = ''
+  entityForm.imageUrl = ''
 }
 
-function applyRiskToForm(risk) {
-  selectedRiskId.value = risk.id
-  riskForm.title = risk.title || ''
-  riskForm.description = risk.description || ''
-  riskForm.type = risk.type || 'other'
-  riskForm.severity = risk.severity || 'low'
-  riskForm.latitude = String(risk.coordinates?.[0] ?? '')
-  riskForm.longitude = String(risk.coordinates?.[1] ?? '')
+function applyEntityToForm(entity) {
+  selectedEntity.value = { kind: entity.kind, id: entity.id }
+  entityForm.sourceKind = entity.kind === 'risk' ? 'risk' : 'report'
+  entityForm.title = entity.title || ''
+  entityForm.description = entity.description || ''
+  entityForm.type = entity.type || 'other'
+  entityForm.severity = entity.severity || 'low'
+  entityForm.latitude = String(entity.coordinates?.[0] ?? '')
+  entityForm.longitude = String(entity.coordinates?.[1] ?? '')
+  entityForm.locationName = entity.locationName || ''
+  entityForm.reporterName = entity.reporterName || ''
+  entityForm.imageUrl = entity.imageUrl || ''
 }
 
 async function loadAdminData() {
@@ -158,40 +191,52 @@ function drawOfficialHazards() {
 
   officialHazards.value.forEach((hazard) => {
     if (!Array.isArray(hazard.coordinates) || hazard.coordinates.length !== 2) return
-    const meta = riskMeta[hazard.type] || riskMeta.other
     L.circleMarker(hazard.coordinates, {
       radius: 5,
-      color: meta.color,
-      fillColor: meta.color,
-      fillOpacity: 0.45,
+      color: '#8fa2ad',
+      fillColor: '#8fa2ad',
+      fillOpacity: 0.35,
       weight: 1,
       interactive: false,
     }).addTo(officialLayer)
   })
 }
 
-function drawManualRisks() {
-  if (!manualLayer) return
-  manualLayer.clearLayers()
+function drawManagedEntities() {
+  if (!riskLayer || !reportLayer) return
+  riskLayer.clearLayers()
+  reportLayer.clearLayers()
 
-  risks.value.forEach((risk) => {
-    if (!Array.isArray(risk.coordinates) || risk.coordinates.length !== 2) return
-    const meta = riskMeta[risk.type] || riskMeta.other
-    const isSelected = risk.id === selectedRiskId.value
+  mapEntities.value.forEach((entity) => {
+    if (!Array.isArray(entity.coordinates) || entity.coordinates.length !== 2) return
+    const meta = riskMeta[entity.type] || riskMeta.other
+    const isSelected = entity.id === selectedEntity.value.id && entity.kind === selectedEntity.value.kind
 
-    const marker = L.circleMarker(risk.coordinates, {
-      radius: isSelected ? 10 : 8,
-      color: meta.color,
-      fillColor: meta.color,
-      fillOpacity: 0.9,
-      weight: isSelected ? 3 : 2,
+    if (entity.kind === 'risk') {
+      const marker = L.circleMarker(entity.coordinates, {
+        radius: isSelected ? 10 : 8,
+        color: meta.color,
+        fillColor: meta.color,
+        fillOpacity: 0.95,
+        weight: isSelected ? 3 : 2,
+      })
+      marker.bindPopup(`[Risk] ${entity.title}<br/>${meta.label} · ${entity.severity}`)
+      marker.on('click', () => applyEntityToForm(entity))
+      marker.addTo(riskLayer)
+      return
+    }
+
+    const marker = L.marker(entity.coordinates, {
+      icon: L.divIcon({
+        className: 'admin-report-pin',
+        html: `<div class="admin-report-pin__dot" style="border-color:${meta.color}"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      }),
     })
-
-    marker.bindPopup(`${risk.title}<br/>${meta.label} · ${risk.severity}`)
-    marker.on('click', () => {
-      applyRiskToForm(risk)
-    })
-    marker.addTo(manualLayer)
+    marker.bindPopup(`[Report] ${entity.title}<br/>${meta.label} · ${entity.severity}`)
+    marker.on('click', () => applyEntityToForm(entity))
+    marker.addTo(reportLayer)
   })
 }
 
@@ -199,8 +244,8 @@ function drawDraftPoint() {
   if (!draftLayer) return
   draftLayer.clearLayers()
 
-  const lat = Number(riskForm.latitude)
-  const lng = Number(riskForm.longitude)
+  const lat = Number(entityForm.latitude)
+  const lng = Number(entityForm.longitude)
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
 
   L.marker([lat, lng], {
@@ -213,56 +258,62 @@ function drawDraftPoint() {
   }).addTo(draftLayer)
 }
 
-async function handleCreateOrUpdateRisk() {
+async function handleCreateOrUpdateEntity() {
   error.value = ''
   info.value = ''
   try {
     const token = tokenOrThrow()
-    const payload = {
-      title: riskForm.title,
-      description: riskForm.description,
-      type: riskForm.type,
-      severity: riskForm.severity,
-      latitude: Number(riskForm.latitude),
-      longitude: Number(riskForm.longitude),
+    const basePayload = {
+      title: entityForm.title,
+      description: entityForm.description,
+      hazardType: entityForm.type,
+      type: entityForm.type,
+      severity: entityForm.severity,
+      latitude: Number(entityForm.latitude),
+      longitude: Number(entityForm.longitude),
+      locationName: entityForm.locationName || 'Unknown location',
+      reporterName: entityForm.reporterName || 'Admin',
+      imageUrl: entityForm.imageUrl,
     }
 
     if (isEditMode.value) {
-      await updateAdminRisk(token, selectedRiskId.value, payload)
-      info.value = 'Risk updated'
+      if (selectedEntity.value.kind === 'risk') {
+        await updateAdminRisk(token, selectedEntity.value.id, basePayload)
+      } else {
+        await updateAdminCommunityReport(token, selectedEntity.value.id, basePayload)
+      }
+      info.value = 'Item updated'
     } else {
-      await createAdminRisk(token, payload)
-      info.value = 'Risk created'
+      if (entityForm.sourceKind === 'risk') {
+        await createAdminRisk(token, basePayload)
+      } else {
+        await createAdminCommunityReport(token, basePayload)
+      }
+      info.value = 'Item created'
     }
 
     await loadAdminData()
   } catch (nextError) {
-    error.value = nextError?.message || 'Failed to save risk'
+    error.value = nextError?.message || 'Failed to save item'
   }
 }
 
-async function handleArchiveRisk(riskId = selectedRiskId.value) {
-  if (!riskId) return
+async function handleRemoveSelected() {
+  if (!selectedEntity.value.id) return
   error.value = ''
   info.value = ''
   try {
     const token = tokenOrThrow()
-    await archiveAdminRisk(token, riskId)
-    info.value = 'Risk removed'
-    clearRiskForm()
+    if (selectedEntity.value.kind === 'risk') {
+      await archiveAdminRisk(token, selectedEntity.value.id)
+    } else {
+      await deleteAdminCommunityReport(token, selectedEntity.value.id)
+    }
+    clearEntityForm()
     await loadAdminData()
+    info.value = 'Item removed'
   } catch (nextError) {
-    error.value = nextError?.message || 'Failed to remove risk'
-  }
-}
-
-async function handleDeleteReport(reportId) {
-  try {
-    const token = tokenOrThrow()
-    await deleteAdminCommunityReport(token, reportId)
-    await loadAdminData()
-  } catch (nextError) {
-    error.value = nextError?.message || 'Failed to delete report'
+    error.value = nextError?.message || 'Failed to remove item'
   }
 }
 
@@ -328,13 +379,14 @@ onMounted(async () => {
   }).addTo(mapInstance)
 
   officialLayer = L.layerGroup().addTo(mapInstance)
-  manualLayer = L.layerGroup().addTo(mapInstance)
+  riskLayer = L.layerGroup().addTo(mapInstance)
+  reportLayer = L.layerGroup().addTo(mapInstance)
   draftLayer = L.layerGroup().addTo(mapInstance)
 
   mapInstance.on('click', (event) => {
-    selectedRiskId.value = ''
-    riskForm.latitude = Number(event.latlng.lat.toFixed(6)).toString()
-    riskForm.longitude = Number(event.latlng.lng.toFixed(6)).toString()
+    selectedEntity.value = { kind: '', id: '' }
+    entityForm.latitude = Number(event.latlng.lat.toFixed(6)).toString()
+    entityForm.longitude = Number(event.latlng.lng.toFixed(6)).toString()
   })
 
   mapInstance.on('moveend', loadOfficialHazards)
@@ -342,11 +394,8 @@ onMounted(async () => {
 })
 
 watch(officialHazards, drawOfficialHazards, { deep: true })
-watch(risks, drawManualRisks, { deep: true })
-watch(
-  () => [riskForm.latitude, riskForm.longitude, selectedRiskId.value],
-  drawDraftPoint
-)
+watch([risks, reports, selectedEntity], drawManagedEntities, { deep: true })
+watch(() => [entityForm.latitude, entityForm.longitude], drawDraftPoint)
 
 onUnmounted(() => {
   if (hazardInflightController) hazardInflightController.abort()
@@ -364,7 +413,7 @@ onUnmounted(() => {
         <div>
           <p class="kicker">Operations Center</p>
           <h1>Admin Dashboard</h1>
-          <p class="sub">Manage risks, community reports, users, and knowledge articles in one place.</p>
+          <p class="sub">Unified map management for manual risks and community reports.</p>
         </div>
         <button class="refresh-btn" :disabled="loading" @click="loadAll">{{ loading ? 'Refreshing...' : 'Refresh' }}</button>
       </header>
@@ -380,51 +429,62 @@ onUnmounted(() => {
       <p v-if="info" class="ok-box">{{ info }}</p>
 
       <nav class="tabs">
-        <button :class="{ active: activeTab === 'risk' }" @click="activeTab = 'risk'">Risk Map</button>
-        <button :class="{ active: activeTab === 'reports' }" @click="activeTab = 'reports'">Community Reports</button>
+        <button :class="{ active: activeTab === 'map' }" @click="activeTab = 'map'">Map Ops</button>
         <button :class="{ active: activeTab === 'users' }" @click="activeTab = 'users'">Users</button>
         <button :class="{ active: activeTab === 'knowledge' }" @click="activeTab = 'knowledge'">KnowledgeHub</button>
       </nav>
 
-      <section v-if="activeTab === 'risk'" class="risk-layout">
+      <section v-if="activeTab === 'map'" class="risk-layout">
         <div class="risk-form">
-          <h2>{{ isEditMode ? 'Edit Selected Risk' : 'Create Manual Risk' }}</h2>
+          <h2>{{ isEditMode ? 'Edit Selected Item' : 'Create New Item' }}</h2>
           <p class="map-hint">Location: {{ selectedPointLabel }}</p>
+
           <div class="form-grid">
-            <input v-model="riskForm.title" placeholder="Risk title" />
-            <input v-model="riskForm.description" placeholder="Risk description" />
-            <select v-model="riskForm.type">
+            <select v-model="entityForm.sourceKind" :disabled="isEditMode">
+              <option value="risk">Manual Risk</option>
+              <option value="report">Community Report</option>
+            </select>
+            <input v-model="entityForm.title" placeholder="Title" />
+
+            <input v-model="entityForm.description" placeholder="Description" />
+            <input v-model="entityForm.locationName" placeholder="Location Name (for report)" />
+
+            <select v-model="entityForm.type">
               <option value="fire">Fire</option>
               <option value="flood">Flood</option>
               <option value="storm">Storm</option>
               <option value="heat">Heat</option>
+              <option value="trail">Trail</option>
               <option value="other">Other</option>
             </select>
-            <select v-model="riskForm.severity">
+            <select v-model="entityForm.severity">
               <option value="low">Low</option>
               <option value="moderate">Moderate</option>
               <option value="high">High</option>
               <option value="extreme">Extreme</option>
             </select>
-            <input v-model="riskForm.latitude" type="number" step="0.000001" placeholder="Latitude" />
-            <input v-model="riskForm.longitude" type="number" step="0.000001" placeholder="Longitude" />
+
+            <input v-model="entityForm.latitude" type="number" step="0.000001" placeholder="Latitude" />
+            <input v-model="entityForm.longitude" type="number" step="0.000001" placeholder="Longitude" />
+
+            <input v-model="entityForm.reporterName" placeholder="Reporter (for report)" />
+            <input v-model="entityForm.imageUrl" placeholder="Image URL (for report)" />
           </div>
 
           <div class="row-actions">
-            <button class="primary-btn" @click="handleCreateOrUpdateRisk">
-              {{ isEditMode ? 'Save Changes' : 'Create Risk' }}
+            <button class="primary-btn" @click="handleCreateOrUpdateEntity">
+              {{ isEditMode ? 'Save Changes' : 'Create' }}
             </button>
-            <button class="ghost-btn" @click="clearRiskForm">Clear</button>
-            <button v-if="isEditMode" class="danger-btn" @click="handleArchiveRisk()">Remove</button>
+            <button class="ghost-btn" @click="clearEntityForm">Clear</button>
+            <button v-if="isEditMode" class="danger-btn" @click="handleRemoveSelected">Remove</button>
           </div>
 
           <div class="list">
-            <article v-for="risk in risks" :key="risk.id" class="clickable" @click="applyRiskToForm(risk)">
+            <article v-for="item in mapEntities" :key="item.kind + '-' + item.id" class="clickable" @click="applyEntityToForm(item)">
               <div>
-                <strong>{{ risk.title }}</strong>
-                <p>{{ risk.type }} · {{ risk.severity }} · {{ risk.coordinates?.[0] }}, {{ risk.coordinates?.[1] }}</p>
+                <strong>[{{ item.kind === 'risk' ? 'Risk' : 'Report' }}] {{ item.title }}</strong>
+                <p>{{ item.type }} · {{ item.severity }} · {{ item.coordinates?.[0] }}, {{ item.coordinates?.[1] }}</p>
               </div>
-              <button class="danger-btn" @click.stop="handleArchiveRisk(risk.id)">Remove</button>
             </article>
           </div>
         </div>
@@ -433,22 +493,10 @@ onUnmounted(() => {
           <div ref="mapElement" class="risk-map"></div>
           <div class="map-legend">
             <p>Map Layers</p>
-            <span><i style="background:#1f6e57"></i>Editable Manual Risk</span>
-            <span><i style="background:#9aa5af"></i>Official Risk (Read-only)</span>
+            <span><i style="background:#1f6e57"></i>Manual Risk (editable)</span>
+            <span><i style="border-color:#1f6e57; background:#fff"></i>Community Report (editable)</span>
+            <span><i style="background:#8fa2ad"></i>Official Risk (read-only)</span>
           </div>
-        </div>
-      </section>
-
-      <section v-if="activeTab === 'reports'" class="panel">
-        <h2>Manage Community Reports</h2>
-        <div class="list">
-          <article v-for="report in reports" :key="report.id">
-            <div>
-              <strong>{{ report.title }}</strong>
-              <p>{{ report.hazardType }} · {{ report.severity }} · {{ report.locationName }}</p>
-            </div>
-            <button class="danger-btn" @click="handleDeleteReport(report.id)">Delete</button>
-          </article>
         </div>
       </section>
 
@@ -602,7 +650,7 @@ h1 {
 .risk-layout {
   margin-top: 0.8rem;
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 390px 1fr;
   gap: 0.8rem;
   min-height: 520px;
 }
@@ -662,6 +710,7 @@ h1 {
   height: 10px;
   border-radius: 999px;
   display: inline-block;
+  border: 2px solid transparent;
 }
 
 .panel {
@@ -782,6 +831,15 @@ h2 {
   border: 2px solid #fff;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   background: #1f6e57;
+}
+
+:deep(.admin-report-pin__dot) {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid #1f6e57;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
 }
 
 @media (max-width: 1080px) {

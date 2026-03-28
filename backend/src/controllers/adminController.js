@@ -5,7 +5,12 @@ import {
   archiveManualHazard,
   updateManualHazard,
 } from '../modules/hazards/repositories/manualHazardRepository.js';
-import { listCommunityReports, deleteCommunityReportById } from '../modules/communityReports/repositories/communityReportRepository.js';
+import {
+  listCommunityReports,
+  createCommunityReport,
+  updateCommunityReportById,
+  deleteCommunityReportById,
+} from '../modules/communityReports/repositories/communityReportRepository.js';
 import {
   listKnowledgeArticlesAdmin,
   createKnowledgeArticleAdmin,
@@ -100,6 +105,36 @@ export async function getAdminCommunityReports(req, res) {
     res.json({ reports: payload.reports });
   } catch (error) {
     res.status(500).json({ reports: [], error: error.message || 'Failed to load community reports' });
+  }
+}
+
+export async function createAdminCommunityReport(req, res) {
+  try {
+    const result = await createCommunityReport(req.body || {});
+    if (result.error) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    res.status(201).json({ report: result.report });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Failed to create community report' });
+  }
+}
+
+export async function updateAdminCommunityReport(req, res) {
+  try {
+    const result = await updateCommunityReportById(req.params.id, req.body || {});
+    if (result.error) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    if (!result.ok) {
+      res.status(404).json({ error: 'Community report not found' });
+      return;
+    }
+    res.json({ report: result.report });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Failed to update community report' });
   }
 }
 

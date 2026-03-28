@@ -47,6 +47,14 @@ export function fetchAdminCommunityReports(token) {
   return request('/admin/community-reports', { token })
 }
 
+export function createAdminCommunityReport(token, payload) {
+  return request('/admin/community-reports', { method: 'POST', token, body: payload })
+}
+
+export function updateAdminCommunityReport(token, reportId, payload) {
+  return request(`/admin/community-reports/${reportId}`, { method: 'PUT', token, body: payload })
+}
+
 export function deleteAdminCommunityReport(token, reportId) {
   return request(`/admin/community-reports/${reportId}`, { method: 'DELETE', token })
 }

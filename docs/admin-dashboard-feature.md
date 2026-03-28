@@ -4,8 +4,7 @@
 
 Implemented an authenticated admin dashboard to manage:
 
-- Manual risk overlays on Risk Map
-- Community reports moderation
+- Unified map operations for both manual risks and community reports
 - User account operations
 - KnowledgeHub article operations
 - Visual map-based risk editing for admins (click/select/edit/remove on map)
@@ -13,9 +12,9 @@ Implemented an authenticated admin dashboard to manage:
 ## Frontend Changes
 
 - New page: `frontend/src/views/AdminDashboard.vue`
-  - Tab modules: `Risk Map`, `Community Reports`, `Users`, `KnowledgeHub`
-  - Supports create/archive manual risk
-  - Supports delete community report
+  - Tab modules: `Map Ops`, `Users`, `KnowledgeHub`
+  - Map Ops supports mixed management of manual risks and community reports
+  - Supports create/update/delete directly from one map-linked editor
   - Supports list/delete users
   - Supports create/delete knowledge articles
 - New service: `frontend/src/services/adminApi.js`
@@ -74,6 +73,8 @@ Base path: `/api/admin`
 ### Community Reports
 
 - `GET /community-reports`
+- `POST /community-reports`
+- `PUT /community-reports/:id`
 - `DELETE /community-reports/:id`
 
 ### Users
@@ -92,10 +93,10 @@ Base path: `/api/admin`
 
 - Manual risks are stored in `manual_hazards` and automatically shown through existing realtime hazard API flow.
 - Dashboard route is auth-protected at frontend and admin-protected at backend.
-- Risk tab now includes a visual map editor:
+- Map Ops tab now includes a visual map editor:
   - click map to set draft point
-  - click existing manual marker to edit
-  - save/remove directly from map-linked form
+  - click existing marker (risk or report) to edit
+  - save/remove directly from unified map-linked form
 - Added frontend local admin shortcut login:
   - Username: `admin`
   - Password: `123456`
