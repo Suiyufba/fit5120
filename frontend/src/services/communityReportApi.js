@@ -73,51 +73,78 @@ function normalizeReport(raw = {}) {
 
 export async function fetchCommunityReports({ limit = 50, signal } = {}) {
   const params = new URLSearchParams({ limit: String(limit) })
-  const response = await requestWithFallback('/community-reports?' + params.toString(), {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-  }, { signal })
+  const bases = buildCandidateBaseUrls()
+  let lastError
 
-  const payload = await parseJson(response)
+  for (const baseUrl of bases) {
+    try {
+      const response = await requestWithFallback('/community-reports?' + params.toString(), {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      }, { signal })
+      const payload = await parseJson(response)
 
-  if (!response.ok) {
-    throw new Error(payload?.error || 'Community reports request failed (' + response.status + ')')
+      if (!response.ok) {
+        lastError = new Error(payload?.error || 'Community reports request failed (' + response.status + ')')
+        continue
+      }
+
+      if (!Array.isArray(payload?.reports)) {
+        lastError = new Error('Community reports request failed (invalid response)')
+        continue
+      }
+
+      const reports = payload.reports.map(normalizeReport)
+      return {
+        reports,
+        storage: payload?.storage || 'unknown',
+        fetchedAt: payload?.fetchedAt ? new Date(payload.fetchedAt) : new Date(),
+      }
+    } catch (error) {
+      if (error?.name === 'AbortError') throw error
+      lastError = error
+    }
   }
 
-  if (!Array.isArray(payload?.reports)) {
-    throw new Error('Community reports request failed (invalid response)')
-  }
-
-  const reports = payload.reports.map(normalizeReport)
-  return {
-    reports,
-    storage: payload?.storage || 'unknown',
-    fetchedAt: payload?.fetchedAt ? new Date(payload.fetchedAt) : new Date(),
-  }
+  throw lastError || new Error('Community reports request failed')
 }
 
 export async function submitCommunityReport(input, { signal } = {}) {
-  const response = await requestWithFallback('/community-reports', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify(input || {}),
-  }, { signal })
+  const bases = buildCandidateBaseUrls()
+  let lastError
 
-  const payload = await parseJson(response)
+  for (const baseUrl of bases) {
+    try {
+      const response = await fetch(baseUrl + '/community-reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(input || {}),
+        signal,
+      })
+      const payload = await parseJson(response)
 
-  if (!response.ok) {
-    throw new Error(payload?.error || 'Submit report failed (' + response.status + ')')
+      if (!response.ok) {
+        lastError = new Error(payload?.error || 'Submit report failed (' + response.status + ')')
+        continue
+      }
+
+      if (!payload?.report || !payload?.report?.id) {
+        lastError = new Error('Submit report failed (invalid response)')
+        continue
+      }
+
+      return {
+        report: normalizeReport(payload?.report || {}),
+        storage: payload?.storage || 'unknown',
+      }
+    } catch (error) {
+      if (error?.name === 'AbortError') throw error
+      lastError = error
+    }
   }
 
-  if (!payload?.report || !payload?.report?.id) {
-    throw new Error('Submit report failed (invalid response)')
-  }
-
-  return {
-    report: normalizeReport(payload?.report || {}),
-    storage: payload?.storage || 'unknown',
-  }
+  throw lastError || new Error('Submit report failed')
 }
