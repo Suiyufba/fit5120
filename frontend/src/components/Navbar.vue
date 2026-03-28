@@ -58,7 +58,7 @@ function goAccount() {
 
 <template>
   <header class="bg-white/80 backdrop-blur-xl sticky top-0 z-[3000] shadow-sm bg-surface-container-low">
-    <nav class="flex justify-between items-center px-8 py-4 max-w-full mx-auto">
+    <nav class="flex justify-between items-center px-4 py-3 md:px-8 md:py-4 max-w-full mx-auto">
       <router-link to="/" class="brand-lockup">
         <img src="/hikeshield-logo.svg" alt="HikeShield logo" class="brand-mark" />
         <span class="brand-wordmark">HikeShield</span>
@@ -78,13 +78,13 @@ function goAccount() {
         </router-link>
       </div>
 
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 md:gap-4">
         <button
-          class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-[#d8e4da] bg-white/80 hover:bg-white transition-all active:scale-95"
+          class="inline-flex items-center gap-2 px-2.5 py-2 md:px-3 rounded-full border border-[#d8e4da] bg-white/80 hover:bg-white transition-all active:scale-95 max-w-[58vw] md:max-w-none"
           @click="goAccount"
         >
           <span class="material-symbols-outlined text-[#4A6741]">account_circle</span>
-          <span class="text-sm font-semibold text-[#31554a] hidden lg:inline">{{ accountLabel }}</span>
+          <span class="text-sm font-semibold text-[#31554a] hidden sm:inline lg:inline truncate">{{ accountLabel }}</span>
         </button>
         <button
           class="md:hidden p-2 rounded-full hover:bg-slate-100/50 transition-all"
@@ -96,7 +96,7 @@ function goAccount() {
     </nav>
 
     <transition name="dropdown">
-      <div v-if="isMenuOpen" class="md:hidden px-8 pb-4 flex flex-col gap-2 bg-surface-container-low">
+      <div v-if="isMenuOpen" class="md:hidden px-4 pb-4 flex flex-col gap-2 bg-surface-container-low">
         <router-link
           v-for="item in navItems"
           :key="item.path"
@@ -120,6 +120,7 @@ function goAccount() {
   align-items: center;
   gap: 0.62rem;
   text-decoration: none;
+  min-width: 0;
 }
 
 .brand-mark {
@@ -135,6 +136,22 @@ function goAccount() {
   letter-spacing: -0.02em;
   color: #2f5648;
   line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .brand-lockup {
+    gap: 0.48rem;
+  }
+
+  .brand-mark {
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 0.58rem;
+  }
+
+  .brand-wordmark {
+    font-size: 1.08rem;
+  }
 }
 
 .dropdown-enter-active,

@@ -191,24 +191,24 @@ onUnmounted(() => {
 
 <template>
   <div>
-  <main class="space-y-16 pb-20">
+  <main class="space-y-12 md:space-y-16 pb-16 md:pb-20">
     <!-- Hero Section -->
-    <section class="relative px-8 pt-12 md:pt-24 overflow-hidden">
-      <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-12 items-center">
+    <section class="relative px-4 md:px-8 pt-10 md:pt-24 overflow-hidden">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-8 md:gap-12 items-center">
         <div class="w-full md:w-1/2 z-10">
           <span class="text-xs font-label uppercase tracking-[0.2em] text-primary mb-4 block">Official Victorian Safety Guide</span>
-          <h1 class="text-5xl md:text-7xl font-headline font-extrabold text-on-surface leading-tight mb-8">
+          <h1 class="text-4xl sm:text-5xl md:text-7xl font-headline font-extrabold text-on-surface leading-tight mb-6 md:mb-8">
             Hike with <span class="gradient-text">Confidence</span> in Victoria.
           </h1>
-          <div class="flex flex-wrap gap-4">
+          <div class="flex flex-col sm:flex-row flex-wrap gap-3 md:gap-4">
             <button
-              class="primary-gradient text-on-primary px-8 py-4 rounded-lg font-bold flex items-center gap-2 shadow-xl shadow-primary/20 hover:opacity-90 transition-all"
+              class="primary-gradient text-on-primary px-6 md:px-8 py-4 rounded-lg font-bold flex items-center justify-center gap-2 shadow-xl shadow-primary/20 hover:opacity-90 transition-all"
               @click="router.push('/risk-map')"
             >
               <span class="material-symbols-outlined">map</span> Check Risk Map
             </button>
             <button
-              class="bg-surface-container-high text-primary px-8 py-4 rounded-lg font-bold border-2 border-primary/10 hover:bg-surface-container-highest transition-all"
+              class="bg-surface-container-high text-primary px-6 md:px-8 py-4 rounded-lg font-bold border-2 border-primary/10 hover:bg-surface-container-highest transition-all"
               @click="router.push('/route-planner')"
             >
               Plan My Route
@@ -216,14 +216,14 @@ onUnmounted(() => {
           </div>
         </div>
         <div class="w-full md:w-1/2 relative">
-          <div class="aspect-square rounded-[2rem] overflow-hidden bg-surface-container-high rotate-3 hover:rotate-0 transition-transform duration-500">
+          <div class="aspect-[1/1] sm:aspect-square rounded-[1.6rem] md:rounded-[2rem] overflow-hidden bg-surface-container-high rotate-0 md:rotate-3 hover:rotate-0 transition-transform duration-500">
             <img
               class="w-full h-full object-cover"
               alt="Stunning aerial view of the rugged Grampians National Park in Victoria"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmNyB922YneY1cbo22Sttfq74UspbMx6Vrm-cr5xzgB9OfhoGhfly1s-GFQUpk1yLdxJESMHIccLvddetSCEwmU519zR9aV38SFNj_QpO4O-ippvOXQhrAl8K3lAoNTtrTk86KAEKNXoWKZXZZV7tQGlSkwH9C-6eukOcdWi6jW6iooq9zRGM513df6ITqsjlEqL8ucroqiBNahzq-UQCYyukUlfLXUtKQnsW89abQApWV8cs_4I0yWhFWgelNSH3UwMC734-x3vc"
             />
           </div>
-          <div class="absolute -bottom-6 -left-6 bg-glass bg-white/70 p-6 rounded-2xl shadow-2xl backdrop-blur-md max-w-[240px] border border-white/40">
+          <div class="absolute bottom-4 left-4 md:-bottom-6 md:-left-6 bg-glass bg-white/80 p-4 md:p-6 rounded-2xl shadow-2xl backdrop-blur-md max-w-[220px] md:max-w-[240px] border border-white/40">
             <div class="flex items-center gap-3 mb-2">
               <span class="w-3 h-3 rounded-full bg-error animate-pulse"></span>
               <span class="font-bold text-sm">Active Warning</span>
@@ -235,7 +235,7 @@ onUnmounted(() => {
     </section>
 
     <!-- Risk Map Preview & Hazard Bento -->
-    <section class="px-8 max-w-7xl mx-auto">
+    <section class="px-4 md:px-8 max-w-7xl mx-auto">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
         <div class="md:col-span-8 bg-surface-container-low rounded-[2rem] p-4 flex flex-col gap-6 group border border-[#d7e5d8]">
           <div class="flex justify-between items-center px-4 pt-2">
@@ -247,7 +247,7 @@ onUnmounted(() => {
               <span class="material-symbols-outlined text-primary cursor-pointer" @click="router.push('/risk-map')">open_in_full</span>
             </div>
           </div>
-          <div class="relative w-full h-[420px] rounded-[1.5rem] overflow-hidden bg-surface-dim border border-white/60">
+          <div class="relative w-full h-[320px] sm:h-[380px] md:h-[420px] rounded-[1.5rem] overflow-hidden bg-surface-dim border border-white/60">
             <HomeRiskPreviewMap :hazards="previewHazards" />
             <div class="absolute inset-x-4 bottom-4 bg-white/90 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/70">
               <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-[#31544a] mb-2">Top Active Hazards</p>
@@ -322,7 +322,7 @@ onUnmounted(() => {
     </section>
 
     <!-- Community Alerts -->
-    <section class="px-8 max-w-7xl mx-auto">
+    <section class="px-4 md:px-8 max-w-7xl mx-auto">
       <div class="flex items-baseline justify-between mb-8">
         <h2 class="font-headline font-bold text-3xl">Recent Community Alerts</h2>
         <button class="text-primary font-bold text-sm hover:underline" @click="router.push('/community-reports')">View all reports</button>
@@ -366,9 +366,9 @@ onUnmounted(() => {
           </div>
         </article>
       </div>
-      <div class="mt-8 flex justify-center">
+      <div class="mt-6 md:mt-8 flex justify-center">
         <button
-          class="flex items-center gap-2 px-12 py-4 bg-surface-container-high rounded-full font-bold text-primary hover:bg-surface-container-highest transition-all"
+          class="flex items-center justify-center gap-2 w-full sm:w-auto px-8 md:px-12 py-4 bg-surface-container-high rounded-full font-bold text-primary hover:bg-surface-container-highest transition-all"
           @click="router.push('/report-hazard')"
         >
           <span class="material-symbols-outlined">add_circle</span> Report a Hazard
@@ -377,7 +377,7 @@ onUnmounted(() => {
     </section>
 
     <!-- Knowledge Hub Preview -->
-    <section class="bg-surface-container-low py-20 px-8">
+    <section class="bg-surface-container-low py-16 md:py-20 px-4 md:px-8">
       <div class="max-w-7xl mx-auto">
         <div class="mb-12 text-center md:text-left">
           <h2 class="font-headline font-bold text-3xl mb-4">Knowledge Hub</h2>
@@ -396,34 +396,41 @@ onUnmounted(() => {
           <div
             v-for="article in knowledgePreviewCards"
             :key="article.id"
-            class="bg-white rounded-[2rem] p-8 flex flex-col h-full shadow-sm hover:translate-y-[-4px] transition-transform"
+            class="relative rounded-[2rem] overflow-hidden min-h-[320px] shadow-sm hover:translate-y-[-4px] transition-transform group"
           >
-            <div
-              class="w-12 h-12 rounded-xl flex items-center justify-center mb-6"
-              :class="getKnowledgeAccent(article.topic).badge"
-            >
-              <span
-                class="material-symbols-outlined"
-                :class="getKnowledgeAccent(article.topic).iconColor"
+            <img
+              v-if="article.imageUrl"
+              :src="article.imageUrl"
+              :alt="article.title"
+              class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+            />
+            <div v-else class="absolute inset-0 bg-[radial-gradient(circle_at_top,#d9ece2_0%,#8db7a5_35%,#31544a_100%)]"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-[#17352d]/95 via-[#21453b]/72 to-[#21453b]/25"></div>
+            <div class="relative z-10 flex h-full flex-col justify-end p-8">
+              <div
+                class="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-white/18 backdrop-blur-sm"
               >
-                {{ getKnowledgeAccent(article.topic).icon }}
-              </span>
+                <span
+                  class="material-symbols-outlined text-white"
+                >
+                  {{ getKnowledgeAccent(article.topic).icon }}
+                </span>
+              </div>
+              <p class="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75">
+                {{ article.topic }}
+              </p>
+              <h3 class="mb-4 font-headline text-xl font-bold text-white">{{ article.title }}</h3>
+              <p class="mb-8 flex-1 text-sm leading-relaxed text-white/82">
+                {{ article.summary }}
+              </p>
+              <button
+                class="flex items-center gap-2 text-left text-sm font-bold text-white group-hover:text-white"
+                @click="router.push('/knowledge-hub')"
+              >
+                {{ getKnowledgeAccent(article.topic).cta }}
+                <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+              </button>
             </div>
-            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#527568] mb-3">
-              {{ article.topic }}
-            </p>
-            <h3 class="font-headline font-bold text-xl mb-4">{{ article.title }}</h3>
-            <p class="text-sm text-on-surface-variant leading-relaxed mb-8 flex-1">
-              {{ article.summary }}
-            </p>
-            <button
-              class="font-bold text-sm text-left flex items-center gap-2 group"
-              :class="getKnowledgeAccent(article.topic).buttonColor"
-              @click="router.push('/knowledge-hub')"
-            >
-              {{ getKnowledgeAccent(article.topic).cta }}
-              <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-            </button>
           </div>
 
           <div class="relative rounded-[2rem] overflow-hidden group h-full min-h-[320px]">

@@ -17,6 +17,7 @@ const startPoint = ref(null)
 const endPoint = ref(null)
 const planResult = ref(null)
 const hazards = ref([])
+const isSheetExpanded = ref(false)
 
 let mapInstance
 let markerLayer
@@ -229,6 +230,7 @@ async function handlePlanRoute() {
       end: endPoint.value,
     })
 
+    isSheetExpanded.value = true
     drawRoutes()
   } catch (nextError) {
     if (nextError?.name === 'AbortError') return
@@ -241,6 +243,10 @@ async function handlePlanRoute() {
 function goToDetails() {
   if (!planResult.value?.recommendedRoute) return
   router.push('/route-detail')
+}
+
+function toggleSheet() {
+  isSheetExpanded.value = !isSheetExpanded.value
 }
 
 onMounted(() => {
@@ -304,7 +310,15 @@ onUnmounted(() => {
 
 <template>
   <main class="planner-layout">
-    <aside class="planner-panel">
+    <aside class="planner-panel mobile-sheet" :class="{ 'mobile-sheet--expanded': isSheetExpanded }">
+      <div class="mobile-sheet__handle"></div>
+      <div class="planner-mobile-actions">
+        <button class="mobile-sheet-toggle" @click="toggleSheet">
+          <span class="material-symbols-outlined text-[18px]">{{ isSheetExpanded ? 'expand_more' : 'expand_less' }}</span>
+          {{ isSheetExpanded ? 'Show Less' : 'Route Panel' }}
+        </button>
+      </div>
+      <div class="mobile-sheet__body planner-panel__body">
       <div>
         <p class="planner-kicker">Pre-Hike Safety Planner</p>
         <h1>Plan Route</h1>
@@ -360,6 +374,7 @@ onUnmounted(() => {
         <p class="summary-explain">{{ summary.explanation }}</p>
         <button class="primary-btn" @click="goToDetails">View Route Details</button>
       </section>
+      </div>
     </aside>
 
     <section class="planner-map-wrap">
@@ -373,10 +388,13 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: 360px 1fr;
   height: calc(100vh - 72px);
+  height: var(--mobile-safe-height);
   background: linear-gradient(130deg, #f3f8f5 0%, #e6f2ee 45%, #eef4fb 100%);
+  position: relative;
 }
 
 .planner-panel {
+  --mobile-sheet-peek: 250px;
   border-right: 1px solid #d8e3dc;
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(7px);
@@ -385,6 +403,16 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 0.9rem;
   overflow: auto;
+}
+
+.planner-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.planner-mobile-actions {
+  display: none;
 }
 
 .planner-kicker {
@@ -634,12 +662,24 @@ h1 {
 @media (max-width: 980px) {
   .planner-layout {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(320px, auto) 1fr;
+    min-height: var(--mobile-safe-height);
   }
 
   .planner-panel {
     border-right: 0;
-    border-bottom: 1px solid #d8e3dc;
+    border-top: 1px solid #d8e3dc;
+    padding: 0 1rem 1rem;
+    background: rgba(255, 255, 255, 0.96);
+  }
+
+  .planner-mobile-actions {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 0.45rem;
+  }
+
+  .planner-map-wrap {
+    min-height: var(--mobile-safe-height);
   }
 }
 </style>

@@ -142,7 +142,7 @@ onUnmounted(() => {
 .kb-page {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 2.2rem 1rem 4rem;
+  padding: 1.4rem 1rem 3rem;
 }
 
 .kb-hero {
@@ -296,6 +296,23 @@ h2, h3 {
 }
 
 @media (max-width: 900px) {
+  .kb-page {
+    padding-top: 1rem;
+  }
+
+  h1 {
+    font-size: 1.7rem;
+  }
+
+  .kb-featured-image {
+    height: 230px;
+  }
+
+  .kb-meta {
+    flex-wrap: wrap;
+    gap: 0.45rem 0.8rem;
+  }
+
   .kb-grid {
     grid-template-columns: 1fr;
   }

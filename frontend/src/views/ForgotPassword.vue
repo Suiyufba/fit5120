@@ -142,6 +142,21 @@ input {
   padding: 0.68rem 0.8rem;
 }
 
+@media (max-width: 640px) {
+  .forgot-page {
+    padding: 1rem 0.85rem 1.4rem;
+  }
+
+  .forgot-card {
+    padding: 1.05rem;
+    border-radius: 1.1rem;
+  }
+
+  h1 {
+    font-size: 1.7rem;
+  }
+}
+
 select {
   border: 1px solid #cfddd2;
   border-radius: 0.7rem;

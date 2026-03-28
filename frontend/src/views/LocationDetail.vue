@@ -5,7 +5,7 @@ const router = useRouter()
 </script>
 
 <template>
-  <main class="relative flex" style="height: calc(100vh - 72px)">
+  <main class="location-detail-page relative flex" style="height: var(--mobile-safe-height)">
     <!-- Background Map -->
     <div class="absolute inset-0 z-0">
       <img
@@ -26,9 +26,9 @@ const router = useRouter()
     <div class="absolute inset-0 bg-on-surface/5 backdrop-blur-[2px] z-10 pointer-events-none md:pointer-events-auto"></div>
 
     <!-- Detail Panel -->
-    <aside class="absolute right-0 top-0 h-full w-full md:w-[480px] z-20 custom-glass shadow-[-24px_0_48px_rgba(0,31,41,0.06)] rounded-tl-3xl flex flex-col overflow-hidden">
+    <aside class="location-detail-panel absolute right-0 top-0 h-full w-full md:w-[480px] z-20 custom-glass shadow-[-24px_0_48px_rgba(0,31,41,0.06)] md:rounded-tl-3xl flex flex-col overflow-hidden">
       <!-- Panel Header -->
-      <div class="px-8 pt-8 pb-4 flex justify-between items-start">
+      <div class="px-4 sm:px-6 md:px-8 pt-5 md:pt-8 pb-4 flex justify-between items-start sticky top-0 bg-white/65 backdrop-blur-md z-10">
         <div>
           <span class="inline-block px-3 py-1 bg-surface-container-highest text-primary font-label text-[10px] tracking-[0.1em] uppercase font-bold rounded-full mb-3">Location Detail</span>
           <h1 class="font-headline text-3xl font-extrabold tracking-tight leading-tight text-on-surface">
@@ -41,7 +41,7 @@ const router = useRouter()
       </div>
 
       <!-- Scrollable Content -->
-      <div class="flex-1 overflow-y-auto px-8 py-4 space-y-8 scroll-smooth">
+      <div class="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-4 space-y-8 scroll-smooth">
         <!-- Risk Alert -->
         <section class="space-y-4">
           <div class="p-6 bg-[#FFF9F2] rounded-xl flex items-start gap-5">
@@ -133,3 +133,20 @@ const router = useRouter()
     </aside>
   </main>
 </template>
+
+<style scoped>
+@media (max-width: 768px) {
+  .location-detail-page {
+    height: var(--mobile-safe-height) !important;
+  }
+
+  .location-detail-panel {
+    border-top-left-radius: 1.35rem;
+    border-top-right-radius: 1.35rem;
+    top: auto;
+    bottom: 0;
+    height: min(84dvh, 860px);
+    box-shadow: 0 -20px 48px rgba(0, 31, 41, 0.12);
+  }
+}
+</style>

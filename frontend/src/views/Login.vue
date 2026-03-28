@@ -173,4 +173,19 @@ button:disabled {
   color: #4b5f58;
   font-size: 0.84rem;
 }
+
+@media (max-width: 640px) {
+  .auth-page {
+    padding: 1rem 0.85rem 1.4rem;
+  }
+
+  .auth-card {
+    border-radius: 1.15rem;
+    padding: 1.1rem;
+  }
+
+  h1 {
+    font-size: 1.7rem;
+  }
+}
 </style>

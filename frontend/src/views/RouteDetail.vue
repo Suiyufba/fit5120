@@ -16,6 +16,7 @@ const plan = ref(null)
 const planningFromShare = ref(false)
 const shareMessage = ref('')
 const shareError = ref('')
+const isSheetExpanded = ref(false)
 
 let mapInstance
 let routeLayer
@@ -223,6 +224,10 @@ async function shareRoute() {
   }
 }
 
+function toggleSheet() {
+  isSheetExpanded.value = !isSheetExpanded.value
+}
+
 async function hydrateFromSharedLink() {
   const shared = parseSharedPoint()
   if (!shared) return
@@ -301,7 +306,15 @@ onUnmounted(() => {
       <div ref="mapElement" class="detail-map"></div>
     </section>
 
-    <aside class="detail-panel">
+    <aside class="detail-panel mobile-sheet" :class="{ 'mobile-sheet--expanded': isSheetExpanded }">
+      <div class="mobile-sheet__handle"></div>
+      <div class="detail-mobile-actions">
+        <button class="mobile-sheet-toggle" @click="toggleSheet">
+          <span class="material-symbols-outlined text-[18px]">{{ isSheetExpanded ? 'expand_more' : 'expand_less' }}</span>
+          {{ isSheetExpanded ? 'Show Less' : 'Route Detail' }}
+        </button>
+      </div>
+      <div class="mobile-sheet__body detail-panel__body">
       <template v-if="recommended">
         <p class="detail-kicker">Route Safety Detail</p>
         <h1>Recommended Route</h1>
@@ -370,6 +383,7 @@ onUnmounted(() => {
 
       <button class="share-btn" @click="shareRoute">Share Route</button>
       <button class="back-btn" @click="router.push('/route-planner')">Back to Planner</button>
+      </div>
     </aside>
   </main>
 </template>
@@ -379,7 +393,9 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: 1fr 380px;
   height: calc(100vh - 72px);
+  height: var(--mobile-safe-height);
   background: #f0f6f3;
+  position: relative;
 }
 
 .detail-map-wrap {
@@ -392,6 +408,7 @@ onUnmounted(() => {
 }
 
 .detail-panel {
+  --mobile-sheet-peek: 255px;
   border-left: 1px solid #d5e1d8;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(7px);
@@ -400,6 +417,16 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
+}
+
+.detail-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.detail-mobile-actions {
+  display: none;
 }
 
 .detail-kicker {
@@ -548,12 +575,24 @@ h1 {
 @media (max-width: 980px) {
   .detail-layout {
     grid-template-columns: 1fr;
-    grid-template-rows: 48vh 1fr;
+    min-height: var(--mobile-safe-height);
   }
 
   .detail-panel {
     border-left: 0;
     border-top: 1px solid #d5e1d8;
+    padding: 0 1rem 1rem;
+    background: rgba(255, 255, 255, 0.97);
+  }
+
+  .detail-mobile-actions {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 0.4rem;
+  }
+
+  .detail-map-wrap {
+    min-height: var(--mobile-safe-height);
   }
 }
 </style>

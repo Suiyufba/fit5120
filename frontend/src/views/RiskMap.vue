@@ -25,6 +25,7 @@ const activeLayers = ref(['fire', 'flood', 'storm', 'heat', 'other'])
 const hazards = ref([])
 const loading = ref(false)
 const lastUpdatedAt = ref(null)
+const isSheetExpanded = ref(false)
 
 const severityOrder = { extreme: 4, high: 3, moderate: 2, low: 1 }
 const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
@@ -181,7 +182,12 @@ async function loadHazards() {
 
 function selectHazard(hazard) {
   selectedHazardId.value = hazard.id
+  isSheetExpanded.value = true
   mapInstance?.setView(hazard.coordinates, Math.max(mapInstance.getZoom(), 9), { animate: true })
+}
+
+function toggleSheet() {
+  isSheetExpanded.value = !isSheetExpanded.value
 }
 
 function getCurrentPosition() {
@@ -278,7 +284,15 @@ watch(filteredHazards, () => {
 
 <template>
   <div class="risk-map-page">
-    <aside class="risk-map-sidebar">
+    <aside class="risk-map-sidebar mobile-sheet" :class="{ 'mobile-sheet--expanded': isSheetExpanded }">
+      <div class="mobile-sheet__handle"></div>
+      <div class="risk-map-mobile-actions">
+        <button class="mobile-sheet-toggle" @click="toggleSheet">
+          <span class="material-symbols-outlined text-[18px]">{{ isSheetExpanded ? 'expand_more' : 'expand_less' }}</span>
+          {{ isSheetExpanded ? 'Show Less' : 'Open Feed' }}
+        </button>
+      </div>
+      <div class="mobile-sheet__body risk-map-sidebar__body">
       <div>
         <p class="risk-map-kicker">Real-time Victoria Risk Map</p>
         <h1 class="risk-map-title">Official Open Data Monitoring</h1>
@@ -327,6 +341,7 @@ watch(filteredHazards, () => {
           </button>
         </div>
       </div>
+      </div>
     </aside>
 
     <main class="risk-map-canvas-wrap">
@@ -344,11 +359,14 @@ watch(filteredHazards, () => {
   display: grid;
   grid-template-columns: 360px 1fr;
   height: calc(100vh - 72px);
+  height: var(--mobile-safe-height);
   background: linear-gradient(140deg, #f5fbf5 0%, #e7f2fb 46%, #f6f3ef 100%);
   overflow: hidden;
+  position: relative;
 }
 
 .risk-map-sidebar {
+  --mobile-sheet-peek: 240px;
   padding: 1.4rem;
   border-right: 1px solid #d7e2d9;
   background: rgba(255, 255, 255, 0.78);
@@ -358,6 +376,16 @@ watch(filteredHazards, () => {
   gap: 1rem;
   overflow-y: auto;
   min-height: 0;
+}
+
+.risk-map-sidebar__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.risk-map-mobile-actions {
+  display: none;
 }
 
 .risk-map-kicker {
@@ -532,24 +560,29 @@ watch(filteredHazards, () => {
 @media (max-width: 1024px) {
   .risk-map-page {
     grid-template-columns: 1fr;
-    height: auto;
-    min-height: calc(100vh - 72px);
-    overflow: visible;
+    min-height: var(--mobile-safe-height);
   }
 
   .risk-map-sidebar {
     border-right: none;
-    border-bottom: 1px solid #d7e2d9;
-    max-height: none;
+    border-top: 1px solid #d7e2d9;
+    padding: 0 1rem 1rem;
+    background: rgba(255, 255, 255, 0.96);
   }
 
   .risk-map-feed-list {
-    max-height: 24vh;
+    max-height: none;
   }
 
   .risk-map-canvas-wrap {
-    height: 58vh;
-    min-height: 420px;
+    height: 100%;
+    min-height: var(--mobile-safe-height);
+  }
+
+  .risk-map-mobile-actions {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 0.5rem;
   }
 }
 </style>

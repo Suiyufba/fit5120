@@ -294,4 +294,24 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 640px) {
+  .register-page {
+    padding: 1rem 0.85rem 1.4rem;
+  }
+
+  .register-card {
+    padding: 1rem;
+    border-radius: 1.1rem;
+  }
+
+  h1 {
+    font-size: 1.7rem;
+  }
+
+  .quiz-panel,
+  .quiz-item {
+    padding: 0.8rem;
+  }
+}
 </style>

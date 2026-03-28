@@ -18,6 +18,7 @@ const submitError = ref('')
 const submitSuccess = ref('')
 
 const selectedPoint = ref(null)
+const isSheetExpanded = ref(false)
 
 const form = reactive({
   title: '',
@@ -250,6 +251,7 @@ async function handleSubmit() {
     })
 
     submitSuccess.value = 'Report submitted successfully.'
+    isSheetExpanded.value = true
     form.title = ''
     form.description = ''
     form.locationName = ''
@@ -261,6 +263,10 @@ async function handleSubmit() {
   } finally {
     submitLoading.value = false
   }
+}
+
+function toggleSheet() {
+  isSheetExpanded.value = !isSheetExpanded.value
 }
 
 onMounted(async () => {
@@ -314,7 +320,15 @@ onUnmounted(() => {
 
 <template>
   <main class="community-layout">
-    <aside class="community-panel">
+    <aside class="community-panel mobile-sheet" :class="{ 'mobile-sheet--expanded': isSheetExpanded }">
+      <div class="mobile-sheet__handle"></div>
+      <div class="community-mobile-actions">
+        <button class="mobile-sheet-toggle" @click="toggleSheet">
+          <span class="material-symbols-outlined text-[18px]">{{ isSheetExpanded ? 'expand_more' : 'expand_less' }}</span>
+          {{ isSheetExpanded ? 'Show Less' : 'Reports & Form' }}
+        </button>
+      </div>
+      <div class="mobile-sheet__body community-panel__body">
       <div>
         <p class="community-kicker">Community Intelligence + Official Risk Layer</p>
         <h1>Community Reports</h1>
@@ -378,6 +392,7 @@ onUnmounted(() => {
           <p>{{ report.locationName }} · {{ formatRelativeTime(report.reportedAt) }}</p>
         </div>
       </section>
+      </div>
     </aside>
 
     <section class="community-map-wrap">
@@ -400,10 +415,13 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: 410px 1fr;
   height: calc(100vh - 72px);
+  height: var(--mobile-safe-height);
   background: linear-gradient(130deg, #f3f8f5 0%, #e6f2ee 45%, #eef4fb 100%);
+  position: relative;
 }
 
 .community-panel {
+  --mobile-sheet-peek: 280px;
   border-right: 1px solid rgba(31, 111, 87, 0.15);
   padding: 1rem;
   display: flex;
@@ -412,6 +430,16 @@ onUnmounted(() => {
   overflow: auto;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(8px);
+}
+
+.community-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.community-mobile-actions {
+  display: none;
 }
 
 .community-kicker {
@@ -619,11 +647,31 @@ h1 {
 @media (max-width: 1000px) {
   .community-layout {
     grid-template-columns: 1fr;
-    height: auto;
+    min-height: var(--mobile-safe-height);
   }
 
   .community-map-wrap {
-    height: 62vh;
+    min-height: var(--mobile-safe-height);
+  }
+
+  .community-panel {
+    border-right: 0;
+    border-top: 1px solid rgba(31, 111, 87, 0.15);
+    padding: 0 1rem 1rem;
+    background: rgba(255, 255, 255, 0.97);
+  }
+
+  .community-mobile-actions {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 0.4rem;
+  }
+
+  .legend-overlay {
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    max-width: none;
   }
 }
 </style>

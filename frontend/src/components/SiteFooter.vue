@@ -1,5 +1,5 @@
 <template>
-  <footer class="bg-slate-50 w-full py-12 px-8 border-t border-slate-200">
+  <footer class="bg-slate-50 w-full py-10 px-4 md:px-8 border-t border-slate-200">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
       <div class="space-y-4">
         <div class="font-headline font-bold text-slate-900 text-xl italic">
@@ -9,7 +9,7 @@
           © 2026 The HikeShield Victoria. Official Victorian Safety Data. Empowering hikers with real-time risk assessments.
         </p>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-12">
+      <div class="grid w-full grid-cols-2 md:w-auto md:grid-cols-3 gap-6 md:gap-12">
         <div class="flex flex-col gap-3 font-body text-sm tracking-wide">
           <span class="font-bold text-slate-900 uppercase tracking-widest text-[10px]">Safety</span>
           <a href="#" class="text-slate-500 hover:text-[#4A6741] transition-colors">Emergency: 000</a>

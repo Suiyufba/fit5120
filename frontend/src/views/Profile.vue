@@ -395,6 +395,15 @@ h1 {
 }
 
 @media (max-width: 700px) {
+  .profile-page {
+    padding: 1rem 0.85rem 1.4rem;
+  }
+
+  .profile-card {
+    padding: 1rem;
+    border-radius: 1.1rem;
+  }
+
   .profile-grid,
   .profile-form {
     grid-template-columns: 1fr;
