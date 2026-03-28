@@ -150,6 +150,7 @@ export async function initCommunityReportStore() {
   if (!pool) return false;
 
   await pool.query(CREATE_TABLE_SQL);
+  await pool.query(`ALTER TABLE community_reports ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE`);
   return true;
 }
 
@@ -172,6 +173,7 @@ export async function listCommunityReports(limit = 50) {
     SELECT id, title, description, hazard_type, severity, location_name,
            latitude, longitude, image_url, reporter_name, likes, views, reported_at
     FROM community_reports
+    WHERE is_deleted = FALSE
     ORDER BY reported_at DESC
     LIMIT $1
     `,
@@ -231,4 +233,27 @@ export async function createCommunityReport(payload) {
     report: mapRow(result.rows[0]),
     storage: 'database',
   };
+}
+
+export async function deleteCommunityReportById(reportId) {
+  const id = text(reportId);
+  if (!id) return { ok: false };
+
+  const pool = getPgPool();
+  if (!pool) {
+    const index = memoryReports.findIndex((item) => item.id === id);
+    if (index < 0) return { ok: false };
+    memoryReports.splice(index, 1);
+    return { ok: true, storage: 'memory' };
+  }
+
+  const result = await pool.query(
+    `
+    UPDATE community_reports
+    SET is_deleted = TRUE, updated_at = NOW()
+    WHERE id = $1
+    `,
+    [id]
+  );
+  return { ok: result.rowCount > 0, storage: 'database' };
 }

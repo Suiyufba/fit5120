@@ -106,6 +106,17 @@ function pickString(value, fallback = '') {
   return text || fallback;
 }
 
+function slugify(value) {
+  const normalized = String(value || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  return normalized || `article-${Date.now()}`;
+}
+
 function toNumber(value, fallback = 0) {
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;
@@ -256,4 +267,118 @@ export async function initKnowledgeArticleStore() {
   }
 
   return true;
+}
+
+export async function listKnowledgeArticlesAdmin({ limit = 200 } = {}) {
+  const pool = getPgPool();
+  if (!pool) return [];
+
+  await initKnowledgeArticleStore();
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 200, 500));
+
+  const result = await pool.query(
+    `
+    SELECT id, slug, title, summary, content, image_url, topic, read_minutes, source_url, is_featured,
+           published_at, created_at, updated_at
+    FROM knowledge_articles
+    ORDER BY updated_at DESC
+    LIMIT $1
+    `,
+    [safeLimit]
+  );
+
+  return result.rows.map((row) => ({
+    id: String(row.id),
+    slug: row.slug,
+    title: row.title,
+    summary: row.summary,
+    content: row.content,
+    imageUrl: row.image_url || '',
+    topic: row.topic || 'General',
+    readMinutes: Number(row.read_minutes || 5),
+    sourceUrl: row.source_url || '',
+    isFeatured: Boolean(row.is_featured),
+    publishedAt: row.published_at ? new Date(row.published_at).toISOString() : null,
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
+  }));
+}
+
+export async function createKnowledgeArticleAdmin(payload = {}) {
+  const pool = getPgPool();
+  if (!pool) return { error: 'Database is not configured' };
+
+  await initKnowledgeArticleStore();
+
+  const title = pickString(payload.title);
+  const summary = pickString(payload.summary);
+  const content = pickString(payload.content);
+  if (!title || !summary || !content) {
+    return { error: 'title, summary and content are required' };
+  }
+
+  const topic = pickString(payload.topic, 'General');
+  const readMinutes = Math.max(1, Math.min(toNumber(payload.readMinutes, 5), 60));
+  const sourceUrl = pickString(payload.sourceUrl);
+  const imageUrl = pickString(payload.imageUrl);
+  const slug = slugify(payload.slug || title);
+  const isFeatured = Boolean(payload.isFeatured);
+
+  const result = await pool.query(
+    `
+    INSERT INTO knowledge_articles (
+      slug, title, summary, content, image_url, topic, read_minutes, source_url, is_featured, published_at, created_at, updated_at
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW(),NOW(),NOW())
+    RETURNING id
+    `,
+    [slug, title, summary, content, imageUrl || null, topic, readMinutes, sourceUrl || null, isFeatured]
+  );
+
+  return { id: String(result.rows[0].id) };
+}
+
+export async function updateKnowledgeArticleAdmin(id, payload = {}) {
+  const pool = getPgPool();
+  if (!pool) return { error: 'Database is not configured' };
+
+  await initKnowledgeArticleStore();
+  const articleId = Number(id);
+  if (!Number.isFinite(articleId)) return { error: 'Invalid article id' };
+
+  const title = pickString(payload.title);
+  const summary = pickString(payload.summary);
+  const content = pickString(payload.content);
+  if (!title || !summary || !content) {
+    return { error: 'title, summary and content are required' };
+  }
+
+  const topic = pickString(payload.topic, 'General');
+  const readMinutes = Math.max(1, Math.min(toNumber(payload.readMinutes, 5), 60));
+  const sourceUrl = pickString(payload.sourceUrl);
+  const imageUrl = pickString(payload.imageUrl);
+  const slug = slugify(payload.slug || title);
+  const isFeatured = Boolean(payload.isFeatured);
+
+  const result = await pool.query(
+    `
+    UPDATE knowledge_articles
+    SET slug = $2, title = $3, summary = $4, content = $5, image_url = $6,
+        topic = $7, read_minutes = $8, source_url = $9, is_featured = $10, updated_at = NOW()
+    WHERE id = $1
+    `,
+    [articleId, slug, title, summary, content, imageUrl || null, topic, readMinutes, sourceUrl || null, isFeatured]
+  );
+
+  return { ok: result.rowCount > 0 };
+}
+
+export async function deleteKnowledgeArticleAdmin(id) {
+  const pool = getPgPool();
+  if (!pool) return false;
+  await initKnowledgeArticleStore();
+
+  const articleId = Number(id);
+  if (!Number.isFinite(articleId)) return false;
+  const result = await pool.query('DELETE FROM knowledge_articles WHERE id = $1', [articleId]);
+  return result.rowCount > 0;
 }

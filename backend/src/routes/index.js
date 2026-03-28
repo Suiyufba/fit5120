@@ -5,6 +5,7 @@ import { authRoutes } from './authRoutes.js';
 import { routePlannerRoutes } from './routePlannerRoutes.js';
 import { knowledgeRoutes } from './knowledgeRoutes.js';
 import { communityReportsRoutes } from './communityReportsRoutes.js';
+import { adminRoutes } from './adminRoutes.js';
 
 const apiRouter = Router();
 
@@ -14,5 +15,6 @@ apiRouter.use(authRoutes);
 apiRouter.use(routePlannerRoutes);
 apiRouter.use(knowledgeRoutes);
 apiRouter.use(communityReportsRoutes);
+apiRouter.use(adminRoutes);
 
 export { apiRouter };

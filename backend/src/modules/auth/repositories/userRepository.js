@@ -131,3 +131,29 @@ export async function updateUserPasswordByEmail({ email, passwordHash }) {
   if (!result.rowCount) return null;
   return mapUserRow(result.rows[0]);
 }
+
+export async function listUsers({ limit = 200 } = {}) {
+  const pool = getPgPool();
+  if (!pool) return [];
+
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 200, 500));
+  const result = await pool.query(
+    `
+    SELECT id, email, age, region, security_question, experience_level, assessment_score,
+           assessment_answers_json, created_at, updated_at
+    FROM app_users
+    ORDER BY created_at DESC
+    LIMIT $1
+    `,
+    [safeLimit]
+  );
+  return result.rows.map(mapUserRow);
+}
+
+export async function deleteUserById(userId) {
+  const pool = getPgPool();
+  if (!pool) return false;
+
+  const result = await pool.query('DELETE FROM app_users WHERE id = $1', [userId]);
+  return result.rowCount > 0;
+}

@@ -8,13 +8,19 @@ const router = useRouter()
 const isMenuOpen = ref(false)
 const { isAuthenticated, state } = useAuthState()
 
-const navItems = [
-  { name: 'Home', path: '/' },
-  { name: 'Risk Map', path: '/risk-map' },
-  { name: 'Plan Route', path: '/route-planner' },
-  { name: 'Community Reports', path: '/community-reports' },
-  { name: 'Knowledge Hub', path: '/knowledge-hub' },
-]
+const navItems = computed(() => {
+  const items = [
+    { name: 'Home', path: '/' },
+    { name: 'Risk Map', path: '/risk-map' },
+    { name: 'Plan Route', path: '/route-planner' },
+    { name: 'Community Reports', path: '/community-reports' },
+    { name: 'Knowledge Hub', path: '/knowledge-hub' },
+  ]
+  if (isAuthenticated.value) {
+    items.push({ name: 'Dashboard', path: '/admin-dashboard' })
+  }
+  return items
+})
 
 const isActive = (path) => {
   if (path === '/') return route.path === '/'

@@ -4,6 +4,7 @@ import { fetchVicEmergencyHazards } from '../adapters/vicEmergencyAdapter.js';
 import { fetchVicRoadsHazards } from '../adapters/vicRoadsAdapter.js';
 import { getLatestHazardSnapshot, saveLatestHazardSnapshot } from '../../../infrastructure/db/hazardSnapshotRepository.js';
 import { inBbox, parseBbox, parseLayers, sanitizeHazard } from '../domain/hazardUtils.js';
+import { listManualHazards } from '../repositories/manualHazardRepository.js';
 
 let latestSnapshot = {
   hazards: [],
@@ -85,8 +86,10 @@ export async function getHazardsForRequest({ bboxParam, layersParam }) {
   const bbox = parseBbox(bboxParam);
   const layers = parseLayers(layersParam, config.defaultLayers);
   const snapshot = (await getLatestHazardSnapshot()) || latestSnapshot;
+  const manualHazards = await listManualHazards({ includeInactive: false });
+  const mergedHazards = [...snapshot.hazards, ...manualHazards];
 
-  const hazards = snapshot.hazards
+  const hazards = mergedHazards
     .filter((hazard) => layers.has(hazard.type))
     .filter((hazard) => inBbox(hazard.coordinates, bbox));
   const fetchedAtTs = Date.parse(snapshot.fetchedAt);
@@ -99,7 +102,7 @@ export async function getHazardsForRequest({ bboxParam, layersParam }) {
     isStale: ageMs !== null ? ageMs > config.staleThresholdMs : true,
     meta: {
       count: hazards.length,
-      totalBeforeFilter: snapshot.hazards.length,
+      totalBeforeFilter: mergedHazards.length,
       sourceStatus: snapshot.sourceStatus || [],
       lastError: snapshot.lastError || null,
       ageMs

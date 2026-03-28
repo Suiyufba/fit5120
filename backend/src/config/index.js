@@ -27,5 +27,9 @@ export const config = {
   openWeatherApiUrl: process.env.OPENWEATHER_API_URL || 'https://api.openweathermap.org/data/2.5/weather',
   osrmApiBaseUrl: process.env.OSRM_API_BASE_URL || 'https://router.project-osrm.org',
   vicEmergencyFeedUrl: process.env.VIC_EMERGENCY_FEED_URL || '',
-  vicEmergencyApiKey: process.env.VIC_EMERGENCY_API_KEY || ''
+  vicEmergencyApiKey: process.env.VIC_EMERGENCY_API_KEY || '',
+  adminEmails: (process.env.ADMIN_EMAILS || '1178804854@qq.com')
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean),
 };

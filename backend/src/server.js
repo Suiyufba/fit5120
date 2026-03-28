@@ -7,6 +7,7 @@ import { initHazardSnapshotStore } from './infrastructure/db/hazardSnapshotRepos
 import { initUserStore } from './modules/auth/repositories/userRepository.js';
 import { initKnowledgeArticleStore } from './modules/knowledge/repositories/articleRepository.js';
 import { initCommunityReportStore } from './modules/communityReports/repositories/communityReportRepository.js';
+import { initManualHazardStore } from './modules/hazards/repositories/manualHazardRepository.js';
 
 const app = express();
 
@@ -20,6 +21,7 @@ async function boot() {
     const userStoreReady = await initUserStore();
     const knowledgeReady = await initKnowledgeArticleStore();
     const communityReportStoreReady = await initCommunityReportStore();
+    const manualHazardStoreReady = await initManualHazardStore();
 
     if (dbReady) {
       console.log('Postgres snapshot store ready');
@@ -36,6 +38,11 @@ async function boot() {
       console.log('Community report store ready');
     } else {
       console.warn('DATABASE_URL is not set, community reports fallback to in-memory');
+    }
+    if (manualHazardStoreReady) {
+      console.log('Manual hazard store ready');
+    } else {
+      console.warn('DATABASE_URL is not set, manual hazard fallback to in-memory');
     }
   } catch (error) {
     console.error('Failed to initialize database stores:', error.message);
