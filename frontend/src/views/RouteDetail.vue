@@ -205,7 +205,7 @@ async function shareRoute() {
   }
 
   const sharePayload = {
-    title: 'GoHiking Route Plan',
+    title: 'HikeShield Route Plan',
     text: 'Safer pre-hike route and risk detail',
     url: shareUrl,
   }

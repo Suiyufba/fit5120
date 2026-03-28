@@ -39,7 +39,7 @@ async function handleSubmit() {
 <template>
   <main class="auth-page">
     <section class="auth-card">
-      <p class="auth-kicker">GoHiking Account</p>
+      <p class="auth-kicker">HikeShield Account</p>
       <h1>Welcome Back</h1>
       <p class="auth-subtitle">Sign in to view your level, risk profile, and route recommendations.</p>
 

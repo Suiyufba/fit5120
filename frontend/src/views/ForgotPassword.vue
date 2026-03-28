@@ -37,7 +37,7 @@ async function handleConfirmReset() {
 <template>
   <main class="forgot-page">
     <section class="forgot-card">
-      <p class="forgot-kicker">GoHiking Account</p>
+      <p class="forgot-kicker">HikeShield Account</p>
       <h1>Reset Password</h1>
       <p class="forgot-subtitle">Reset with your email and security answer.</p>
 
