@@ -17,21 +17,24 @@ import {
   updateKnowledgeArticleAdmin,
   deleteKnowledgeArticleAdmin,
 } from '../modules/knowledge/repositories/articleRepository.js';
+import { getLatestHazardSnapshot } from '../infrastructure/db/hazardSnapshotRepository.js';
 
 export async function getAdminOverview(req, res) {
   try {
-    const [users, reportsPayload, manualHazards, articles] = await Promise.all([
+    const [users, reportsPayload, manualHazards, articles, latestSnapshot] = await Promise.all([
       listUsers({ limit: 500 }),
       listCommunityReports(500),
       listManualHazards({ includeInactive: false }),
       listKnowledgeArticlesAdmin({ limit: 500 }),
+      getLatestHazardSnapshot(),
     ]);
+    const officialHazardCount = Array.isArray(latestSnapshot?.hazards) ? latestSnapshot.hazards.length : 0;
 
     res.json({
       counts: {
         users: users.length,
         communityReports: reportsPayload.reports.length,
-        manualRisks: manualHazards.length,
+        risks: manualHazards.length + officialHazardCount,
         knowledgeArticles: articles.length,
       },
     });

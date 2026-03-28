@@ -8,6 +8,7 @@ Implemented an authenticated admin dashboard to manage:
 - User account operations
 - KnowledgeHub article operations
 - Visual map-based risk editing for admins (click/select/edit/remove on map)
+- Overview card `Risks` now shows `manual hazards + official hazard snapshot` total
 
 ## Frontend Changes
 
@@ -59,6 +60,7 @@ Base path: `/api/admin`
 
 - `GET /overview`
   - Returns high-level counts for dashboard cards
+  - `risks` count includes both editable manual hazards and official hazard snapshot items
 
 ### Manual Risks
 

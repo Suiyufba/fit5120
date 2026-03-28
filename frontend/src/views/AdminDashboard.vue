@@ -27,7 +27,7 @@ const loading = ref(false)
 const error = ref('')
 const info = ref('')
 
-const overview = ref({ users: 0, communityReports: 0, manualRisks: 0, knowledgeArticles: 0 })
+const overview = ref({ users: 0, communityReports: 0, risks: 0, knowledgeArticles: 0 })
 const risks = ref([])
 const reports = ref([])
 const users = ref([])
@@ -532,7 +532,7 @@ onUnmounted(() => {
       <div class="metrics">
         <article><span>Users</span><strong>{{ overview.users }}</strong></article>
         <article><span>Community Reports</span><strong>{{ overview.communityReports }}</strong></article>
-        <article><span>Manual Risks</span><strong>{{ overview.manualRisks }}</strong></article>
+        <article><span>Risks</span><strong>{{ overview.risks }}</strong></article>
         <article><span>Knowledge Articles</span><strong>{{ overview.knowledgeArticles }}</strong></article>
       </div>
 
