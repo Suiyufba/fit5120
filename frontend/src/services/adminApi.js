@@ -63,6 +63,10 @@ export function fetchAdminUsers(token) {
   return request('/admin/users', { token })
 }
 
+export function updateAdminUser(token, userId, payload) {
+  return request(`/admin/users/${userId}`, { method: 'PUT', token, body: payload })
+}
+
 export function deleteAdminUser(token, userId) {
   return request(`/admin/users/${userId}`, { method: 'DELETE', token })
 }

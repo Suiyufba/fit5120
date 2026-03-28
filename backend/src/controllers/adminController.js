@@ -1,4 +1,4 @@
-import { listUsers, deleteUserById } from '../modules/auth/repositories/userRepository.js';
+import { listUsers, deleteUserById, updateUserById } from '../modules/auth/repositories/userRepository.js';
 import {
   createManualHazard,
   listManualHazards,
@@ -173,6 +173,23 @@ export async function deleteAdminUser(req, res) {
     res.json({ ok: true });
   } catch (error) {
     res.status(500).json({ error: error.message || 'Failed to delete user' });
+  }
+}
+
+export async function updateAdminUser(req, res) {
+  try {
+    const result = await updateUserById(req.params.id, req.body || {});
+    if (result?.error) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    if (!result?.ok) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    res.json({ user: result.user });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Failed to update user' });
   }
 }
 

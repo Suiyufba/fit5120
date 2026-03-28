@@ -157,3 +157,50 @@ export async function deleteUserById(userId) {
   const result = await pool.query('DELETE FROM app_users WHERE id = $1', [userId]);
   return result.rowCount > 0;
 }
+
+export async function updateUserById(userId, { email, region, experienceLevel, assessmentScore }) {
+  const pool = getPgPool();
+  if (!pool) return null;
+
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const normalizedRegion = String(region || '').trim();
+  const normalizedLevel = String(experienceLevel || '').trim().toLowerCase();
+  const normalizedScore = Number(assessmentScore);
+
+  if (!normalizedEmail) {
+    return { error: 'email is required' };
+  }
+
+  if (!['newcomer', 'intermediate', 'advanced'].includes(normalizedLevel)) {
+    return { error: 'experienceLevel must be newcomer, intermediate, or advanced' };
+  }
+
+  if (!Number.isFinite(normalizedScore) || normalizedScore < 0 || normalizedScore > 100) {
+    return { error: 'assessmentScore must be a number between 0 and 100' };
+  }
+
+  try {
+    const result = await pool.query(
+      `
+      UPDATE app_users
+      SET email = $2,
+          region = $3,
+          experience_level = $4,
+          assessment_score = $5,
+          updated_at = NOW()
+      WHERE id = $1
+      RETURNING id, email, age, region, security_question, experience_level, assessment_score,
+                assessment_answers_json, created_at, updated_at
+      `,
+      [userId, normalizedEmail, normalizedRegion || null, normalizedLevel, Math.round(normalizedScore)]
+    );
+
+    if (!result.rowCount) return { ok: false };
+    return { ok: true, user: mapUserRow(result.rows[0]) };
+  } catch (error) {
+    if (String(error?.message || '').toLowerCase().includes('unique')) {
+      return { error: 'email already exists' };
+    }
+    throw error;
+  }
+}

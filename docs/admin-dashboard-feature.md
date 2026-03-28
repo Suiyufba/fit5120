@@ -6,6 +6,7 @@ Implemented an authenticated admin dashboard to manage:
 
 - Unified map operations for both manual risks and community reports
 - User account operations
+- User edit operations for email, region, experience level, and assessment score
 - KnowledgeHub article operations
 - Visual map-based risk editing for admins (click/select/edit/remove on map)
 - Overview card `Risks` now shows `manual hazards + official hazard snapshot` total
@@ -84,6 +85,8 @@ Base path: `/api/admin`
 ### Users
 
 - `GET /users`
+- `PUT /users/:id`
+  - Update `email`, `region`, `experienceLevel`, `assessmentScore`
 - `DELETE /users/:id`
 
 ### Knowledge Articles

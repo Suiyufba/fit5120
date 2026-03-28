@@ -15,6 +15,7 @@ import {
   updateAdminCommunityReport,
   deleteAdminCommunityReport,
   fetchAdminUsers,
+  updateAdminUser,
   deleteAdminUser,
   fetchAdminKnowledgeArticles,
   createAdminKnowledgeArticle,
@@ -62,6 +63,8 @@ const articleForm = reactive({
   imageUrl: '',
   isFeatured: false,
 })
+
+const userEditForms = reactive({})
 
 const riskMeta = {
   fire: { color: '#D84727', label: 'Fire' },
@@ -462,6 +465,51 @@ async function handleDeleteUser(userId) {
   }
 }
 
+function syncUserEditForms() {
+  const nextIds = new Set(users.value.map((user) => user.id))
+
+  users.value.forEach((user) => {
+    if (!userEditForms[user.id]) {
+      userEditForms[user.id] = {
+        email: user.email || '',
+        region: user.region || '',
+        experienceLevel: user.experienceLevel || 'newcomer',
+        assessmentScore: String(user.assessmentScore ?? 0),
+      }
+      return
+    }
+
+    userEditForms[user.id].email = user.email || ''
+    userEditForms[user.id].region = user.region || ''
+    userEditForms[user.id].experienceLevel = user.experienceLevel || 'newcomer'
+    userEditForms[user.id].assessmentScore = String(user.assessmentScore ?? 0)
+  })
+
+  Object.keys(userEditForms).forEach((userId) => {
+    if (!nextIds.has(userId)) {
+      delete userEditForms[userId]
+    }
+  })
+}
+
+async function handleUpdateUser(userId) {
+  try {
+    const token = tokenOrThrow()
+    const form = userEditForms[userId]
+    await updateAdminUser(token, userId, {
+      email: form.email,
+      region: form.region,
+      experienceLevel: form.experienceLevel,
+      assessmentScore: Number(form.assessmentScore),
+    })
+    info.value = 'User updated'
+    error.value = ''
+    await loadAdminData()
+  } catch (nextError) {
+    error.value = nextError?.message || 'Failed to update user'
+  }
+}
+
 async function handleCreateArticle() {
   try {
     const token = tokenOrThrow()
@@ -559,6 +607,7 @@ onMounted(async () => {
 watch(officialHazards, drawOfficialHazards, { deep: true })
 watch([risks, reports, selectedEntity, mapEditMode], drawManagedEntities, { deep: true })
 watch(() => [entityForm.latitude, entityForm.longitude], drawDraftPoint)
+watch(users, syncUserEditForms, { deep: true })
 
 onUnmounted(() => {
   if (hazardInflightController) hazardInflightController.abort()
@@ -677,11 +726,23 @@ onUnmounted(() => {
         <h2>Manage Users</h2>
         <div class="list">
           <article v-for="user in users" :key="user.id">
-            <div>
-              <strong>{{ user.email }}</strong>
-              <p>{{ user.region || 'N/A' }} · {{ user.experienceLevel }} · score {{ user.assessmentScore }}</p>
+            <div class="user-edit-card">
+              <strong>User ID: {{ user.id }}</strong>
+              <div v-if="userEditForms[user.id]" class="user-edit-grid">
+                <input v-model="userEditForms[user.id].email" placeholder="Email" />
+                <input v-model="userEditForms[user.id].region" placeholder="Region" />
+                <select v-model="userEditForms[user.id].experienceLevel">
+                  <option value="newcomer">Newcomer</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+                <input v-model="userEditForms[user.id].assessmentScore" type="number" min="0" max="100" placeholder="Score" />
+              </div>
             </div>
-            <button class="danger-btn" @click="handleDeleteUser(user.id)">Delete</button>
+            <div class="user-actions">
+              <button class="ghost-btn" @click="handleUpdateUser(user.id)">Save</button>
+              <button class="danger-btn" @click="handleDeleteUser(user.id)">Delete</button>
+            </div>
           </article>
         </div>
       </section>
@@ -1014,6 +1075,31 @@ h2 {
   font-size: 0.8rem;
 }
 
+.user-edit-card {
+  flex: 1;
+}
+
+.user-edit-grid {
+  margin-top: 0.45rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.user-edit-grid input,
+.user-edit-grid select {
+  border: 1px solid #d8e5e0;
+  border-radius: 10px;
+  padding: 0.52rem 0.62rem;
+  font-size: 0.86rem;
+}
+
+.user-actions {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
 .danger-btn {
   border: 1px solid #ebc7c7;
   background: #fff6f6;
@@ -1082,6 +1168,10 @@ h2 {
 
   .form-grid textarea {
     grid-column: span 1;
+  }
+
+  .user-edit-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

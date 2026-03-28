@@ -12,6 +12,7 @@ import {
   updateAdminCommunityReport,
   deleteAdminCommunityReport,
   getAdminUsers,
+  updateAdminUser,
   deleteAdminUser,
   getAdminKnowledgeArticles,
   createAdminKnowledgeArticle,
@@ -36,6 +37,7 @@ adminRoutes.put('/admin/community-reports/:id', updateAdminCommunityReport);
 adminRoutes.delete('/admin/community-reports/:id', deleteAdminCommunityReport);
 
 adminRoutes.get('/admin/users', getAdminUsers);
+adminRoutes.put('/admin/users/:id', updateAdminUser);
 adminRoutes.delete('/admin/users/:id', deleteAdminUser);
 
 adminRoutes.get('/admin/knowledge/articles', getAdminKnowledgeArticles);
