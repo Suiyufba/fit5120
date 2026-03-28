@@ -1,25 +1,41 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { fetchCommunityReports } from '../services/communityReportApi'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import * as L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import { fetchRealtimeHazards } from '../services/hazardApi'
+import { fetchCommunityReports, submitCommunityReport } from '../services/communityReportApi'
 
-const router = useRouter()
+const mapElement = ref(null)
 
 const reports = ref([])
-const loading = ref(false)
-const error = ref('')
+const hazards = ref([])
 const fetchedAt = ref(null)
 const storageMode = ref('unknown')
+const loading = ref(false)
+const submitLoading = ref(false)
+const error = ref('')
+const submitError = ref('')
+const submitSuccess = ref('')
 
-let refreshTimer
-let inflightController
+const selectedPoint = ref(null)
+
+const form = reactive({
+  title: '',
+  description: '',
+  locationName: '',
+  hazardType: 'trail',
+  severity: 'moderate',
+  reporterName: '',
+  imageUrl: '',
+})
 
 const hazardMeta = {
-  fire: { label: 'Fire Hazard', color: '#E76F51', icon: 'local_fire_department' },
-  flood: { label: 'Flood Warning', color: '#2F7EC1', icon: 'water' },
-  storm: { label: 'Weather Impact', color: '#1c4f51', icon: 'rainy' },
-  trail: { label: 'Trail Caution', color: '#6b5c4f', icon: 'warning' },
-  other: { label: 'General Alert', color: '#5A6B5F', icon: 'campaign' },
+  fire: { label: 'Bushfire', color: '#D84727', icon: 'local_fire_department' },
+  flood: { label: 'Flood', color: '#2165B5', icon: 'flood' },
+  storm: { label: 'Storm', color: '#5A4B81', icon: 'rainy' },
+  heat: { label: 'Heat', color: '#D08817', icon: 'thermostat' },
+  trail: { label: 'Trail', color: '#6B5C4F', icon: 'warning' },
+  other: { label: 'Other', color: '#2E7D6B', icon: 'campaign' },
 }
 
 const severityRank = { extreme: 4, high: 3, moderate: 2, low: 1 }
@@ -38,209 +54,573 @@ const stats = computed(() => {
   return summary
 })
 
-const markerReports = computed(() => {
-  const latMin = -39.4
-  const latMax = -34.0
-  const lngMin = 140.9
-  const lngMax = 150.1
-
-  return sortedReports.value.map((item) => {
-    const lngRatio = (item.longitude - lngMin) / (lngMax - lngMin)
-    const latRatio = 1 - (item.latitude - latMin) / (latMax - latMin)
-
-    const x = Math.max(0.06, Math.min(0.94, Number.isFinite(lngRatio) ? lngRatio : 0.5))
-    const y = Math.max(0.08, Math.min(0.92, Number.isFinite(latRatio) ? latRatio : 0.5))
-
-    return {
-      ...item,
-      x,
-      y,
-      meta: hazardMeta[item.hazardType] || hazardMeta.other,
-    }
-  })
+const selectedPointLabel = computed(() => {
+  if (!selectedPoint.value) return 'Click the map to select report location'
+  return `${selectedPoint.value.lat}, ${selectedPoint.value.lng}`
 })
 
-function getMeta(report) {
-  return hazardMeta[report.hazardType] || hazardMeta.other
-}
+let mapInstance
+let hazardLayer
+let reportLayer
+let selectedPointLayer
+let inflightReportController
+let inflightHazardController
+let refreshTimer
 
-function formatCount(value) {
-  const num = Number(value || 0)
-  if (num >= 1000) return (num / 1000).toFixed(1).replace('.0', '') + 'k'
-  return String(num)
+function severityLabel(value) {
+  if (value === 'extreme') return 'Extreme'
+  if (value === 'high') return 'High'
+  if (value === 'moderate') return 'Moderate'
+  return 'Low'
 }
 
 function formatRelativeTime(date) {
-  const reportedTs = date instanceof Date ? date.getTime() : Date.parse(date || '')
-  if (!Number.isFinite(reportedTs)) return 'Unknown time'
+  const ts = date instanceof Date ? date.getTime() : Date.parse(date || '')
+  if (!Number.isFinite(ts)) return 'Unknown'
+  const secs = Math.max(0, Math.floor((Date.now() - ts) / 1000))
+  if (secs < 60) return `${secs}s ago`
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`
+  return `${Math.floor(secs / 86400)}d ago`
+}
 
-  const deltaSec = Math.max(0, Math.floor((Date.now() - reportedTs) / 1000))
-  if (deltaSec < 60) return deltaSec + 's ago'
-  if (deltaSec < 3600) return Math.floor(deltaSec / 60) + 'm ago'
-  if (deltaSec < 86400) return Math.floor(deltaSec / 3600) + 'h ago'
-  return Math.floor(deltaSec / 86400) + 'd ago'
+function getMarkerRadius(severity) {
+  if (severity === 'extreme') return 11
+  if (severity === 'high') return 9
+  if (severity === 'moderate') return 7
+  return 6
+}
+
+function zoneOpacitiesBySeverity(severity) {
+  if (severity === 'extreme') return { l1: 0.3, l2: 0.18, l3: 0.1 }
+  if (severity === 'high') return { l1: 0.24, l2: 0.14, l3: 0.08 }
+  if (severity === 'moderate') return { l1: 0.18, l2: 0.1, l3: 0.06 }
+  return { l1: 0.14, l2: 0.08, l3: 0.05 }
+}
+
+function drawSelectedPoint() {
+  if (!selectedPointLayer) return
+  selectedPointLayer.clearLayers()
+  if (!selectedPoint.value) return
+
+  L.marker([selectedPoint.value.lat, selectedPoint.value.lng], {
+    icon: L.divIcon({
+      className: 'planner-anchor-icon',
+      html: '<div class="planner-anchor planner-anchor--report">R</div>',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+    }),
+  })
+    .bindPopup('Selected report point')
+    .addTo(selectedPointLayer)
+}
+
+function drawHazards() {
+  if (!hazardLayer) return
+  hazardLayer.clearLayers()
+
+  hazards.value.forEach((hazard) => {
+    if (!Array.isArray(hazard.coordinates) || hazard.coordinates.length !== 2) return
+    const meta = hazardMeta[hazard.type] || hazardMeta.other
+    const opacity = zoneOpacitiesBySeverity(hazard.severity)
+
+    ;[
+      { radius: 5000, fillOpacity: opacity.l3, weight: 1 },
+      { radius: 3000, fillOpacity: opacity.l2, weight: 1 },
+      { radius: 1000, fillOpacity: opacity.l1, weight: 2 },
+    ].forEach((zone) => {
+      L.circle(hazard.coordinates, {
+        radius: zone.radius,
+        color: meta.color,
+        fillColor: meta.color,
+        fillOpacity: zone.fillOpacity,
+        opacity: 0.45,
+        weight: zone.weight,
+        interactive: false,
+      }).addTo(hazardLayer)
+    })
+
+    L.circleMarker(hazard.coordinates, {
+      radius: getMarkerRadius(hazard.severity),
+      color: meta.color,
+      fillColor: meta.color,
+      fillOpacity: 0.86,
+      weight: 2,
+    })
+      .bindPopup(`${hazard.title}<br/>${meta.label} · ${severityLabel(hazard.severity)}`)
+      .addTo(hazardLayer)
+  })
+}
+
+function drawReports() {
+  if (!reportLayer) return
+  reportLayer.clearLayers()
+
+  sortedReports.value.forEach((report) => {
+    if (!Number.isFinite(report.latitude) || !Number.isFinite(report.longitude)) return
+    const meta = hazardMeta[report.hazardType] || hazardMeta.other
+
+    L.marker([report.latitude, report.longitude], {
+      icon: L.divIcon({
+        className: 'community-report-pin',
+        html: `<div class="community-report-pin__dot" style="background:${meta.color}"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      }),
+    })
+      .bindPopup(
+        `<strong>${report.title}</strong><br/>${meta.label} · ${severityLabel(report.severity)}<br/>${report.locationName}`
+      )
+      .addTo(reportLayer)
+  })
+}
+
+async function loadHazards() {
+  if (!mapInstance) return
+  if (inflightHazardController) inflightHazardController.abort()
+  inflightHazardController = new AbortController()
+
+  try {
+    const bounds = mapInstance.getBounds()
+    const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
+    const payload = await fetchRealtimeHazards({
+      bbox,
+      layers: ['fire', 'flood', 'storm', 'heat', 'other'],
+      signal: inflightHazardController.signal,
+    })
+    hazards.value = payload.hazards
+  } catch (nextError) {
+    if (nextError?.name === 'AbortError') return
+    console.error('Failed to load map hazards:', nextError)
+  }
 }
 
 async function loadReports() {
-  if (inflightController) inflightController.abort()
-  inflightController = new AbortController()
+  if (inflightReportController) inflightReportController.abort()
+  inflightReportController = new AbortController()
   loading.value = true
   error.value = ''
 
   try {
     const payload = await fetchCommunityReports({
-      limit: 80,
-      signal: inflightController.signal,
+      limit: 100,
+      signal: inflightReportController.signal,
     })
     reports.value = payload.reports
-    fetchedAt.value = payload.fetchedAt
     storageMode.value = payload.storage
-  } catch (loadError) {
-    if (loadError?.name === 'AbortError') return
-    error.value = loadError?.message || 'Failed to fetch reports'
+    fetchedAt.value = payload.fetchedAt
+  } catch (nextError) {
+    if (nextError?.name === 'AbortError') return
+    error.value = nextError?.message || 'Failed to fetch community reports'
   } finally {
     loading.value = false
   }
 }
 
+function validateForm() {
+  if (!selectedPoint.value) return 'Please pick a location on the map first'
+  if (!form.title.trim()) return 'Title is required'
+  if (!form.description.trim()) return 'Description is required'
+  if (!form.locationName.trim()) return 'Location name is required'
+  return ''
+}
+
+async function handleSubmit() {
+  submitError.value = ''
+  submitSuccess.value = ''
+  const validationError = validateForm()
+  if (validationError) {
+    submitError.value = validationError
+    return
+  }
+
+  submitLoading.value = true
+
+  try {
+    await submitCommunityReport({
+      title: form.title.trim(),
+      description: form.description.trim(),
+      locationName: form.locationName.trim(),
+      hazardType: form.hazardType,
+      severity: form.severity,
+      latitude: selectedPoint.value.lat,
+      longitude: selectedPoint.value.lng,
+      reporterName: form.reporterName.trim() || 'Anonymous Hiker',
+      imageUrl: form.imageUrl.trim(),
+    })
+
+    submitSuccess.value = 'Report submitted successfully.'
+    form.title = ''
+    form.description = ''
+    form.locationName = ''
+    form.reporterName = ''
+    form.imageUrl = ''
+    await loadReports()
+  } catch (nextError) {
+    submitError.value = nextError?.message || 'Failed to submit report'
+  } finally {
+    submitLoading.value = false
+  }
+}
+
 onMounted(async () => {
-  await loadReports()
-  refreshTimer = window.setInterval(loadReports, 60000)
+  mapInstance = L.map(mapElement.value, {
+    zoomControl: true,
+    attributionControl: true,
+  }).setView([-37.8136, 144.9631], 7)
+
+  mapInstance.attributionControl.setPrefix(false)
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors',
+  }).addTo(mapInstance)
+
+  hazardLayer = L.layerGroup().addTo(mapInstance)
+  reportLayer = L.layerGroup().addTo(mapInstance)
+  selectedPointLayer = L.layerGroup().addTo(mapInstance)
+
+  mapInstance.on('click', (event) => {
+    selectedPoint.value = {
+      lat: Number(event.latlng.lat.toFixed(6)),
+      lng: Number(event.latlng.lng.toFixed(6)),
+    }
+  })
+
+  mapInstance.on('moveend', loadHazards)
+
+  await Promise.all([loadHazards(), loadReports()])
+  refreshTimer = window.setInterval(() => {
+    loadHazards()
+    loadReports()
+  }, 60000)
 })
+
+watch(hazards, drawHazards, { deep: true })
+watch(sortedReports, drawReports, { deep: true })
+watch(selectedPoint, drawSelectedPoint, { deep: true })
 
 onUnmounted(() => {
   if (refreshTimer) window.clearInterval(refreshTimer)
-  if (inflightController) inflightController.abort()
+  if (inflightReportController) inflightReportController.abort()
+  if (inflightHazardController) inflightHazardController.abort()
+  if (mapInstance) {
+    mapInstance.remove()
+    mapInstance = null
+  }
 })
 </script>
 
 <template>
-  <div class="flex flex-col" style="height: calc(100vh - 72px)">
-    <main class="flex-1 flex overflow-hidden relative">
-      <aside class="w-full md:w-[430px] bg-surface-container-low flex flex-col z-20 shadow-xl md:shadow-none">
-        <div class="p-6 border-b border-outline-variant/20 space-y-4">
-          <div class="flex justify-between items-end gap-4">
-            <div>
-              <h1 class="text-3xl font-headline font-extrabold tracking-tight text-primary">Community Reports</h1>
-              <p class="text-xs text-on-surface-variant font-medium mt-1">
-                {{ stats.total }} reports · Last sync: {{ fetchedAt ? fetchedAt.toLocaleTimeString() : '—' }}
-              </p>
-            </div>
-            <span class="text-[10px] font-label font-medium bg-primary-container/10 text-primary px-3 py-1 rounded-full uppercase tracking-widest">
-              {{ storageMode === 'database' ? 'Railway DB' : 'Memory Fallback' }}
-            </span>
-          </div>
+  <main class="community-layout">
+    <aside class="community-panel">
+      <div>
+        <p class="community-kicker">Community Intelligence + Official Risk Layer</p>
+        <h1>Community Reports</h1>
+        <p class="community-sub">Pick location on map, fill report on left, submit in same page.</p>
+      </div>
 
-          <div class="grid grid-cols-4 gap-2 text-center text-[11px] font-semibold">
-            <div class="rounded-lg bg-red-50 text-red-700 px-2 py-2">E {{ stats.extreme }}</div>
-            <div class="rounded-lg bg-orange-50 text-orange-700 px-2 py-2">H {{ stats.high }}</div>
-            <div class="rounded-lg bg-amber-50 text-amber-700 px-2 py-2">M {{ stats.moderate }}</div>
-            <div class="rounded-lg bg-emerald-50 text-emerald-700 px-2 py-2">L {{ stats.low }}</div>
-          </div>
-
-          <button
-            class="w-full py-2 px-4 rounded-lg bg-primary text-on-primary font-headline font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-            @click="router.push('/report-hazard')"
-          >
-            <span class="material-symbols-outlined text-sm">add_circle</span>
-            Submit Report
-          </button>
-
-          <p v-if="error" class="text-xs text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-            {{ error }}
-          </p>
+      <section class="community-form">
+        <div class="point-card">
+          <p>Selected Map Point</p>
+          <strong>{{ selectedPointLabel }}</strong>
         </div>
 
-        <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4 bg-surface-container-low">
-          <div v-if="loading && !sortedReports.length" class="text-sm text-on-surface-variant">Loading reports...</div>
+        <input v-model="form.title" class="field-input" type="text" placeholder="Report title" />
+        <textarea v-model="form.description" class="field-input" rows="3" placeholder="Describe what you observed"></textarea>
+        <input v-model="form.locationName" class="field-input" type="text" placeholder="Location name (track / park)" />
 
-          <div
-            v-for="report in sortedReports"
-            :key="report.id"
-            class="group bg-surface-container-lowest rounded-xl p-4 transition-all duration-300 hover:bg-surface-bright border-l-4"
-            :style="{ borderColor: getMeta(report).color }"
-          >
-            <div class="flex items-center gap-2 mb-1">
-              <span class="w-2 h-2 rounded-full" :style="{ backgroundColor: getMeta(report).color }"></span>
-              <span class="text-[10px] font-label font-bold uppercase tracking-widest" :style="{ color: getMeta(report).color }">
-                {{ getMeta(report).label }}
-              </span>
-              <span class="ml-auto text-[10px] uppercase font-bold text-on-surface-variant">{{ report.severity }}</span>
-            </div>
-
-            <h3 class="font-headline font-bold text-on-surface leading-tight">{{ report.title }}</h3>
-            <p class="text-xs text-on-surface-variant font-medium mt-1">
-              {{ report.locationName }} · {{ formatRelativeTime(report.reportedAt) }}
-            </p>
-            <p class="text-xs text-on-surface-variant mt-2 leading-relaxed">{{ report.description }}</p>
-
-            <div class="flex items-center gap-3 mt-3 text-[10px] font-bold text-slate-500">
-              <span class="flex items-center gap-1">
-                <span class="material-symbols-outlined text-xs">thumb_up</span> {{ formatCount(report.likes) }}
-              </span>
-              <span class="flex items-center gap-1">
-                <span class="material-symbols-outlined text-xs">visibility</span> {{ formatCount(report.views) }}
-              </span>
-              <span class="ml-auto">{{ report.reporterName }}</span>
-            </div>
-          </div>
-
-          <div v-if="!loading && !sortedReports.length" class="text-sm text-on-surface-variant">
-            No reports yet. Be the first to submit one.
-          </div>
-        </div>
-      </aside>
-
-      <section class="flex-1 relative bg-[#e5e5f7] overflow-hidden hidden md:block">
-        <div class="absolute inset-0 z-0">
-          <img
-            class="w-full h-full object-cover opacity-80 mix-blend-multiply grayscale-[20%]"
-            alt="Topographic map of Victoria"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnpDiY-W_u-7FF6aOXRQbek5VwW_hTWMQYnDL40UVGg9twyDJG_PnbtNXXzwfZcl8eHBizV-CvDl4_pFCJ-EkoyNSk9M6Ac4iWRBzQNOMbqxP56mlU9i-hN00i2KSOa6gX2Lwvcp6-M119i7KqeKj_jmxCQetWPJRG7gfLurvFfmv4Q9mAqqw93Pu2-mjksLcqWWvPnZm2MtixXhB-TFKDRMHQ5l3_xt0fcMjz7-B5gYi1HnhnzTNzaEkOR6FKfMdytWtZJNUKDyE"
-          />
-          <div class="absolute inset-0 bg-primary/5"></div>
+        <div class="field-row">
+          <select v-model="form.hazardType" class="field-input">
+            <option value="fire">Fire</option>
+            <option value="flood">Flood</option>
+            <option value="storm">Storm / Mud</option>
+            <option value="trail">Trail Obstacle</option>
+            <option value="other">Other</option>
+          </select>
+          <select v-model="form.severity" class="field-input">
+            <option value="low">Low</option>
+            <option value="moderate">Moderate</option>
+            <option value="high">High</option>
+            <option value="extreme">Extreme</option>
+          </select>
         </div>
 
-        <div
-          v-for="report in markerReports"
-          :key="'marker-' + report.id"
-          class="absolute z-10 group cursor-pointer"
-          :style="{ left: report.x * 100 + '%', top: report.y * 100 + '%', transform: 'translate(-50%, -50%)' }"
-        >
-          <div class="relative">
-            <div
-              v-if="report.severity === 'extreme' || report.severity === 'high'"
-              class="absolute -inset-4 rounded-full animate-ping"
-              :style="{ backgroundColor: report.meta.color + '33' }"
-            ></div>
-            <div
-              class="bg-surface-container-lowest p-2 rounded-full shadow-xl border-2 flex items-center justify-center group-hover:scale-125 transition-transform duration-300"
-              :style="{ borderColor: report.meta.color }"
-            >
-              <span class="material-symbols-outlined" :style="{ color: report.meta.color }">
-                {{ report.meta.icon }}
-              </span>
-            </div>
-            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-on-surface text-surface text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-bold">
-              {{ report.title }}
-            </div>
-          </div>
+        <div class="field-row">
+          <input v-model="form.reporterName" class="field-input" type="text" placeholder="Reporter name (optional)" />
+          <input v-model="form.imageUrl" class="field-input" type="url" placeholder="Image URL (optional)" />
         </div>
 
-        <div class="absolute top-8 left-8 z-30">
-          <div class="bg-surface-container-lowest/90 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-outline-variant/10 max-w-xs">
-            <h4 class="font-headline font-extrabold text-primary mb-3 text-sm">Legend</h4>
-            <div class="space-y-3">
-              <div v-for="(meta, key) in hazardMeta" :key="key" class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full flex items-center justify-center" :style="{ backgroundColor: meta.color + '20' }">
-                  <span class="material-symbols-outlined text-sm" :style="{ color: meta.color }">{{ meta.icon }}</span>
-                </span>
-                <span class="text-xs font-medium text-on-surface-variant">{{ meta.label }}</span>
-              </div>
-            </div>
+        <button class="primary-btn" :disabled="submitLoading" @click="handleSubmit">
+          {{ submitLoading ? 'Submitting...' : 'Submit Report' }}
+        </button>
+        <p v-if="submitError" class="error-text">{{ submitError }}</p>
+        <p v-if="submitSuccess" class="ok-text">{{ submitSuccess }}</p>
+        <p v-if="error" class="error-text">{{ error }}</p>
+      </section>
+
+      <section class="summary-card">
+        <p class="summary-title">Live Summary</p>
+        <p>{{ stats.total }} reports · E {{ stats.extreme }} · H {{ stats.high }} · M {{ stats.moderate }} · L {{ stats.low }}</p>
+        <p>Storage: {{ storageMode === 'database' ? 'Railway DB' : 'Fallback' }}</p>
+        <p>Last sync: {{ fetchedAt ? fetchedAt.toLocaleTimeString() : '—' }}</p>
+      </section>
+
+      <section class="feed-card">
+        <p class="summary-title">Latest Reports</p>
+        <p v-if="loading && !sortedReports.length" class="muted">Loading reports...</p>
+        <div v-for="report in sortedReports.slice(0, 8)" :key="report.id" class="feed-item">
+          <div class="feed-title-row">
+            <strong>{{ report.title }}</strong>
+            <span>{{ severityLabel(report.severity) }}</span>
           </div>
+          <p>{{ report.locationName }} · {{ formatRelativeTime(report.reportedAt) }}</p>
         </div>
       </section>
-    </main>
-  </div>
+    </aside>
+
+    <section class="community-map-wrap">
+      <div ref="mapElement" class="community-map"></div>
+      <div class="legend-overlay">
+        <p>Map Layers</p>
+        <span class="legend-item"><i style="background:#1F6E57"></i>User Report</span>
+        <span class="legend-item"><i style="background:#D84727"></i>Fire Risk</span>
+        <span class="legend-item"><i style="background:#2165B5"></i>Flood Risk</span>
+        <span class="legend-item"><i style="background:#5A4B81"></i>Storm Risk</span>
+      </div>
+    </section>
+  </main>
 </template>
+
+<style scoped>
+.community-layout {
+  display: grid;
+  grid-template-columns: 410px 1fr;
+  height: calc(100vh - 72px);
+  background: linear-gradient(130deg, #f3f8f5 0%, #e6f2ee 45%, #eef4fb 100%);
+}
+
+.community-panel {
+  border-right: 1px solid rgba(31, 111, 87, 0.15);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  overflow: auto;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+}
+
+.community-kicker {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #1f6e57;
+}
+
+h1 {
+  margin: 0.25rem 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #123b3e;
+}
+
+.community-sub {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #3b5358;
+}
+
+.community-form,
+.summary-card,
+.feed-card {
+  background: #fff;
+  border: 1px solid rgba(15, 40, 45, 0.08);
+  border-radius: 14px;
+  padding: 0.85rem;
+}
+
+.point-card {
+  background: #eef4fb;
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.7rem;
+}
+
+.point-card p {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #47646b;
+}
+
+.point-card strong {
+  font-size: 0.8rem;
+  color: #123b3e;
+}
+
+.field-input {
+  width: 100%;
+  border: 1px solid #d8e5e8;
+  border-radius: 10px;
+  padding: 0.62rem 0.7rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.55rem;
+  background: #fbfdfd;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.primary-btn {
+  width: 100%;
+  margin-top: 0.2rem;
+  border: none;
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #334f2b 0%, #4a6741 100%);
+  cursor: pointer;
+}
+
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.summary-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+  color: #1f6e57;
+}
+
+.summary-card p {
+  margin: 0.18rem 0;
+  font-size: 0.8rem;
+  color: #284950;
+}
+
+.feed-item {
+  border-top: 1px solid #edf4f5;
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.feed-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.feed-title-row strong {
+  font-size: 0.82rem;
+  color: #123b3e;
+}
+
+.feed-title-row span,
+.feed-item p,
+.muted {
+  font-size: 0.74rem;
+  color: #4e6970;
+  margin: 0.15rem 0 0;
+}
+
+.error-text {
+  margin: 0.35rem 0 0;
+  font-size: 0.76rem;
+  color: #b42318;
+}
+
+.ok-text {
+  margin: 0.35rem 0 0;
+  font-size: 0.76rem;
+  color: #0f7b6c;
+}
+
+.community-map-wrap {
+  position: relative;
+  min-height: 0;
+}
+
+.community-map {
+  width: 100%;
+  height: 100%;
+}
+
+.legend-overlay {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 500;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(15, 45, 49, 0.08);
+  border-radius: 12px;
+  padding: 0.7rem;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
+}
+
+.legend-overlay p {
+  margin: 0 0 0.45rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: #1f6e57;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  font-size: 0.75rem;
+  color: #2a4b52;
+  margin-top: 0.3rem;
+}
+
+.legend-item i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+:deep(.planner-anchor) {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: #1f6e57;
+}
+
+:deep(.community-report-pin__dot) {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+}
+
+@media (max-width: 1000px) {
+  .community-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .community-map-wrap {
+    height: 62vh;
+  }
+}
+</style>

@@ -1,5 +1,52 @@
-const DEFAULT_BASE_URL =
-  import.meta.env.VITE_HAZARD_API_BASE_URL || 'https://backend-production-f55c.up.railway.app/api'
+const ENV_BASE_URL = (import.meta.env.VITE_HAZARD_API_BASE_URL || '').trim()
+const LEGACY_BASE_URL = 'https://backend-production-f55c.up.railway.app/api'
+
+function buildCandidateBaseUrls() {
+  const candidates = [ENV_BASE_URL, LEGACY_BASE_URL, '/api']
+  const uniq = []
+
+  candidates.forEach((value) => {
+    const next = String(value || '').trim().replace(/\/+$/, '')
+    if (!next || uniq.includes(next)) return
+    uniq.push(next)
+  })
+
+  return uniq
+}
+
+async function parseJson(response) {
+  try {
+    return await response.json()
+  } catch {
+    return null
+  }
+}
+
+async function requestWithFallback(path, options = {}, { signal } = {}) {
+  const bases = buildCandidateBaseUrls()
+  let lastError
+
+  for (const baseUrl of bases) {
+    try {
+      const response = await fetch(baseUrl + path, {
+        ...options,
+        signal,
+      })
+
+      if (response.status === 404) {
+        lastError = new Error('Community reports request failed (404)')
+        continue
+      }
+
+      return response
+    } catch (error) {
+      if (error?.name === 'AbortError') throw error
+      lastError = error
+    }
+  }
+
+  throw lastError || new Error('Community reports request failed')
+}
 
 function toNumber(value) {
   const parsed = Number(value)
@@ -26,20 +73,22 @@ function normalizeReport(raw = {}) {
 
 export async function fetchCommunityReports({ limit = 50, signal } = {}) {
   const params = new URLSearchParams({ limit: String(limit) })
-  const url = DEFAULT_BASE_URL + '/community-reports?' + params.toString()
-  const response = await fetch(url, {
+  const response = await requestWithFallback('/community-reports?' + params.toString(), {
     method: 'GET',
     headers: { Accept: 'application/json' },
-    signal,
-  })
+  }, { signal })
 
-  const payload = await response.json().catch(() => ({}))
+  const payload = await parseJson(response)
 
   if (!response.ok) {
     throw new Error(payload?.error || 'Community reports request failed (' + response.status + ')')
   }
 
-  const reports = Array.isArray(payload?.reports) ? payload.reports.map(normalizeReport) : []
+  if (!Array.isArray(payload?.reports)) {
+    throw new Error('Community reports request failed (invalid response)')
+  }
+
+  const reports = payload.reports.map(normalizeReport)
   return {
     reports,
     storage: payload?.storage || 'unknown',
@@ -48,20 +97,23 @@ export async function fetchCommunityReports({ limit = 50, signal } = {}) {
 }
 
 export async function submitCommunityReport(input, { signal } = {}) {
-  const response = await fetch(DEFAULT_BASE_URL + '/community-reports', {
+  const response = await requestWithFallback('/community-reports', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
     body: JSON.stringify(input || {}),
-    signal,
-  })
+  }, { signal })
 
-  const payload = await response.json().catch(() => ({}))
+  const payload = await parseJson(response)
 
   if (!response.ok) {
     throw new Error(payload?.error || 'Submit report failed (' + response.status + ')')
+  }
+
+  if (!payload?.report || !payload?.report?.id) {
+    throw new Error('Submit report failed (invalid response)')
   }
 
   return {

@@ -8,6 +8,9 @@ Implemented an end-to-end `community report` workflow:
 - Community report list page now loads live data from backend API.
 - Backend persists reports into Railway Postgres when `DATABASE_URL` is configured.
 - Backend falls back to in-memory store only when DB is unavailable.
+- Community report page now supports same-page submission with map point selection.
+- Right-side map now overlays official risk layers and user submitted report markers.
+- Community report API now supports multi-endpoint fallback to reduce 404 from stale base URLs.
 
 ## Frontend Changes
 
