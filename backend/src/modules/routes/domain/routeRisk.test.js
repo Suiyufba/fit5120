@@ -9,7 +9,7 @@ const baseRoute = {
     [-37.7, 145.1]
   ],
   distanceKm: 20,
-  durationMin: 40
+  durationMin: 300
 };
 
 test('scoreRouteCandidate computes weighted scores and risk level', () => {
@@ -153,4 +153,23 @@ test('newcomer profile risk is higher than advanced for same route/hazards', () 
   });
 
   assert.ok(newcomer.riskScore > advanced.riskScore);
+});
+
+test('very long hiking route becomes No-Go even with limited hazard overlap', () => {
+  const longRoute = {
+    ...baseRoute,
+    distanceKm: 120,
+    durationMin: 1800
+  };
+
+  const scored = scoreRouteCandidate({
+    route: longRoute,
+    hazards: [],
+    userLevel: 'advanced',
+    fastestRoute: longRoute
+  });
+
+  assert.equal(scored.goNoGo, 'No-Go');
+  assert.ok(scored.riskScore >= 35);
+  assert.match(scored.explanation, /unusually long for a hiking plan/i);
 });

@@ -26,6 +26,8 @@ export const config = {
   openWeatherApiKey: process.env.OPENWEATHER_API_KEY || '',
   openWeatherApiUrl: process.env.OPENWEATHER_API_URL || 'https://api.openweathermap.org/data/2.5/weather',
   osrmApiBaseUrl: process.env.OSRM_API_BASE_URL || 'https://router.project-osrm.org',
+  osrmRouteProfile: process.env.OSRM_ROUTE_PROFILE || 'foot',
+  hikingBaseSpeedKmh: Number.parseFloat(process.env.HIKING_BASE_SPEED_KMH || '4.5') || 4.5,
   vicEmergencyFeedUrl: process.env.VIC_EMERGENCY_FEED_URL || '',
   vicEmergencyApiKey: process.env.VIC_EMERGENCY_API_KEY || '',
   adminEmails: (process.env.ADMIN_EMAILS || '1178804854@qq.com')

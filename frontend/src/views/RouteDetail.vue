@@ -36,6 +36,23 @@ const layerMeta = {
 const recommended = computed(() => plan.value?.recommendedRoute || null)
 const prepTips = computed(() => recommended.value?.suggestedPrep || [])
 
+function formatDuration(durationMin) {
+  const mins = Math.max(Number(durationMin) || 0, 0)
+  if (mins < 90) return `${Math.round(mins)} min`
+
+  const totalHours = mins / 60
+  if (totalHours < 24) {
+    const hours = Math.floor(totalHours)
+    const remainingMin = Math.round(mins % 60)
+    if (!remainingMin) return `${hours} h`
+    return `${hours} h ${remainingMin} min`
+  }
+
+  const days = Math.floor(totalHours / 24)
+  const hours = Math.round(totalHours % 24)
+  return hours ? `${days} d ${hours} h` : `${days} d`
+}
+
 function zoneOpacitiesBySeverity(severity) {
   if (severity === 'extreme') return { l1: 0.28, l2: 0.18, l3: 0.1 }
   if (severity === 'high') return { l1: 0.23, l2: 0.14, l3: 0.08 }
@@ -293,7 +310,7 @@ onUnmounted(() => {
 
         <div class="metric-grid">
           <article><span>Distance</span><strong>{{ recommended.distanceKm.toFixed(1) }} km</strong></article>
-          <article><span>Duration</span><strong>{{ Math.round(recommended.durationMin) }} min</strong></article>
+          <article><span>Duration</span><strong>{{ formatDuration(recommended.durationMin) }}</strong></article>
           <article><span>Difficulty</span><strong>{{ recommended.difficulty }}</strong></article>
           <article><span>Risk</span><strong>{{ recommended.riskLevel }} ({{ recommended.riskScore.toFixed(1) }})</strong></article>
         </div>

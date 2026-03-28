@@ -34,6 +34,23 @@ const layerMeta = {
   other: { label: 'Other', color: '#2E7D6B' },
 }
 
+function formatDuration(durationMin) {
+  const mins = Math.max(Number(durationMin) || 0, 0)
+  if (mins < 90) return `${Math.round(mins)} min`
+
+  const totalHours = mins / 60
+  if (totalHours < 24) {
+    const hours = Math.floor(totalHours)
+    const remainingMin = Math.round(mins % 60)
+    if (!remainingMin) return `${hours} h`
+    return `${hours} h ${remainingMin} min`
+  }
+
+  const days = Math.floor(totalHours / 24)
+  const hours = Math.round(totalHours % 24)
+  return hours ? `${days} d ${hours} h` : `${days} d`
+}
+
 const canPlan = computed(() => Boolean(startPoint.value && endPoint.value && !loading.value))
 
 const summary = computed(() => {
@@ -41,7 +58,7 @@ const summary = computed(() => {
   const route = planResult.value.recommendedRoute
   return {
     distance: `${route.distanceKm.toFixed(1)} km`,
-    duration: `${Math.round(route.durationMin)} min`,
+    duration: formatDuration(route.durationMin),
     difficulty: route.difficulty,
     risk: `${route.riskLevel} (${route.riskScore.toFixed(1)})`,
     goNoGo: route.goNoGo,
