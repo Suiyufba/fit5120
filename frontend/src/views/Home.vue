@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import SiteFooter from '../components/SiteFooter.vue'
 import HomeRiskPreviewMap from '../components/HomeRiskPreviewMap.vue'
 import { fetchRealtimeHazards } from '../services/hazardApi'
+import { fetchCommunityReports } from '../services/communityReportApi'
+import { fetchKnowledgeArticles } from '../services/knowledgeApi'
 
 const router = useRouter()
 const previewLoading = ref(false)
@@ -35,38 +37,130 @@ const previewTypeSummary = computed(() => {
   return summary
 })
 
-const communityAlerts = ref([
-  {
-    id: 'c-1',
-    title: 'Boardwalk section is slippery after overnight rain',
-    severity: 'high',
-    location: 'Sherbrooke Forest, Dandenong Ranges',
-    timeAgo: '32 MIN AGO',
-    details: 'Multiple hikers reported moss buildup and low visibility near bridge turns. Trekking poles are strongly recommended.',
-    status: 'Verified by 3 hikers',
-    replies: 6,
-  },
-  {
-    id: 'c-2',
-    title: 'Trail marker missing at west junction',
-    severity: 'moderate',
-    location: 'Grampians Peak Trail',
-    timeAgo: '1 HOUR AGO',
-    details: 'The yellow route marker at split point B-14 appears damaged. New hikers may drift into a service track.',
-    status: 'Pending ranger review',
-    replies: 4,
-  },
-  {
-    id: 'c-3',
-    title: 'Sudden wind gust pocket near ridge crossing',
-    severity: 'high',
-    location: 'Mount Buller Alpine Trail',
-    timeAgo: '2 HOURS AGO',
-    details: 'Strong lateral gusts reported between 2:30 PM and 3:00 PM. Avoid exposed crossings if carrying heavy packs.',
-    status: 'Confirmed by route leader',
-    replies: 9,
-  },
-])
+const communityReportsLoading = ref(false)
+const communityReportsError = ref('')
+const communityAlerts = ref([])
+
+const knowledgeLoading = ref(false)
+const knowledgeError = ref('')
+const knowledgeArticles = ref([])
+
+const heroKnowledgeArticle = computed(() => {
+  if (!knowledgeArticles.value.length) return null
+  return knowledgeArticles.value.find((item) => item.imageUrl) || knowledgeArticles.value[0]
+})
+
+const knowledgePreviewCards = computed(() => {
+  if (!knowledgeArticles.value.length) return []
+  const source = [...knowledgeArticles.value]
+  const featured = heroKnowledgeArticle.value
+  const filtered = featured ? source.filter((item) => item.id !== featured.id) : source
+  return filtered.slice(0, 2)
+})
+
+function formatTimeAgo(input) {
+  const ts = input instanceof Date ? input.getTime() : Date.parse(String(input || ''))
+  if (!Number.isFinite(ts)) return 'JUST NOW'
+
+  const diffMs = Date.now() - ts
+  const diffMinutes = Math.max(1, Math.round(diffMs / 60000))
+
+  if (diffMinutes < 60) return `${diffMinutes} MIN AGO`
+  const diffHours = Math.round(diffMinutes / 60)
+  if (diffHours < 24) return `${diffHours} HOUR${diffHours > 1 ? 'S' : ''} AGO`
+  const diffDays = Math.round(diffHours / 24)
+  return `${diffDays} DAY${diffDays > 1 ? 'S' : ''} AGO`
+}
+
+function getCommunityStatus(report) {
+  const reporter = report.reporterName || 'Anonymous hiker'
+  const views = Number(report.views || 0)
+  if (views > 0) return `Reported by ${reporter} · ${views} views`
+  return `Reported by ${reporter}`
+}
+
+function getKnowledgeAccent(topic) {
+  const normalized = String(topic || '').toLowerCase()
+  if (normalized.includes('weather')) {
+    return {
+      badge: 'bg-secondary/10',
+      iconColor: 'text-secondary',
+      buttonColor: 'text-secondary',
+      icon: 'cloudy_filled',
+      cta: 'Browse Guides',
+    }
+  }
+
+  if (normalized.includes('gear') || normalized.includes('packing') || normalized.includes('checklist')) {
+    return {
+      badge: 'bg-primary/10',
+      iconColor: 'text-primary',
+      buttonColor: 'text-primary',
+      icon: 'checklist',
+      cta: 'Open Article',
+    }
+  }
+
+  if (normalized.includes('fire') || normalized.includes('emergency') || normalized.includes('risk')) {
+    return {
+      badge: 'bg-red-100',
+      iconColor: 'text-red-600',
+      buttonColor: 'text-red-600',
+      icon: 'local_fire_department',
+      cta: 'Read Advice',
+    }
+  }
+
+  return {
+    badge: 'bg-primary/10',
+    iconColor: 'text-primary',
+    buttonColor: 'text-primary',
+    icon: 'menu_book',
+    cta: 'Read Article',
+  }
+}
+
+async function loadCommunityAlerts() {
+  communityReportsLoading.value = true
+  communityReportsError.value = ''
+
+  try {
+    const payload = await fetchCommunityReports({ limit: 3 })
+    communityAlerts.value = payload.reports
+      .sort((a, b) => b.reportedAt.getTime() - a.reportedAt.getTime())
+      .slice(0, 3)
+      .map((report) => ({
+        id: report.id,
+        title: report.title,
+        severity: report.severity,
+        location: report.locationName,
+        timeAgo: formatTimeAgo(report.reportedAt),
+        details: report.description,
+        status: getCommunityStatus(report),
+        replies: Number(report.likes || 0),
+      }))
+  } catch (error) {
+    communityAlerts.value = []
+    communityReportsError.value = error?.message || 'Failed to load recent alerts'
+  } finally {
+    communityReportsLoading.value = false
+  }
+}
+
+async function loadKnowledgePreview() {
+  knowledgeLoading.value = true
+  knowledgeError.value = ''
+
+  try {
+    const list = await fetchKnowledgeArticles()
+    knowledgeArticles.value = list.slice(0, 3)
+  } catch (error) {
+    knowledgeArticles.value = []
+    knowledgeError.value = error?.message || 'Failed to load knowledge articles'
+  } finally {
+    knowledgeLoading.value = false
+  }
+}
 
 async function loadHomePreview() {
   previewLoading.value = true
@@ -85,6 +179,8 @@ async function loadHomePreview() {
 
 onMounted(() => {
   loadHomePreview()
+  loadCommunityAlerts()
+  loadKnowledgePreview()
   previewTimer = window.setInterval(loadHomePreview, HOME_PREVIEW_REFRESH_MS)
 })
 
@@ -231,7 +327,16 @@ onUnmounted(() => {
         <h2 class="font-headline font-bold text-3xl">Recent Community Alerts</h2>
         <button class="text-primary font-bold text-sm hover:underline" @click="router.push('/community-reports')">View all reports</button>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div v-if="communityReportsLoading" class="rounded-2xl border border-[#dce7dd] bg-white px-6 py-5 text-sm text-slate-500">
+        Loading recent community alerts from the database...
+      </div>
+      <div v-else-if="communityReportsError" class="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-5 text-sm text-rose-700">
+        {{ communityReportsError }}
+      </div>
+      <div v-else-if="!communityAlerts.length" class="rounded-2xl border border-[#dce7dd] bg-white px-6 py-5 text-sm text-slate-500">
+        No community alerts have been submitted yet.
+      </div>
+      <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <article
           v-for="alert in communityAlerts"
           :key="alert.id"
@@ -276,50 +381,67 @@ onUnmounted(() => {
       <div class="max-w-7xl mx-auto">
         <div class="mb-12 text-center md:text-left">
           <h2 class="font-headline font-bold text-3xl mb-4">Knowledge Hub</h2>
-          <p class="text-on-surface-variant max-w-xl">Equip yourself with the essential knowledge before stepping onto the trail. Expertise from Victorian Park Rangers.</p>
+          <p class="text-on-surface-variant max-w-xl">Live articles from your database, surfaced on the homepage instead of placeholder content.</p>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div class="bg-white rounded-[2rem] p-8 flex flex-col h-full shadow-sm hover:translate-y-[-4px] transition-transform">
-            <div class="bg-primary/10 w-12 h-12 rounded-xl flex items-center justify-center mb-6">
-              <span class="material-symbols-outlined text-primary">checklist</span>
+        <div v-if="knowledgeLoading" class="rounded-[2rem] border border-[#dce7dd] bg-white px-6 py-5 text-sm text-slate-500">
+          Loading knowledge articles...
+        </div>
+        <div v-else-if="knowledgeError" class="rounded-[2rem] border border-rose-200 bg-rose-50 px-6 py-5 text-sm text-rose-700">
+          {{ knowledgeError }}
+        </div>
+        <div v-else-if="!knowledgeArticles.length" class="rounded-[2rem] border border-[#dce7dd] bg-white px-6 py-5 text-sm text-slate-500">
+          No knowledge articles have been published yet.
+        </div>
+        <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div
+            v-for="article in knowledgePreviewCards"
+            :key="article.id"
+            class="bg-white rounded-[2rem] p-8 flex flex-col h-full shadow-sm hover:translate-y-[-4px] transition-transform"
+          >
+            <div
+              class="w-12 h-12 rounded-xl flex items-center justify-center mb-6"
+              :class="getKnowledgeAccent(article.topic).badge"
+            >
+              <span
+                class="material-symbols-outlined"
+                :class="getKnowledgeAccent(article.topic).iconColor"
+              >
+                {{ getKnowledgeAccent(article.topic).icon }}
+              </span>
             </div>
-            <h3 class="font-headline font-bold text-xl mb-4">"Before You Go" checklist</h3>
-            <ul class="space-y-3 mb-8 flex-1">
-              <li class="flex items-center gap-2 text-sm text-on-surface-variant">
-                <span class="material-symbols-outlined text-primary text-sm">check_circle</span> Personal Locator Beacon (PLB)
-              </li>
-              <li class="flex items-center gap-2 text-sm text-on-surface-variant">
-                <span class="material-symbols-outlined text-primary text-sm">check_circle</span> 2L Water per person
-              </li>
-              <li class="flex items-center gap-2 text-sm text-on-surface-variant">
-                <span class="material-symbols-outlined text-primary text-sm">check_circle</span> Map &amp; Offline Navigation
-              </li>
-            </ul>
-            <button class="text-primary font-bold text-sm text-left flex items-center gap-2 group" @click="router.push('/knowledge-hub')">
-              Full Checklist <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-            </button>
-          </div>
-
-          <div class="bg-white rounded-[2rem] p-8 flex flex-col h-full shadow-sm hover:translate-y-[-4px] transition-transform">
-            <div class="bg-secondary/10 w-12 h-12 rounded-xl flex items-center justify-center mb-6">
-              <span class="material-symbols-outlined text-secondary">cloudy_filled</span>
-            </div>
-            <h3 class="font-headline font-bold text-xl mb-4">"Weather 101" guides</h3>
-            <p class="text-sm text-on-surface-variant leading-relaxed mb-8 flex-1">Understanding how Victorian alpine weather can shift in minutes. Learn to spot the signs of incoming storms.</p>
-            <button class="text-secondary font-bold text-sm text-left flex items-center gap-2 group" @click="router.push('/knowledge-hub')">
-              Browse Guides <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#527568] mb-3">
+              {{ article.topic }}
+            </p>
+            <h3 class="font-headline font-bold text-xl mb-4">{{ article.title }}</h3>
+            <p class="text-sm text-on-surface-variant leading-relaxed mb-8 flex-1">
+              {{ article.summary }}
+            </p>
+            <button
+              class="font-bold text-sm text-left flex items-center gap-2 group"
+              :class="getKnowledgeAccent(article.topic).buttonColor"
+              @click="router.push('/knowledge-hub')"
+            >
+              {{ getKnowledgeAccent(article.topic).cta }}
+              <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
             </button>
           </div>
 
           <div class="relative rounded-[2rem] overflow-hidden group h-full min-h-[320px]">
             <img
+              v-if="heroKnowledgeArticle?.imageUrl"
               class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-              alt="Experienced hiker with gear looking over Victorian forest valley"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuArD15DPJjumuqYnRE_aAWV91cvQ60OSASHsfR_6lvPQ6xN2_jXi5aLK5lOc2a5r5GV1WJ60EZnc-DzjZjQW-_kKo7tQ7-2Z_c_sFmJGV02bffT2CTyi5-sR4OIz8wBQVxYlci0Cnw5R1rxl1tBpWC-dW4gfMyJXtNJ5H3cPvhOcrWIz9Lz0X_yGGnbHE8AtGmqiTv9Y1xQokILke_5TF_WpoJmoOx3TkVEa3l2Jnf4NKsphZykza0dTbb6fcq3uOw49LErD_qJvQY"
+              :alt="heroKnowledgeArticle?.title || 'Knowledge article cover'"
+              :src="heroKnowledgeArticle.imageUrl"
             />
+            <div v-else class="absolute inset-0 bg-[radial-gradient(circle_at_top,#8db7a5_0%,#3f6a5a_45%,#203d35_100%)]"></div>
             <div class="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent flex flex-col justify-end p-8">
-              <h3 class="text-white font-headline font-bold text-xl mb-2">Park Ranger Insights</h3>
-              <p class="text-white/80 text-sm mb-6">Local tips for the Dandenong Ranges and beyond.</p>
+              <p class="text-white/70 text-[11px] font-semibold uppercase tracking-[0.18em] mb-3">
+                {{ heroKnowledgeArticle?.topic || 'Featured Article' }}
+              </p>
+              <h3 class="text-white font-headline font-bold text-xl mb-2">{{ heroKnowledgeArticle?.title || 'Database spotlight' }}</h3>
+              <p class="text-white/80 text-sm mb-6">
+                {{ heroKnowledgeArticle?.summary || 'Homepage hero now points to a real article from your Knowledge Hub.' }}
+              </p>
               <button class="bg-white text-primary px-6 py-3 rounded-full font-bold text-sm w-fit" @click="router.push('/knowledge-hub')">Read Stories</button>
             </div>
           </div>
