@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useAuthState } from '../services/authStore'
+import { fetchRealtimeHazards } from '../services/hazardApi'
 import {
   fetchAdminOverview,
   fetchAdminRisks,
@@ -32,6 +33,7 @@ const risks = ref([])
 const reports = ref([])
 const users = ref([])
 const articles = ref([])
+const officialHazards = ref([])
 
 const mapElement = ref(null)
 const selectedEntity = ref({ kind: '', id: '' })
@@ -95,9 +97,11 @@ const mapEntities = computed(() => {
 })
 
 let mapInstance
+let officialLayer
 let riskLayer
 let reportLayer
 let draftLayer
+let hazardInflightController
 let suppressNextMapClick = false
 
 function tokenOrThrow() {
@@ -234,11 +238,37 @@ async function loadAdminData() {
     fetchAdminUsers(token),
     fetchAdminKnowledgeArticles(token),
   ])
-  overview.value = overviewPayload.counts || overview.value
+  const counts = overviewPayload.counts || {}
+  overview.value = {
+    users: Number(counts.users || 0),
+    communityReports: Number(counts.communityReports || 0),
+    risks: Number(counts.risks ?? counts.manualRisks ?? 0),
+    knowledgeArticles: Number(counts.knowledgeArticles || 0),
+  }
   risks.value = riskPayload.risks || []
   reports.value = reportPayload.reports || []
   users.value = userPayload.users || []
   articles.value = articlePayload.articles || []
+}
+
+async function loadOfficialHazards() {
+  if (!mapInstance) return
+  if (hazardInflightController) hazardInflightController.abort()
+  hazardInflightController = new AbortController()
+
+  try {
+    const bounds = mapInstance.getBounds()
+    const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
+    const payload = await fetchRealtimeHazards({
+      bbox,
+      layers: ['fire', 'flood', 'storm', 'heat', 'other'],
+      signal: hazardInflightController.signal,
+    })
+    officialHazards.value = payload.hazards || []
+  } catch (nextError) {
+    if (nextError?.name === 'AbortError') return
+    console.error('Failed to load official hazards on admin map', nextError)
+  }
 }
 
 async function loadAll() {
@@ -247,11 +277,29 @@ async function loadAll() {
   info.value = ''
   try {
     await loadAdminData()
+    await loadOfficialHazards()
   } catch (nextError) {
     error.value = nextError?.message || 'Failed to load dashboard data'
   } finally {
     loading.value = false
   }
+}
+
+function drawOfficialHazards() {
+  if (!officialLayer) return
+  officialLayer.clearLayers()
+
+  officialHazards.value.forEach((hazard) => {
+    if (!Array.isArray(hazard.coordinates) || hazard.coordinates.length !== 2) return
+    L.circleMarker(hazard.coordinates, {
+      radius: 5,
+      color: '#8fa2ad',
+      fillColor: '#8fa2ad',
+      fillOpacity: 0.35,
+      weight: 1,
+      interactive: false,
+    }).addTo(officialLayer)
+  })
 }
 
 function drawManagedEntities() {
@@ -465,6 +513,7 @@ onMounted(async () => {
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(mapInstance)
 
+  officialLayer = L.layerGroup().addTo(mapInstance)
   riskLayer = L.layerGroup().addTo(mapInstance)
   reportLayer = L.layerGroup().addTo(mapInstance)
   draftLayer = L.layerGroup().addTo(mapInstance)
@@ -503,13 +552,16 @@ onMounted(async () => {
     handleMapPointer(event)
   })
 
+  mapInstance.on('moveend', loadOfficialHazards)
   await loadAll()
 })
 
+watch(officialHazards, drawOfficialHazards, { deep: true })
 watch([risks, reports, selectedEntity, mapEditMode], drawManagedEntities, { deep: true })
 watch(() => [entityForm.latitude, entityForm.longitude], drawDraftPoint)
 
 onUnmounted(() => {
+  if (hazardInflightController) hazardInflightController.abort()
   if (mapInstance) {
     mapInstance.remove()
     mapInstance = null
@@ -614,6 +666,7 @@ onUnmounted(() => {
           <div ref="mapElement" class="risk-map"></div>
           <div class="map-legend">
             <p>Map Layers</p>
+            <span><i style="background:#8fa2ad"></i>Official Risk (read-only)</span>
             <span><i style="background:#1f6e57"></i>Manual Risk (editable)</span>
             <span><i style="border-color:#1f6e57; background:#fff"></i>Community Report (editable)</span>
           </div>

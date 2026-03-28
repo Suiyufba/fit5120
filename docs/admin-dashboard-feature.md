@@ -9,6 +9,7 @@ Implemented an authenticated admin dashboard to manage:
 - KnowledgeHub article operations
 - Visual map-based risk editing for admins (click/select/edit/remove on map)
 - Overview card `Risks` now shows `manual hazards + official hazard snapshot` total
+- Dashboard map shows official hazards again as read-only context, while editable items remain manual risks and community reports
 
 ## Frontend Changes
 
@@ -61,6 +62,7 @@ Base path: `/api/admin`
 - `GET /overview`
   - Returns high-level counts for dashboard cards
   - `risks` count includes both editable manual hazards and official hazard snapshot items
+  - Frontend keeps compatibility with older payloads that still return `manualRisks`
 
 ### Manual Risks
 
