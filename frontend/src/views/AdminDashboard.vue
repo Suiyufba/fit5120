@@ -1,8 +1,9 @@
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useAuthState } from '../services/authStore'
+import { logout, useAuthState } from '../services/authStore'
 import { fetchRealtimeHazards } from '../services/hazardApi'
 import {
   fetchAdminOverview,
@@ -22,6 +23,7 @@ import {
   deleteAdminKnowledgeArticle,
 } from '../services/adminApi'
 
+const router = useRouter()
 const { state: authState } = useAuthState()
 
 const activeTab = ref('map')
@@ -113,6 +115,11 @@ function tokenOrThrow() {
   const token = authState.token || ''
   if (!token) throw new Error('Please sign in first')
   return token
+}
+
+function handleLogout() {
+  logout()
+  router.push('/login')
 }
 
 function clearEntityForm() {
@@ -655,7 +662,10 @@ onUnmounted(() => {
           <h1>Admin Dashboard</h1>
           <p class="sub">Unified map management for manual risks and community reports.</p>
         </div>
-        <button class="refresh-btn" :disabled="loading" @click="loadAll">{{ loading ? 'Refreshing...' : 'Refresh' }}</button>
+        <div class="header-actions">
+          <button class="refresh-btn" :disabled="loading" @click="loadAll">{{ loading ? 'Refreshing...' : 'Refresh' }}</button>
+          <button class="signout-btn" @click="handleLogout">Sign Out</button>
+        </div>
       </header>
 
       <div class="metrics">
@@ -834,6 +844,12 @@ onUnmounted(() => {
   align-items: flex-start;
 }
 
+.header-actions {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+}
+
 .kicker {
   margin: 0;
   color: #42685c;
@@ -859,6 +875,15 @@ h1 {
   border-radius: 10px;
   background: #fff;
   padding: 0.48rem 0.82rem;
+}
+
+.signout-btn {
+  border: 1px solid #d8d7cf;
+  border-radius: 10px;
+  background: #fffaf2;
+  color: #5a4732;
+  padding: 0.48rem 0.82rem;
+  font-weight: 700;
 }
 
 .metrics {
@@ -1208,6 +1233,21 @@ h2 {
 
   .user-edit-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .header-actions button {
+    flex: 1;
   }
 }
 </style>
