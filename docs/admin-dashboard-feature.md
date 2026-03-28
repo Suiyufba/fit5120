@@ -28,7 +28,7 @@ Implemented an authenticated admin dashboard to manage:
 - New route: `/admin-dashboard` (requires auth)
   - Added in `frontend/src/router/index.js`
 - Navbar update
-  - Adds `Dashboard` entry for authenticated users
+  - Adds `Dashboard` entry only for admin users
   - Updated in `frontend/src/components/Navbar.vue`
 - Dashboard header update
   - Adds `Sign Out` beside `Refresh` inside `frontend/src/views/AdminDashboard.vue`

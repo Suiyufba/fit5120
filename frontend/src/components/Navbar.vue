@@ -7,6 +7,9 @@ const route = useRoute()
 const router = useRouter()
 const isMenuOpen = ref(false)
 const { isAuthenticated, state } = useAuthState()
+const isAdminUser = computed(() =>
+  Boolean(state.user?.isAdmin || String(state.user?.email || '').toLowerCase() === 'admin')
+)
 
 const navItems = computed(() => {
   const items = [
@@ -16,7 +19,7 @@ const navItems = computed(() => {
     { name: 'Community Reports', path: '/community-reports' },
     { name: 'Knowledge Hub', path: '/knowledge-hub' },
   ]
-  if (isAuthenticated.value) {
+  if (isAuthenticated.value && isAdminUser.value) {
     items.push({ name: 'Dashboard', path: '/admin-dashboard' })
   }
   return items
@@ -29,7 +32,7 @@ const isActive = (path) => {
 
 const accountLabel = computed(() => {
   if (!isAuthenticated.value) return 'Sign In'
-  if (state.user?.isAdmin || String(state.user?.email || '').toLowerCase() === 'admin') {
+  if (isAdminUser.value) {
     return 'Dashboard · Admin'
   }
   const level = state.user?.experienceLevel || 'newcomer'
@@ -40,7 +43,7 @@ const accountLabel = computed(() => {
 
 function goAccount() {
   if (isAuthenticated.value) {
-    if (state.user?.isAdmin || String(state.user?.email || '').toLowerCase() === 'admin') {
+    if (isAdminUser.value) {
       router.push('/admin-dashboard')
       return
     }
