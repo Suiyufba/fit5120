@@ -100,6 +100,7 @@ let riskLayer
 let reportLayer
 let draftLayer
 let hazardInflightController
+let suppressNextMapClick = false
 
 function tokenOrThrow() {
   const token = authState.token || ''
@@ -140,6 +141,14 @@ function applyDraggedPosition(entity, latlng) {
   entityForm.latitude = Number(latlng.lat.toFixed(6)).toString()
   entityForm.longitude = Number(latlng.lng.toFixed(6)).toString()
   info.value = 'Position updated by drag. Click Save Changes to persist.'
+}
+
+function handleEntityMarkerInteraction(entity, event) {
+  suppressNextMapClick = true
+  if (event?.originalEvent) {
+    L.DomEvent.stopPropagation(event.originalEvent)
+  }
+  applyEntityToForm(entity)
 }
 
 async function loadAdminData() {
@@ -225,13 +234,13 @@ function drawManagedEntities() {
         icon: L.divIcon({
           className: 'admin-risk-pin',
           html: `<div class="admin-risk-pin__dot ${isSelected ? 'admin-risk-pin__dot--selected' : ''}" style="background:${meta.color}"></div>`,
-          iconSize: [16, 16],
-          iconAnchor: [8, 8],
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
         }),
       })
       marker.bindPopup(`[Risk] ${entity.title}<br/>${meta.label} · ${entity.severity}`)
-      marker.on('click', () => applyEntityToForm(entity))
-      marker.on('dragstart', () => applyEntityToForm(entity))
+      marker.on('click', (event) => handleEntityMarkerInteraction(entity, event))
+      marker.on('dragstart', (event) => handleEntityMarkerInteraction(entity, event))
       marker.on('dragend', (event) => applyDraggedPosition(entity, event.target.getLatLng()))
       marker.addTo(riskLayer)
       return
@@ -242,13 +251,13 @@ function drawManagedEntities() {
       icon: L.divIcon({
         className: 'admin-report-pin',
         html: `<div class="admin-report-pin__dot ${isSelected ? 'admin-report-pin__dot--selected' : ''}" style="border-color:${meta.color}"></div>`,
-        iconSize: [14, 14],
-        iconAnchor: [7, 7],
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
       }),
     })
     marker.bindPopup(`[Report] ${entity.title}<br/>${meta.label} · ${entity.severity}`)
-    marker.on('click', () => applyEntityToForm(entity))
-    marker.on('dragstart', () => applyEntityToForm(entity))
+    marker.on('click', (event) => handleEntityMarkerInteraction(entity, event))
+    marker.on('dragstart', (event) => handleEntityMarkerInteraction(entity, event))
     marker.on('dragend', (event) => applyDraggedPosition(entity, event.target.getLatLng()))
     marker.addTo(reportLayer)
   })
@@ -398,6 +407,10 @@ onMounted(async () => {
   draftLayer = L.layerGroup().addTo(mapInstance)
 
   mapInstance.on('click', (event) => {
+    if (suppressNextMapClick) {
+      suppressNextMapClick = false
+      return
+    }
     selectedEntity.value = { kind: '', id: '' }
     entityForm.latitude = Number(event.latlng.lat.toFixed(6)).toString()
     entityForm.longitude = Number(event.latlng.lng.toFixed(6)).toString()
