@@ -157,6 +157,58 @@ export async function createManualHazard(payload = {}) {
   return { hazard: mapRow(result.rows[0]) };
 }
 
+export async function updateManualHazard(id, payload = {}) {
+  const hazardId = toText(id);
+  if (!hazardId) return { error: 'Invalid risk id' };
+
+  const validated = validateManualHazard(payload);
+  if (validated.error) return validated;
+  const input = validated.input;
+
+  const pool = getPgPool();
+  if (!pool) {
+    const index = memoryManualHazards.findIndex((item) => item.id === hazardId);
+    if (index < 0) return { ok: false };
+    memoryManualHazards[index] = {
+      ...memoryManualHazards[index],
+      ...input,
+      coordinates: [input.latitude, input.longitude],
+      updatedAt: new Date().toISOString(),
+    };
+    return { ok: true, hazard: memoryManualHazards[index] };
+  }
+
+  const result = await pool.query(
+    `
+    UPDATE manual_hazards
+    SET title = $2,
+        description = $3,
+        type = $4,
+        severity = $5,
+        latitude = $6,
+        longitude = $7,
+        source = $8,
+        updated_at = NOW()
+    WHERE id = $1
+      AND is_active = TRUE
+    RETURNING id, title, description, type, severity, latitude, longitude, source, created_by, is_active, updated_at
+    `,
+    [
+      hazardId,
+      input.title,
+      input.description,
+      input.type,
+      input.severity,
+      input.latitude,
+      input.longitude,
+      input.source,
+    ]
+  );
+
+  if (!result.rowCount) return { ok: false };
+  return { ok: true, hazard: mapRow(result.rows[0]) };
+}
+
 export async function archiveManualHazard(id) {
   const pool = getPgPool();
   if (!pool) {

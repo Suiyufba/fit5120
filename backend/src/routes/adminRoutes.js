@@ -5,6 +5,7 @@ import {
   getAdminOverview,
   getAdminManualRisks,
   createAdminManualRisk,
+  updateAdminManualRisk,
   archiveAdminManualRisk,
   getAdminCommunityReports,
   deleteAdminCommunityReport,
@@ -24,6 +25,7 @@ adminRoutes.get('/admin/overview', getAdminOverview);
 
 adminRoutes.get('/admin/risks', getAdminManualRisks);
 adminRoutes.post('/admin/risks', createAdminManualRisk);
+adminRoutes.put('/admin/risks/:id', updateAdminManualRisk);
 adminRoutes.delete('/admin/risks/:id', archiveAdminManualRisk);
 
 adminRoutes.get('/admin/community-reports', getAdminCommunityReports);

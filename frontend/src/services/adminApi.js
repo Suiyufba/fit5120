@@ -35,6 +35,10 @@ export function createAdminRisk(token, payload) {
   return request('/admin/risks', { method: 'POST', token, body: payload })
 }
 
+export function updateAdminRisk(token, riskId, payload) {
+  return request(`/admin/risks/${riskId}`, { method: 'PUT', token, body: payload })
+}
+
 export function archiveAdminRisk(token, riskId) {
   return request(`/admin/risks/${riskId}`, { method: 'DELETE', token })
 }

@@ -1,5 +1,10 @@
 import { listUsers, deleteUserById } from '../modules/auth/repositories/userRepository.js';
-import { createManualHazard, listManualHazards, archiveManualHazard } from '../modules/hazards/repositories/manualHazardRepository.js';
+import {
+  createManualHazard,
+  listManualHazards,
+  archiveManualHazard,
+  updateManualHazard,
+} from '../modules/hazards/repositories/manualHazardRepository.js';
 import { listCommunityReports, deleteCommunityReportById } from '../modules/communityReports/repositories/communityReportRepository.js';
 import {
   listKnowledgeArticlesAdmin,
@@ -66,6 +71,26 @@ export async function archiveAdminManualRisk(req, res) {
     res.json({ ok: true });
   } catch (error) {
     res.status(500).json({ error: error.message || 'Failed to archive manual risk' });
+  }
+}
+
+export async function updateAdminManualRisk(req, res) {
+  try {
+    const result = await updateManualHazard(req.params.id, {
+      ...req.body,
+      source: req.body?.source || 'Admin Dashboard',
+    });
+    if (result.error) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    if (!result.ok) {
+      res.status(404).json({ error: 'Manual risk not found' });
+      return;
+    }
+    res.json({ risk: result.hazard });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Failed to update manual risk' });
   }
 }
 

@@ -8,6 +8,7 @@ Implemented an authenticated admin dashboard to manage:
 - Community reports moderation
 - User account operations
 - KnowledgeHub article operations
+- Visual map-based risk editing for admins (click/select/edit/remove on map)
 
 ## Frontend Changes
 
@@ -65,6 +66,8 @@ Base path: `/api/admin`
 - `GET /risks`
 - `POST /risks`
   - Body: `title`, `description`, `type`, `severity`, `latitude`, `longitude`
+- `PUT /risks/:id`
+  - Update an existing manual risk (including type/severity/title/description/coordinates)
 - `DELETE /risks/:id`
   - Archives a manual risk
 
@@ -89,6 +92,10 @@ Base path: `/api/admin`
 
 - Manual risks are stored in `manual_hazards` and automatically shown through existing realtime hazard API flow.
 - Dashboard route is auth-protected at frontend and admin-protected at backend.
+- Risk tab now includes a visual map editor:
+  - click map to set draft point
+  - click existing manual marker to edit
+  - save/remove directly from map-linked form
 - Added frontend local admin shortcut login:
   - Username: `admin`
   - Password: `123456`
