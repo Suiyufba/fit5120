@@ -96,6 +96,7 @@ Base path: `/api/admin`
 - Map Ops tab now includes a visual map editor:
   - click map to set draft point
   - click existing marker (risk or report) to edit
+  - drag existing marker (risk or report) to update coordinates
   - save/remove directly from unified map-linked form
 - Added frontend local admin shortcut login:
   - Username: `admin`

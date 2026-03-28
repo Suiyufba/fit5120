@@ -135,6 +135,13 @@ function applyEntityToForm(entity) {
   entityForm.imageUrl = entity.imageUrl || ''
 }
 
+function applyDraggedPosition(entity, latlng) {
+  applyEntityToForm(entity)
+  entityForm.latitude = Number(latlng.lat.toFixed(6)).toString()
+  entityForm.longitude = Number(latlng.lng.toFixed(6)).toString()
+  info.value = 'Position updated by drag. Click Save Changes to persist.'
+}
+
 async function loadAdminData() {
   const token = tokenOrThrow()
   const [overviewPayload, riskPayload, reportPayload, userPayload, articlePayload] = await Promise.all([
@@ -213,29 +220,36 @@ function drawManagedEntities() {
     const isSelected = entity.id === selectedEntity.value.id && entity.kind === selectedEntity.value.kind
 
     if (entity.kind === 'risk') {
-      const marker = L.circleMarker(entity.coordinates, {
-        radius: isSelected ? 10 : 8,
-        color: meta.color,
-        fillColor: meta.color,
-        fillOpacity: 0.95,
-        weight: isSelected ? 3 : 2,
+      const marker = L.marker(entity.coordinates, {
+        draggable: true,
+        icon: L.divIcon({
+          className: 'admin-risk-pin',
+          html: `<div class="admin-risk-pin__dot ${isSelected ? 'admin-risk-pin__dot--selected' : ''}" style="background:${meta.color}"></div>`,
+          iconSize: [16, 16],
+          iconAnchor: [8, 8],
+        }),
       })
       marker.bindPopup(`[Risk] ${entity.title}<br/>${meta.label} · ${entity.severity}`)
       marker.on('click', () => applyEntityToForm(entity))
+      marker.on('dragstart', () => applyEntityToForm(entity))
+      marker.on('dragend', (event) => applyDraggedPosition(entity, event.target.getLatLng()))
       marker.addTo(riskLayer)
       return
     }
 
     const marker = L.marker(entity.coordinates, {
+      draggable: true,
       icon: L.divIcon({
         className: 'admin-report-pin',
-        html: `<div class="admin-report-pin__dot" style="border-color:${meta.color}"></div>`,
+        html: `<div class="admin-report-pin__dot ${isSelected ? 'admin-report-pin__dot--selected' : ''}" style="border-color:${meta.color}"></div>`,
         iconSize: [14, 14],
         iconAnchor: [7, 7],
       }),
     })
     marker.bindPopup(`[Report] ${entity.title}<br/>${meta.label} · ${entity.severity}`)
     marker.on('click', () => applyEntityToForm(entity))
+    marker.on('dragstart', () => applyEntityToForm(entity))
+    marker.on('dragend', (event) => applyDraggedPosition(entity, event.target.getLatLng()))
     marker.addTo(reportLayer)
   })
 }
@@ -840,6 +854,24 @@ h2 {
   background: #fff;
   border: 2px solid #1f6e57;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+}
+
+:deep(.admin-report-pin__dot--selected) {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 3px rgba(31, 110, 87, 0.2);
+}
+
+:deep(.admin-risk-pin__dot) {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+}
+
+:deep(.admin-risk-pin__dot--selected) {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 3px rgba(31, 110, 87, 0.2);
 }
 
 @media (max-width: 1080px) {
