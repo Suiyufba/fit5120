@@ -37,6 +37,7 @@ const officialHazards = ref([])
 
 const mapElement = ref(null)
 const selectedEntity = ref({ kind: '', id: '' })
+const mapEditMode = ref('create')
 
 const entityForm = reactive({
   sourceKind: 'risk',
@@ -110,6 +111,7 @@ function tokenOrThrow() {
 
 function clearEntityForm() {
   selectedEntity.value = { kind: '', id: '' }
+  mapEditMode.value = 'create'
   entityForm.sourceKind = 'risk'
   entityForm.title = ''
   entityForm.description = ''
@@ -123,6 +125,7 @@ function clearEntityForm() {
 }
 
 function applyEntityToForm(entity) {
+  mapEditMode.value = 'modify'
   selectedEntity.value = { kind: entity.kind, id: entity.id }
   entityForm.sourceKind = entity.kind === 'risk' ? 'risk' : 'report'
   entityForm.title = entity.title || ''
@@ -137,6 +140,7 @@ function applyEntityToForm(entity) {
 }
 
 function applyDraggedPosition(entity, latlng) {
+  if (mapEditMode.value !== 'modify') return
   applyEntityToForm(entity)
   entityForm.latitude = Number(latlng.lat.toFixed(6)).toString()
   entityForm.longitude = Number(latlng.lng.toFixed(6)).toString()
@@ -147,6 +151,10 @@ function handleEntityMarkerInteraction(entity, event) {
   suppressNextMapClick = true
   if (event?.originalEvent) {
     L.DomEvent.stopPropagation(event.originalEvent)
+  }
+  if (mapEditMode.value !== 'modify') {
+    info.value = 'Switch to Modify mode to edit existing map items.'
+    return
   }
   applyEntityToForm(entity)
 }
@@ -411,6 +419,10 @@ onMounted(async () => {
       suppressNextMapClick = false
       return
     }
+    if (mapEditMode.value !== 'create') {
+      info.value = 'Modify mode: click an existing risk/report marker to edit.'
+      return
+    }
     selectedEntity.value = { kind: '', id: '' }
     entityForm.latitude = Number(event.latlng.lat.toFixed(6)).toString()
     entityForm.longitude = Number(event.latlng.lng.toFixed(6)).toString()
@@ -465,6 +477,11 @@ onUnmounted(() => {
         <div class="risk-form">
           <h2>{{ isEditMode ? 'Edit Selected Item' : 'Create New Item' }}</h2>
           <p class="map-hint">Location: {{ selectedPointLabel }}</p>
+
+          <div class="mode-switch">
+            <button :class="{ active: mapEditMode === 'create' }" @click="mapEditMode = 'create'">Create</button>
+            <button :class="{ active: mapEditMode === 'modify' }" @click="mapEditMode = 'modify'">Modify</button>
+          </div>
 
           <div class="form-grid">
             <select v-model="entityForm.sourceKind" :disabled="isEditMode">
@@ -672,6 +689,26 @@ h1 {
 .tabs button.active {
   background: #23493f;
   color: #fff;
+}
+
+.mode-switch {
+  display: flex;
+  gap: 0.45rem;
+  margin: 0.25rem 0 0.65rem;
+}
+
+.mode-switch button {
+  border: 1px solid #d4e0db;
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.35rem 0.78rem;
+  font-size: 0.8rem;
+}
+
+.mode-switch button.active {
+  background: #1f6e57;
+  color: #fff;
+  border-color: #1f6e57;
 }
 
 .risk-layout {

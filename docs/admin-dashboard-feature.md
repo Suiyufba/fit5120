@@ -94,6 +94,7 @@ Base path: `/api/admin`
 - Manual risks are stored in `manual_hazards` and automatically shown through existing realtime hazard API flow.
 - Dashboard route is auth-protected at frontend and admin-protected at backend.
 - Map Ops tab now includes a visual map editor:
+  - explicit mode switch: `Create` / `Modify`
   - click map to set draft point
   - click existing marker (risk or report) to edit
   - drag existing marker (risk or report) to update coordinates
