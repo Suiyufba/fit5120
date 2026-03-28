@@ -157,6 +157,7 @@ function handleEntityMarkerInteraction(entity, event) {
     return
   }
   applyEntityToForm(entity)
+  info.value = `Selected ${entity.kind === 'risk' ? 'risk' : 'report'}: ${entity.title || entity.id}`
 }
 
 function findNearestEntityFromMapClick(latlng) {
@@ -206,6 +207,25 @@ function findNearestEntityNoThreshold(latlng) {
   })
 
   return best
+}
+
+function selectEntityForModify(latlng) {
+  const nearest = findNearestEntityFromMapClickWithThreshold(latlng, 42)
+  if (nearest) {
+    applyEntityToForm(nearest)
+    info.value = 'Item selected'
+    return true
+  }
+
+  const fallback = findNearestEntityNoThreshold(latlng)
+  if (fallback) {
+    applyEntityToForm(fallback)
+    info.value = 'Selected nearest item (zoom in for precise selection).'
+    return true
+  }
+
+  info.value = 'No editable risk/report items found on map.'
+  return false
 }
 
 async function loadAdminData() {
@@ -286,6 +306,17 @@ function drawManagedEntities() {
     const isSelected = entity.id === selectedEntity.value.id && entity.kind === selectedEntity.value.kind
 
     if (entity.kind === 'risk') {
+      const hitArea = L.circleMarker(entity.coordinates, {
+        radius: 14,
+        color: '#000000',
+        weight: 0,
+        fillOpacity: 0.01,
+      })
+      hitArea.on('click', (event) => handleEntityMarkerInteraction(entity, event))
+      hitArea.on('mousedown', (event) => handleEntityMarkerInteraction(entity, event))
+      hitArea.on('touchstart', (event) => handleEntityMarkerInteraction(entity, event))
+      hitArea.addTo(riskLayer)
+
       const marker = L.marker(entity.coordinates, {
         draggable: mapEditMode.value === 'modify',
         bubblingMouseEvents: false,
@@ -305,6 +336,17 @@ function drawManagedEntities() {
       marker.addTo(riskLayer)
       return
     }
+
+    const hitArea = L.circleMarker(entity.coordinates, {
+      radius: 14,
+      color: '#000000',
+      weight: 0,
+      fillOpacity: 0.01,
+    })
+    hitArea.on('click', (event) => handleEntityMarkerInteraction(entity, event))
+    hitArea.on('mousedown', (event) => handleEntityMarkerInteraction(entity, event))
+    hitArea.on('touchstart', (event) => handleEntityMarkerInteraction(entity, event))
+    hitArea.addTo(reportLayer)
 
     const marker = L.marker(entity.coordinates, {
       draggable: mapEditMode.value === 'modify',
@@ -469,30 +511,38 @@ onMounted(async () => {
   reportLayer = L.layerGroup().addTo(mapInstance)
   draftLayer = L.layerGroup().addTo(mapInstance)
 
-  mapInstance.on('click', (event) => {
-    if (suppressNextMapClick) {
-      suppressNextMapClick = false
-      return
-    }
+  const handleMapPointer = (event) => {
     if (mapEditMode.value !== 'create') {
-      const nearest = findNearestEntityFromMapClickWithThreshold(event.latlng, 34)
-      if (nearest) {
-        applyEntityToForm(nearest)
-        info.value = 'Item selected'
-        return
-      }
-      const fallback = findNearestEntityNoThreshold(event.latlng)
-      if (fallback) {
-        applyEntityToForm(fallback)
-        info.value = 'Selected nearest item (zoom in for precise selection).'
-        return
-      }
-      info.value = 'No editable risk/report items found on map.'
+      selectEntityForModify(event.latlng)
       return
     }
     selectedEntity.value = { kind: '', id: '' }
     entityForm.latitude = Number(event.latlng.lat.toFixed(6)).toString()
     entityForm.longitude = Number(event.latlng.lng.toFixed(6)).toString()
+  }
+
+  mapInstance.on('mousedown', (event) => {
+    if (suppressNextMapClick) {
+      suppressNextMapClick = false
+      return
+    }
+    handleMapPointer(event)
+  })
+
+  mapInstance.on('touchstart', (event) => {
+    if (suppressNextMapClick) {
+      suppressNextMapClick = false
+      return
+    }
+    handleMapPointer(event)
+  })
+
+  mapInstance.on('click', (event) => {
+    if (suppressNextMapClick) {
+      suppressNextMapClick = false
+      return
+    }
+    handleMapPointer(event)
   })
 
   mapInstance.on('moveend', loadOfficialHazards)
