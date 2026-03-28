@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthState } from '../services/authStore'
+import { logout, useAuthState } from '../services/authStore'
 
 const route = useRoute()
 const router = useRouter()
@@ -50,6 +50,12 @@ function goAccount() {
 
   router.push('/login')
 }
+
+function handleLogout() {
+  logout()
+  isMenuOpen.value = false
+  router.push('/login')
+}
 </script>
 
 <template>
@@ -83,6 +89,14 @@ function goAccount() {
           <span class="text-sm font-semibold text-[#31554a] hidden lg:inline">{{ accountLabel }}</span>
         </button>
         <button
+          v-if="isAuthenticated"
+          class="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-full border border-[#d8e4da] bg-white/80 hover:bg-white transition-all active:scale-95 text-sm font-semibold text-[#31554a]"
+          @click="handleLogout"
+        >
+          <span class="material-symbols-outlined text-[#4A6741] text-[18px]">logout</span>
+          <span>Sign Out</span>
+        </button>
+        <button
           class="md:hidden p-2 rounded-full hover:bg-slate-100/50 transition-all"
           @click="isMenuOpen = !isMenuOpen"
         >
@@ -105,6 +119,13 @@ function goAccount() {
         >
           {{ item.name }}
         </router-link>
+        <button
+          v-if="isAuthenticated"
+          class="py-3 px-4 rounded-lg font-headline font-bold tracking-tight transition-all text-left text-slate-600 hover:text-[#4A6741] hover:bg-slate-50"
+          @click="handleLogout"
+        >
+          Sign Out
+        </button>
       </div>
     </transition>
   </header>

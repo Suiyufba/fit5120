@@ -12,6 +12,8 @@ Implemented an authenticated admin dashboard to manage:
 - Visual map-based risk editing for admins (click/select/edit/remove on map)
 - Overview card `Risks` now shows `manual hazards + official hazard snapshot` total
 - Dashboard map shows official hazards again as read-only context, while editable items remain manual risks and community reports
+- Navbar now includes a direct `Sign Out` action for authenticated users, including local admin
+- Local admin can use Plan Route without triggering bigint user-id errors
 
 ## Frontend Changes
 
@@ -27,6 +29,7 @@ Implemented an authenticated admin dashboard to manage:
   - Added in `frontend/src/router/index.js`
 - Navbar update
   - Adds `Dashboard` entry for authenticated users
+  - Adds direct `Sign Out` action for authenticated users on desktop and mobile
   - Updated in `frontend/src/components/Navbar.vue`
 
 ## Backend Changes
@@ -121,3 +124,5 @@ Base path: `/api/admin`
   - After successful sign-in, user is redirected to `/admin-dashboard`.
 - Backend now accepts `LOCAL_ADMIN_TOKEN` (default `local-admin-token`) for the local admin shortcut,
   so dashboard refresh/admin API operations do not return Unauthorized for that mode.
+- Route planning now treats `local-admin` as a valid local session and uses an `advanced` fallback user profile,
+  so Plan Route works for admin instead of querying PostgreSQL with the string id `local-admin`.
