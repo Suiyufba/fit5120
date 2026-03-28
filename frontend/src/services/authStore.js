@@ -7,6 +7,9 @@ import {
 } from './authApi'
 
 const TOKEN_KEY = 'gohiking_auth_token'
+const ADMIN_TOKEN = 'local-admin-token'
+const ADMIN_USERNAME = 'admin'
+const ADMIN_PASSWORD = '123456'
 
 const state = reactive({
   token: localStorage.getItem(TOKEN_KEY) || '',
@@ -30,6 +33,20 @@ function setSession({ token, user }) {
   persistToken(state.token)
 }
 
+function buildLocalAdminUser() {
+  return {
+    id: 'local-admin',
+    email: 'admin',
+    age: 0,
+    region: 'Admin Console',
+    securityQuestion: '',
+    experienceLevel: 'advanced',
+    assessmentScore: 100,
+    createdAt: new Date().toISOString(),
+    isAdmin: true,
+  }
+}
+
 export function logout() {
   setSession({ token: '', user: null })
 }
@@ -38,6 +55,12 @@ export async function restoreSession() {
   if (state.ready) return
 
   if (!state.token) {
+    state.ready = true
+    return
+  }
+
+  if (state.token === ADMIN_TOKEN) {
+    setSession({ token: ADMIN_TOKEN, user: buildLocalAdminUser() })
     state.ready = true
     return
   }
@@ -53,6 +76,13 @@ export async function restoreSession() {
 }
 
 export async function signIn({ email, password }) {
+  const normalizedEmail = String(email || '').trim().toLowerCase()
+  if (normalizedEmail === ADMIN_USERNAME && String(password || '') === ADMIN_PASSWORD) {
+    const user = buildLocalAdminUser()
+    setSession({ token: ADMIN_TOKEN, user })
+    return user
+  }
+
   const payload = await loginUser({ email, password })
   setSession(payload)
   return payload.user

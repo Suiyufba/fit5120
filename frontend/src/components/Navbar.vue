@@ -29,6 +29,9 @@ const isActive = (path) => {
 
 const accountLabel = computed(() => {
   if (!isAuthenticated.value) return 'Sign In'
+  if (state.user?.isAdmin || String(state.user?.email || '').toLowerCase() === 'admin') {
+    return 'Dashboard · Admin'
+  }
   const level = state.user?.experienceLevel || 'newcomer'
   if (level === 'advanced') return 'Profile · Advanced'
   if (level === 'intermediate') return 'Profile · Intermediate'
@@ -37,6 +40,10 @@ const accountLabel = computed(() => {
 
 function goAccount() {
   if (isAuthenticated.value) {
+    if (state.user?.isAdmin || String(state.user?.email || '').toLowerCase() === 'admin') {
+      router.push('/admin-dashboard')
+      return
+    }
     router.push('/profile')
     return
   }

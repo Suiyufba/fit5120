@@ -89,3 +89,7 @@ Base path: `/api/admin`
 
 - Manual risks are stored in `manual_hazards` and automatically shown through existing realtime hazard API flow.
 - Dashboard route is auth-protected at frontend and admin-protected at backend.
+- Added frontend local admin shortcut login:
+  - Username: `admin`
+  - Password: `123456`
+  - After successful sign-in, user is redirected to `/admin-dashboard`.

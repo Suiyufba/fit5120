@@ -14,10 +14,15 @@ async function handleSubmit() {
   loading.value = true
   errorMessage.value = ''
   try {
-    await signIn({
+    const user = await signIn({
       email: email.value,
       password: password.value,
     })
+
+    if (user?.isAdmin || String(user?.email || '').toLowerCase() === 'admin') {
+      router.push('/admin-dashboard')
+      return
+    }
 
     const redirectPath = route.query.redirect
       ? decodeURIComponent(String(route.query.redirect))
@@ -40,13 +45,13 @@ async function handleSubmit() {
 
       <form class="auth-form" @submit.prevent="handleSubmit">
         <label>
-          <span>Email</span>
-          <input v-model="email" type="email" required autocomplete="email" />
+          <span>Email / Username</span>
+          <input v-model="email" type="text" required autocomplete="username" />
         </label>
 
         <label>
           <span>Password</span>
-          <input v-model="password" type="password" required minlength="8" autocomplete="current-password" />
+          <input v-model="password" type="password" required minlength="6" autocomplete="current-password" />
         </label>
 
         <p class="auth-forgot">
