@@ -95,6 +95,9 @@ Base path: `/api/admin`
 - Dashboard route is auth-protected at frontend and admin-protected at backend.
 - Map Ops tab now includes a visual map editor:
   - explicit mode switch: `Create` / `Modify`
+  - admin map now shows only editable manual risks and community reports
+  - removed official read-only hazards from dashboard map to avoid confusion during modify flow
+  - displays editable item count and an empty-state hint when there is nothing to modify
   - click map to set draft point
   - click existing marker (risk or report) to edit
   - in `Modify` mode, map click now supports larger-radius nearest-marker selection fallback

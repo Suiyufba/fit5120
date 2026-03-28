@@ -3,7 +3,6 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useAuthState } from '../services/authStore'
-import { fetchRealtimeHazards } from '../services/hazardApi'
 import {
   fetchAdminOverview,
   fetchAdminRisks,
@@ -33,7 +32,6 @@ const risks = ref([])
 const reports = ref([])
 const users = ref([])
 const articles = ref([])
-const officialHazards = ref([])
 
 const mapElement = ref(null)
 const selectedEntity = ref({ kind: '', id: '' })
@@ -73,6 +71,7 @@ const riskMeta = {
 }
 
 const isEditMode = computed(() => Boolean(selectedEntity.value.id))
+const editableItemCount = computed(() => mapEntities.value.length)
 const selectedPointLabel = computed(() => {
   if (!entityForm.latitude || !entityForm.longitude) return 'Click map to select location'
   return `${entityForm.latitude}, ${entityForm.longitude}`
@@ -96,11 +95,9 @@ const mapEntities = computed(() => {
 })
 
 let mapInstance
-let officialLayer
 let riskLayer
 let reportLayer
 let draftLayer
-let hazardInflightController
 let suppressNextMapClick = false
 
 function tokenOrThrow() {
@@ -244,55 +241,17 @@ async function loadAdminData() {
   articles.value = articlePayload.articles || []
 }
 
-async function loadOfficialHazards() {
-  if (!mapInstance) return
-  if (hazardInflightController) hazardInflightController.abort()
-  hazardInflightController = new AbortController()
-
-  try {
-    const bounds = mapInstance.getBounds()
-    const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
-    const payload = await fetchRealtimeHazards({
-      bbox,
-      layers: ['fire', 'flood', 'storm', 'heat', 'other'],
-      signal: hazardInflightController.signal,
-    })
-    officialHazards.value = payload.hazards || []
-  } catch (nextError) {
-    if (nextError?.name === 'AbortError') return
-    console.error('Failed to load official hazards on admin map', nextError)
-  }
-}
-
 async function loadAll() {
   loading.value = true
   error.value = ''
   info.value = ''
   try {
     await loadAdminData()
-    await loadOfficialHazards()
   } catch (nextError) {
     error.value = nextError?.message || 'Failed to load dashboard data'
   } finally {
     loading.value = false
   }
-}
-
-function drawOfficialHazards() {
-  if (!officialLayer) return
-  officialLayer.clearLayers()
-
-  officialHazards.value.forEach((hazard) => {
-    if (!Array.isArray(hazard.coordinates) || hazard.coordinates.length !== 2) return
-    L.circleMarker(hazard.coordinates, {
-      radius: 5,
-      color: '#8fa2ad',
-      fillColor: '#8fa2ad',
-      fillOpacity: 0.35,
-      weight: 1,
-      interactive: false,
-    }).addTo(officialLayer)
-  })
 }
 
 function drawManagedEntities() {
@@ -506,7 +465,6 @@ onMounted(async () => {
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(mapInstance)
 
-  officialLayer = L.layerGroup().addTo(mapInstance)
   riskLayer = L.layerGroup().addTo(mapInstance)
   reportLayer = L.layerGroup().addTo(mapInstance)
   draftLayer = L.layerGroup().addTo(mapInstance)
@@ -545,16 +503,13 @@ onMounted(async () => {
     handleMapPointer(event)
   })
 
-  mapInstance.on('moveend', loadOfficialHazards)
   await loadAll()
 })
 
-watch(officialHazards, drawOfficialHazards, { deep: true })
 watch([risks, reports, selectedEntity, mapEditMode], drawManagedEntities, { deep: true })
 watch(() => [entityForm.latitude, entityForm.longitude], drawDraftPoint)
 
 onUnmounted(() => {
-  if (hazardInflightController) hazardInflightController.abort()
   if (mapInstance) {
     mapInstance.remove()
     mapInstance = null
@@ -594,11 +549,16 @@ onUnmounted(() => {
         <div class="risk-form">
           <h2>{{ isEditMode ? 'Edit Selected Item' : 'Create New Item' }}</h2>
           <p class="map-hint">Location: {{ selectedPointLabel }}</p>
+          <p class="map-hint">Editable items on map: {{ editableItemCount }}</p>
 
           <div class="mode-switch">
             <button :class="{ active: mapEditMode === 'create' }" @click="mapEditMode = 'create'">Create</button>
             <button :class="{ active: mapEditMode === 'modify' }" @click="mapEditMode = 'modify'">Modify</button>
           </div>
+
+          <p v-if="editableItemCount === 0" class="empty-editable-tip">
+            No editable risks or reports yet. Switch to Create mode and add one first.
+          </p>
 
           <div class="form-grid">
             <select v-model="entityForm.sourceKind" :disabled="isEditMode">
@@ -656,7 +616,6 @@ onUnmounted(() => {
             <p>Map Layers</p>
             <span><i style="background:#1f6e57"></i>Manual Risk (editable)</span>
             <span><i style="border-color:#1f6e57; background:#fff"></i>Community Report (editable)</span>
-            <span><i style="background:#8fa2ad"></i>Official Risk (read-only)</span>
           </div>
         </div>
       </section>
@@ -911,6 +870,16 @@ h2 {
   margin: 0 0 0.6rem;
   font-size: 0.78rem;
   color: #47646b;
+}
+
+.empty-editable-tip {
+  margin: 0 0 0.75rem;
+  padding: 0.62rem 0.72rem;
+  border: 1px solid #d6e5dc;
+  border-radius: 10px;
+  background: #f6fbf8;
+  color: #335b4f;
+  font-size: 0.82rem;
 }
 
 .form-grid {
