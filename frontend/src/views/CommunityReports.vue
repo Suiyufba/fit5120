@@ -4,8 +4,10 @@ import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { fetchRealtimeHazards } from '../services/hazardApi'
 import { fetchCommunityReports, submitCommunityReport } from '../services/communityReportApi'
+import { useAuthState } from '../services/authStore'
 
 const mapElement = ref(null)
+const { state: authState } = useAuthState()
 
 const reports = ref([])
 const hazards = ref([])
@@ -239,6 +241,7 @@ async function handleSubmit() {
 
   try {
     await submitCommunityReport({
+      token: authState.token,
       title: form.title.trim(),
       description: form.description.trim(),
       locationName: form.locationName.trim(),

@@ -33,7 +33,8 @@ const router = createRouter({
     {
       path: '/community-reports',
       name: 'community-reports',
-      component: () => import('../views/CommunityReports.vue')
+      component: () => import('../views/CommunityReports.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/knowledge-hub',
@@ -43,7 +44,8 @@ const router = createRouter({
     {
       path: '/report-hazard',
       name: 'report-hazard',
-      component: () => import('../views/ReportHazard.vue')
+      component: () => import('../views/ReportHazard.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/location/:id?',

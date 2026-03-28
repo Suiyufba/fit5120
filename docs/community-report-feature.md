@@ -170,3 +170,20 @@ Response `500` (server error):
   "error": "Failed to submit community report"
 }
 ```
+
+## Auth Update (2026-03-28)
+
+Community report usage now requires login for interactive surfaces:
+
+- Frontend routes now require authentication:
+  - `/community-reports`
+  - `/report-hazard`
+- Backend submission is now protected:
+  - `POST /api/community-reports` requires `Bearer <token>`
+- Public read access is intentionally preserved for:
+  - `GET /api/community-reports`
+
+Reason:
+
+- The homepage still shows recent community alerts as a public preview.
+- Report creation and the full community report experience are now restricted to signed-in users.

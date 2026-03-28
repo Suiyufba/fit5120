@@ -120,8 +120,19 @@ export async function submitCommunityReport(input, { signal } = {}) {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
+          ...(input?.token ? { Authorization: `Bearer ${input.token}` } : {}),
         },
-        body: JSON.stringify(input || {}),
+        body: JSON.stringify({
+          title: input?.title,
+          description: input?.description,
+          locationName: input?.locationName,
+          hazardType: input?.hazardType,
+          severity: input?.severity,
+          latitude: input?.latitude,
+          longitude: input?.longitude,
+          reporterName: input?.reporterName,
+          imageUrl: input?.imageUrl,
+        }),
         signal,
       })
       const payload = await parseJson(response)
