@@ -160,6 +160,10 @@ function handleEntityMarkerInteraction(entity, event) {
 }
 
 function findNearestEntityFromMapClick(latlng) {
+  return findNearestEntityFromMapClickWithThreshold(latlng, 20)
+}
+
+function findNearestEntityFromMapClickWithThreshold(latlng, thresholdPx = 20) {
   if (!mapInstance || !mapEntities.value.length) return null
   const clickPoint = mapInstance.latLngToContainerPoint(latlng)
 
@@ -179,7 +183,7 @@ function findNearestEntityFromMapClick(latlng) {
   })
 
   if (!best) return null
-  return bestDistance <= 20 ? best : null
+  return bestDistance <= thresholdPx ? best : null
 }
 
 async function loadAdminData() {
@@ -261,7 +265,8 @@ function drawManagedEntities() {
 
     if (entity.kind === 'risk') {
       const marker = L.marker(entity.coordinates, {
-        draggable: true,
+        draggable: mapEditMode.value === 'modify',
+        bubblingMouseEvents: false,
         icon: L.divIcon({
           className: 'admin-risk-pin',
           html: `<div class="admin-risk-pin__dot ${isSelected ? 'admin-risk-pin__dot--selected' : ''}" style="background:${meta.color}"></div>`,
@@ -271,6 +276,8 @@ function drawManagedEntities() {
       })
       marker.bindPopup(`[Risk] ${entity.title}<br/>${meta.label} · ${entity.severity}`)
       marker.on('click', (event) => handleEntityMarkerInteraction(entity, event))
+      marker.on('mousedown', (event) => handleEntityMarkerInteraction(entity, event))
+      marker.on('touchstart', (event) => handleEntityMarkerInteraction(entity, event))
       marker.on('dragstart', (event) => handleEntityMarkerInteraction(entity, event))
       marker.on('dragend', (event) => applyDraggedPosition(entity, event.target.getLatLng()))
       marker.addTo(riskLayer)
@@ -278,7 +285,8 @@ function drawManagedEntities() {
     }
 
     const marker = L.marker(entity.coordinates, {
-      draggable: true,
+      draggable: mapEditMode.value === 'modify',
+      bubblingMouseEvents: false,
       icon: L.divIcon({
         className: 'admin-report-pin',
         html: `<div class="admin-report-pin__dot ${isSelected ? 'admin-report-pin__dot--selected' : ''}" style="border-color:${meta.color}"></div>`,
@@ -288,6 +296,8 @@ function drawManagedEntities() {
     })
     marker.bindPopup(`[Report] ${entity.title}<br/>${meta.label} · ${entity.severity}`)
     marker.on('click', (event) => handleEntityMarkerInteraction(entity, event))
+    marker.on('mousedown', (event) => handleEntityMarkerInteraction(entity, event))
+    marker.on('touchstart', (event) => handleEntityMarkerInteraction(entity, event))
     marker.on('dragstart', (event) => handleEntityMarkerInteraction(entity, event))
     marker.on('dragend', (event) => applyDraggedPosition(entity, event.target.getLatLng()))
     marker.addTo(reportLayer)
@@ -443,7 +453,7 @@ onMounted(async () => {
       return
     }
     if (mapEditMode.value !== 'create') {
-      const nearest = findNearestEntityFromMapClick(event.latlng)
+      const nearest = findNearestEntityFromMapClickWithThreshold(event.latlng, 34)
       if (nearest) {
         applyEntityToForm(nearest)
         info.value = 'Item selected'
@@ -462,7 +472,7 @@ onMounted(async () => {
 })
 
 watch(officialHazards, drawOfficialHazards, { deep: true })
-watch([risks, reports, selectedEntity], drawManagedEntities, { deep: true })
+watch([risks, reports, selectedEntity, mapEditMode], drawManagedEntities, { deep: true })
 watch(() => [entityForm.latitude, entityForm.longitude], drawDraftPoint)
 
 onUnmounted(() => {
