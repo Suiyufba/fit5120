@@ -54,6 +54,7 @@ const entityForm = reactive({
 })
 
 const articleForm = reactive({
+  id: '',
   title: '',
   summary: '',
   content: '',
@@ -76,6 +77,7 @@ const riskMeta = {
 }
 
 const isEditMode = computed(() => Boolean(selectedEntity.value.id))
+const isArticleEditMode = computed(() => Boolean(articleForm.id))
 const editableItemCount = computed(() => mapEntities.value.length)
 const selectedPointLabel = computed(() => {
   if (!entityForm.latitude || !entityForm.longitude) return 'Click map to select location'
@@ -513,7 +515,7 @@ async function handleUpdateUser(userId) {
 async function handleCreateArticle() {
   try {
     const token = tokenOrThrow()
-    await createAdminKnowledgeArticle(token, {
+    const payload = {
       title: articleForm.title,
       summary: articleForm.summary,
       content: articleForm.content,
@@ -522,18 +524,20 @@ async function handleCreateArticle() {
       sourceUrl: articleForm.sourceUrl,
       imageUrl: articleForm.imageUrl,
       isFeatured: articleForm.isFeatured,
-    })
-    articleForm.title = ''
-    articleForm.summary = ''
-    articleForm.content = ''
-    articleForm.topic = 'General'
-    articleForm.readMinutes = '5'
-    articleForm.sourceUrl = ''
-    articleForm.imageUrl = ''
-    articleForm.isFeatured = false
+    }
+
+    if (articleForm.id) {
+      await updateAdminKnowledgeArticle(token, articleForm.id, payload)
+      info.value = 'Article updated'
+    } else {
+      await createAdminKnowledgeArticle(token, payload)
+      info.value = 'Article created'
+    }
+
+    clearArticleForm()
     await loadAdminData()
   } catch (nextError) {
-    error.value = nextError?.message || 'Failed to create article'
+    error.value = nextError?.message || 'Failed to save article'
   }
 }
 
@@ -545,6 +549,30 @@ async function handleDeleteArticle(articleId) {
   } catch (nextError) {
     error.value = nextError?.message || 'Failed to delete article'
   }
+}
+
+function applyArticleToForm(article) {
+  articleForm.id = article.id || ''
+  articleForm.title = article.title || ''
+  articleForm.summary = article.summary || ''
+  articleForm.content = article.content || ''
+  articleForm.topic = article.topic || 'General'
+  articleForm.readMinutes = String(article.readMinutes ?? 5)
+  articleForm.sourceUrl = article.sourceUrl || ''
+  articleForm.imageUrl = article.imageUrl || ''
+  articleForm.isFeatured = Boolean(article.isFeatured)
+}
+
+function clearArticleForm() {
+  articleForm.id = ''
+  articleForm.title = ''
+  articleForm.summary = ''
+  articleForm.content = ''
+  articleForm.topic = 'General'
+  articleForm.readMinutes = '5'
+  articleForm.sourceUrl = ''
+  articleForm.imageUrl = ''
+  articleForm.isFeatured = false
 }
 
 onMounted(async () => {
@@ -759,7 +787,12 @@ onUnmounted(() => {
           <textarea v-model="articleForm.content" rows="4" placeholder="Article content"></textarea>
           <label class="check-row"><input v-model="articleForm.isFeatured" type="checkbox" /> Featured</label>
         </div>
-        <button class="primary-btn" @click="handleCreateArticle">Create Article</button>
+        <div class="row-actions">
+          <button class="primary-btn" @click="handleCreateArticle">
+            {{ isArticleEditMode ? 'Save Article' : 'Create Article' }}
+          </button>
+          <button class="ghost-btn" @click="clearArticleForm">Clear</button>
+        </div>
 
         <div class="list">
           <article v-for="article in articles" :key="article.id">
@@ -767,7 +800,10 @@ onUnmounted(() => {
               <strong>{{ article.title }}</strong>
               <p>{{ article.topic }} · {{ article.readMinutes }} min</p>
             </div>
-            <button class="danger-btn" @click="handleDeleteArticle(article.id)">Delete</button>
+            <div class="user-actions">
+              <button class="ghost-btn" @click="applyArticleToForm(article)">Edit</button>
+              <button class="danger-btn" @click="handleDeleteArticle(article.id)">Delete</button>
+            </div>
           </article>
         </div>
       </section>

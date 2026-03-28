@@ -8,6 +8,7 @@ Implemented an authenticated admin dashboard to manage:
 - User account operations
 - User edit operations for email, region, experience level, and assessment score
 - KnowledgeHub article operations
+- KnowledgeHub article edit operations
 - Visual map-based risk editing for admins (click/select/edit/remove on map)
 - Overview card `Risks` now shows `manual hazards + official hazard snapshot` total
 - Dashboard map shows official hazards again as read-only context, while editable items remain manual risks and community reports
