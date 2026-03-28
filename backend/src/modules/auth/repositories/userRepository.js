@@ -132,6 +132,74 @@ export async function updateUserPasswordByEmail({ email, passwordHash }) {
   return mapUserRow(result.rows[0]);
 }
 
+export async function updateOwnProfileById(userId, { age, region }) {
+  const pool = getPgPool();
+  if (!pool) return null;
+
+  const ageNumber = Number.parseInt(age, 10);
+  const normalizedRegion = String(region || '').trim();
+
+  if (Number.isNaN(ageNumber) || ageNumber < 10 || ageNumber > 100) {
+    return { error: 'age must be between 10 and 100' };
+  }
+
+  if (!normalizedRegion) {
+    return { error: 'region is required' };
+  }
+
+  const result = await pool.query(
+    `
+    UPDATE app_users
+    SET age = $2,
+        region = $3,
+        updated_at = NOW()
+    WHERE id = $1
+    RETURNING id, email, age, region, security_question, experience_level, assessment_score,
+              assessment_answers_json, created_at, updated_at
+    `,
+    [userId, ageNumber, normalizedRegion]
+  );
+
+  if (!result.rowCount) return { ok: false };
+  return { ok: true, user: mapUserRow(result.rows[0]) };
+}
+
+export async function updateOwnCredentialsById(userId, { email, passwordHash }) {
+  const pool = getPgPool();
+  if (!pool) return null;
+
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const wantsEmailUpdate = Boolean(normalizedEmail);
+  const wantsPasswordUpdate = Boolean(passwordHash);
+
+  if (!wantsEmailUpdate && !wantsPasswordUpdate) {
+    return { error: 'email or password update is required' };
+  }
+
+  try {
+    const result = await pool.query(
+      `
+      UPDATE app_users
+      SET email = COALESCE($2, email),
+          password_hash = COALESCE($3, password_hash),
+          updated_at = NOW()
+      WHERE id = $1
+      RETURNING id, email, age, region, security_question, experience_level, assessment_score,
+                assessment_answers_json, created_at, updated_at
+      `,
+      [userId, wantsEmailUpdate ? normalizedEmail : null, passwordHash || null]
+    );
+
+    if (!result.rowCount) return { ok: false };
+    return { ok: true, user: mapUserRow(result.rows[0]) };
+  } catch (error) {
+    if (String(error?.message || '').toLowerCase().includes('unique')) {
+      return { error: 'email already exists' };
+    }
+    throw error;
+  }
+}
+
 export async function listUsers({ limit = 200 } = {}) {
   const pool = getPgPool();
   if (!pool) return [];

@@ -6,6 +6,8 @@ import {
   createUser,
   findUserByEmail,
   findUserById,
+  updateOwnCredentialsById,
+  updateOwnProfileById,
   updateUserPasswordByEmail
 } from '../repositories/userRepository.js';
 
@@ -184,4 +186,82 @@ export function verifyAuthToken(token) {
 export async function getProfileByUserId(userId) {
   const user = await findUserById(userId);
   return sanitizeUser(user);
+}
+
+export async function updateProfileByUserId(userId, { age, region }) {
+  const result = await updateOwnProfileById(userId, { age, region });
+  if (!result) {
+    throw new Error('User store unavailable');
+  }
+  if (result.error) {
+    throw new Error(result.error);
+  }
+  if (!result.ok || !result.user) {
+    throw new Error('User not found');
+  }
+
+  return { user: sanitizeUser(result.user) };
+}
+
+export async function updateSensitiveProfileByUserId(userId, { email, newPassword, securityQuestion, securityAnswer }) {
+  const user = await findUserById(userId);
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const wantsEmailUpdate = String(email || '').trim().length > 0;
+  const wantsPasswordUpdate = String(newPassword || '').length > 0;
+  if (!wantsEmailUpdate && !wantsPasswordUpdate) {
+    throw new Error('Email or password update is required');
+  }
+
+  if (!String(securityQuestion || '').trim() || user.securityQuestion !== String(securityQuestion).trim()) {
+    throw new Error('Security question verification failed');
+  }
+
+  const userWithSecrets = await findUserByEmail(user.email);
+  if (!userWithSecrets?.securityAnswerHash) {
+    throw new Error('Security answer verification failed');
+  }
+
+  const isValidAnswer = await bcrypt.compare(
+    normalizeSecurityAnswer(securityAnswer),
+    userWithSecrets.securityAnswerHash
+  );
+  if (!isValidAnswer) {
+    throw new Error('Security answer verification failed');
+  }
+
+  let nextPasswordHash = null;
+  if (wantsPasswordUpdate) {
+    if (String(newPassword).length < 8) {
+      throw new Error('New password must be at least 8 characters');
+    }
+    nextPasswordHash = await bcrypt.hash(String(newPassword), 10);
+  }
+
+  let normalizedEmail = '';
+  if (wantsEmailUpdate) {
+    normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail || !normalizedEmail.includes('@')) {
+      throw new Error('Please provide a valid email');
+    }
+  }
+
+  const result = await updateOwnCredentialsById(userId, {
+    email: wantsEmailUpdate ? normalizedEmail : null,
+    passwordHash: nextPasswordHash,
+  });
+
+  if (!result) {
+    throw new Error('User store unavailable');
+  }
+  if (result.error) {
+    throw new Error(result.error);
+  }
+  if (!result.ok || !result.user) {
+    throw new Error('User not found');
+  }
+
+  return { user: sanitizeUser(result.user) };
 }

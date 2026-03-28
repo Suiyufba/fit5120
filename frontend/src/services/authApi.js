@@ -38,3 +38,11 @@ export function fetchCurrentUser(token) {
 export function confirmPasswordReset(payload) {
   return requestJson('/auth/password-reset/security', { method: 'POST', body: payload })
 }
+
+export function updateCurrentUserProfile(token, payload) {
+  return requestJson('/auth/profile', { method: 'PUT', token, body: payload })
+}
+
+export function updateCurrentUserSensitiveProfile(token, payload) {
+  return requestJson('/auth/profile/sensitive', { method: 'PUT', token, body: payload })
+}

@@ -2,7 +2,9 @@ import {
   getProfileByUserId,
   loginUser,
   registerUser,
-  resetPasswordWithSecurityAnswer
+  resetPasswordWithSecurityAnswer,
+  updateProfileByUserId,
+  updateSensitiveProfileByUserId
 } from '../modules/auth/services/authService.js';
 
 export async function register(req, res) {
@@ -59,5 +61,35 @@ export async function resetPasswordBySecurityAnswer(req, res) {
     res.json(result);
   } catch (error) {
     res.status(400).json({ error: error.message || 'Failed to reset password' });
+  }
+}
+
+export async function updateProfile(req, res) {
+  try {
+    const result = await updateProfileByUserId(req.auth.userId, {
+      age: req.body?.age,
+      region: req.body?.region,
+    });
+    res.json(result);
+  } catch (error) {
+    const message = error.message || 'Failed to update profile';
+    const status = message === 'User not found' ? 404 : 400;
+    res.status(status).json({ error: message });
+  }
+}
+
+export async function updateSensitiveProfile(req, res) {
+  try {
+    const result = await updateSensitiveProfileByUserId(req.auth.userId, {
+      email: req.body?.email,
+      newPassword: req.body?.newPassword,
+      securityQuestion: req.body?.securityQuestion,
+      securityAnswer: req.body?.securityAnswer,
+    });
+    res.json(result);
+  } catch (error) {
+    const message = error.message || 'Failed to update credentials';
+    const status = message === 'User not found' ? 404 : 400;
+    res.status(status).json({ error: message });
   }
 }

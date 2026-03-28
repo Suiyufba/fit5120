@@ -4,15 +4,18 @@ import {
   fetchCurrentUser,
   loginUser,
   registerUser,
+  updateCurrentUserProfile,
+  updateCurrentUserSensitiveProfile,
 } from './authApi'
 
-const TOKEN_KEY = 'gohiking_auth_token'
+const TOKEN_KEY = 'hikeshield_auth_token'
+const LEGACY_TOKEN_KEY = 'gohiking_auth_token'
 const ADMIN_TOKEN = 'local-admin-token'
 const ADMIN_USERNAME = 'admin'
 const ADMIN_PASSWORD = '123456'
 
 const state = reactive({
-  token: localStorage.getItem(TOKEN_KEY) || '',
+  token: localStorage.getItem(TOKEN_KEY) || localStorage.getItem(LEGACY_TOKEN_KEY) || '',
   user: null,
   ready: false,
 })
@@ -22,9 +25,11 @@ const isAuthenticated = computed(() => Boolean(state.token && state.user))
 function persistToken(token) {
   if (token) {
     localStorage.setItem(TOKEN_KEY, token)
+    localStorage.removeItem(LEGACY_TOKEN_KEY)
     return
   }
   localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(LEGACY_TOKEN_KEY)
 }
 
 function setSession({ token, user }) {
@@ -104,6 +109,31 @@ export async function signUp({ email, password, age, region, securityQuestion, s
 
 export async function resetPassword({ email, securityQuestion, securityAnswer, newPassword }) {
   return confirmPasswordReset({ email, securityQuestion, securityAnswer, newPassword })
+}
+
+export async function saveProfile({ age, region }) {
+  if (!state.token || !state.user || state.token === ADMIN_TOKEN) {
+    throw new Error('Profile editing is unavailable for this session')
+  }
+
+  const payload = await updateCurrentUserProfile(state.token, { age, region })
+  setSession({ token: state.token, user: payload.user })
+  return payload.user
+}
+
+export async function saveSensitiveProfile({ email, newPassword, securityQuestion, securityAnswer }) {
+  if (!state.token || !state.user || state.token === ADMIN_TOKEN) {
+    throw new Error('Credential editing is unavailable for this session')
+  }
+
+  const payload = await updateCurrentUserSensitiveProfile(state.token, {
+    email,
+    newPassword,
+    securityQuestion,
+    securityAnswer,
+  })
+  setSession({ token: state.token, user: payload.user })
+  return payload.user
 }
 
 export function useAuthState() {
