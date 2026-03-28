@@ -31,7 +31,7 @@ function hashGeometry(geometry = []) {
 
 function sampleGeometry(geometry = [], maxPoints = 80) {
   if (!Array.isArray(geometry) || geometry.length <= maxPoints) return geometry;
-  const stride = Math.max(1, Math.floor(geometry.length / maxPoints));
+  const stride = Math.max(1, Math.ceil(geometry.length / maxPoints));
   const sampled = geometry.filter((_, index) => index % stride === 0);
   const last = geometry[geometry.length - 1];
   if (sampled[sampled.length - 1] !== last) sampled.push(last);
@@ -82,23 +82,37 @@ function isTrailWay(tags = {}) {
 }
 
 async function fetchElevationProfile(sampledGeometry) {
-  const url = new URL(`/v1/${config.openTopoDataDataset}`, config.openTopoDataApiUrl);
-  url.searchParams.set(
-    'locations',
-    sampledGeometry.map(([lat, lng]) => `${lat},${lng}`).join('|')
+  const chunks = [];
+  for (let index = 0; index < sampledGeometry.length; index += 40) {
+    chunks.push(sampledGeometry.slice(index, index + 40));
+  }
+
+  const points = [];
+  for (const chunk of chunks) {
+    const url = new URL(`/v1/${config.openTopoDataDataset}`, config.openTopoDataApiUrl);
+    url.searchParams.set(
+      'locations',
+      chunk.map(([lat, lng]) => `${lat},${lng}`).join('|')
+    );
+
+    const payload = await fetchJson(url.toString(), {
+      timeoutMs: Math.max(config.requestTimeoutMs, 15000),
+    });
+    const results = Array.isArray(payload?.results) ? payload.results : [];
+    results.forEach((item, index) => {
+      points.push({
+        lat: chunk[index]?.[0],
+        lng: chunk[index]?.[1],
+        elevation: Number(item?.elevation),
+      });
+    });
+  }
+
+  const cleanPoints = points.filter((item) =>
+    Number.isFinite(item.lat) && Number.isFinite(item.lng) && Number.isFinite(item.elevation)
   );
 
-  const payload = await fetchJson(url.toString());
-  const results = Array.isArray(payload?.results) ? payload.results : [];
-  const points = results
-    .map((item, index) => ({
-      lat: sampledGeometry[index]?.[0],
-      lng: sampledGeometry[index]?.[1],
-      elevation: Number(item?.elevation),
-    }))
-    .filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lng) && Number.isFinite(item.elevation));
-
-  if (!points.length) {
+  if (!cleanPoints.length) {
     return {
       elevationMinM: 0,
       elevationMaxM: 0,
@@ -116,9 +130,9 @@ async function fetchElevationProfile(sampledGeometry) {
   let slopeSum = 0;
   let slopeCount = 0;
 
-  for (let index = 1; index < points.length; index += 1) {
-    const prev = points[index - 1];
-    const next = points[index];
+  for (let index = 1; index < cleanPoints.length; index += 1) {
+    const prev = cleanPoints[index - 1];
+    const next = cleanPoints[index];
     const delta = next.elevation - prev.elevation;
     if (delta > 0) totalAscentM += delta;
     if (delta < 0) totalDescentM += Math.abs(delta);
@@ -133,13 +147,13 @@ async function fetchElevationProfile(sampledGeometry) {
   }
 
   return {
-    elevationMinM: Math.min(...points.map((point) => point.elevation)),
-    elevationMaxM: Math.max(...points.map((point) => point.elevation)),
+    elevationMinM: Math.min(...cleanPoints.map((point) => point.elevation)),
+    elevationMaxM: Math.max(...cleanPoints.map((point) => point.elevation)),
     totalAscentM: Number(totalAscentM.toFixed(1)),
     totalDescentM: Number(totalDescentM.toFixed(1)),
     maxSlopePct: Number(maxSlopePct.toFixed(1)),
     avgSlopePct: Number((slopeCount ? slopeSum / slopeCount : 0).toFixed(1)),
-    points,
+    points: cleanPoints,
   };
 }
 
