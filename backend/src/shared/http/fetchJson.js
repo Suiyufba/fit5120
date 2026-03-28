@@ -11,7 +11,9 @@ export async function fetchJson(url, options = {}) {
 
   try {
     const response = await fetch(url, {
+      method: options.method || 'GET',
       headers: options.headers || {},
+      body: options.body,
       signal: controller.signal
     });
 

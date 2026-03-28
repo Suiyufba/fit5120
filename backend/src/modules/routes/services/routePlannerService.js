@@ -1,7 +1,10 @@
 import { getLatestHazardSnapshot } from '../../../infrastructure/db/hazardSnapshotRepository.js';
 import { getProfileByUserId } from '../../auth/services/authService.js';
 import { fetchOsrmRoutes } from '../adapters/osrmAdapter.js';
+import { listCommunityReports } from '../../communityReports/repositories/communityReportRepository.js';
+import { listManualHazards } from '../../hazards/repositories/manualHazardRepository.js';
 import { buildDetourWaypointCandidates, scoreRouteCandidate } from '../domain/routeRisk.js';
+import { getRouteGeographyProfileForRoute } from './routeGeographyService.js';
 
 const LOCAL_ADMIN_ROUTE_PROFILE = {
   id: 'local-admin',
@@ -23,8 +26,21 @@ function assertCoordinate(point, fieldName) {
 
 async function loadLatestHazards() {
   const snapshot = await getLatestHazardSnapshot();
-  if (!snapshot?.hazards?.length) return [];
-  return snapshot.hazards;
+  const official = snapshot?.hazards?.length ? snapshot.hazards : [];
+  const manual = await listManualHazards({ includeInactive: false });
+  const reportsPayload = await listCommunityReports(300);
+  const reports = (reportsPayload?.reports || []).map((report) => ({
+    id: report.id,
+    type: report.hazardType || 'other',
+    severity: report.severity || 'moderate',
+    title: report.title || report.locationName || 'Community report',
+    description: report.description || '',
+    source: 'Community Report',
+    updatedAt: report.reportedAt,
+    coordinates: [report.latitude, report.longitude],
+  }));
+
+  return [...official, ...manual, ...reports];
 }
 
 async function buildCandidateRoutes(start, end) {
@@ -71,12 +87,16 @@ export async function planSaferRoute({ userId, start, end }) {
 
   const hazards = await loadLatestHazards();
   const fastestRoute = [...candidates].sort((a, b) => a.durationMin - b.durationMin)[0];
-  const scored = candidates.map((route) =>
-    scoreRouteCandidate({
-      route,
-      hazards,
-      userLevel: user.experienceLevel,
-      fastestRoute
+  const scored = await Promise.all(
+    candidates.map(async (route) => {
+      const geographyProfile = await getRouteGeographyProfileForRoute(route);
+      return scoreRouteCandidate({
+        route,
+        hazards,
+        userLevel: user.experienceLevel,
+        fastestRoute,
+        geographyProfile,
+      });
     })
   );
   scored.sort((a, b) => a.riskScore - b.riskScore);
@@ -105,7 +125,8 @@ export async function planSaferRoute({ userId, start, end }) {
       explanation: recommendedRoute.explanation,
       keyRisks: recommendedRoute.keyRisks,
       zoneSummary: recommendedRoute.zoneSummary,
-      suggestedPrep: recommendedRoute.suggestedPrep
+      suggestedPrep: recommendedRoute.suggestedPrep,
+      geographyProfile: recommendedRoute.geographyProfile,
     },
     alternatives,
     scoringBreakdown: recommendedRoute.scoringBreakdown

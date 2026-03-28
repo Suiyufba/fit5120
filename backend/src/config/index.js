@@ -28,6 +28,9 @@ export const config = {
   osrmApiBaseUrl: process.env.OSRM_API_BASE_URL || 'https://router.project-osrm.org',
   osrmRouteProfile: process.env.OSRM_ROUTE_PROFILE || 'foot',
   hikingBaseSpeedKmh: Number.parseFloat(process.env.HIKING_BASE_SPEED_KMH || '4.5') || 4.5,
+  openTopoDataApiUrl: process.env.OPENTOPO_DATA_API_URL || 'https://api.opentopodata.org/',
+  openTopoDataDataset: process.env.OPENTOPO_DATA_DATASET || 'aster30m',
+  overpassApiUrl: process.env.OVERPASS_API_URL || 'https://overpass-api.de/api/interpreter',
   vicEmergencyFeedUrl: process.env.VIC_EMERGENCY_FEED_URL || '',
   vicEmergencyApiKey: process.env.VIC_EMERGENCY_API_KEY || '',
   adminEmails: (process.env.ADMIN_EMAILS || '1178804854@qq.com')

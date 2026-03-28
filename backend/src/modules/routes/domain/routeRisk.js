@@ -10,6 +10,7 @@ const TYPE_FACTOR = {
   flood: 1.1,
   storm: 1.05,
   heat: 0.95,
+  trail: 1.0,
   other: 0.85
 };
 
@@ -224,6 +225,40 @@ function feasibilityPenaltyScore(route) {
   return clamp((extraDistance * 0.7) + (extraDurationHours * 4.5), 0, 40);
 }
 
+function terrainPenalty(surfaceType, trailCondition) {
+  const roughSurfaces = new Set(['gravel', 'rock', 'ground', 'dirt', 'mud', 'sand', 'pebblestone']);
+  const poorConditions = new Set(['bad', 'very_bad', 'horrible', 'no', 'intermediate', 'poor']);
+
+  let score = 0;
+  if (roughSurfaces.has(String(surfaceType || '').toLowerCase())) score += 16;
+  if (poorConditions.has(String(trailCondition || '').toLowerCase())) score += 24;
+  return clamp(score, 0, 30);
+}
+
+function geographyRiskScore(geographyProfile) {
+  if (!geographyProfile) return 0;
+
+  const ascentScore = clamp((Number(geographyProfile.totalAscentM || 0) / 1400) * 100);
+  const descentScore = clamp((Number(geographyProfile.totalDescentM || 0) / 1600) * 100);
+  const slopeScore = clamp((Number(geographyProfile.maxSlopePct || 0) / 35) * 100);
+  const exposureScore = clamp(
+    (Number(geographyProfile.riverCrossingCount || 0) * 10)
+    + (Number(geographyProfile.cliffExposureCount || 0) * 14)
+    + (Number(geographyProfile.closureCount || 0) * 28),
+    0,
+    100
+  );
+  const terrainScore = terrainPenalty(geographyProfile.surfaceType, geographyProfile.trailCondition);
+
+  return clamp(
+    (0.22 * ascentScore)
+    + (0.12 * descentScore)
+    + (0.28 * slopeScore)
+    + (0.28 * exposureScore)
+    + (0.10 * terrainScore)
+  );
+}
+
 function riskLevelByScore(score) {
   if (score >= 85) return 'Extreme';
   if (score >= 65) return 'High';
@@ -241,7 +276,7 @@ function isOpenWeatherHazard(hazard) {
   return String(hazard.source || '').toLowerCase().includes('openweather') && WEATHER_TYPES.has(hazard.type);
 }
 
-function goNoGoDecision({ userLevel, riskScore, impacts }) {
+function goNoGoDecision({ userLevel, riskScore, impacts, geographyProfile }) {
   const thresholds = {
     newcomer: { score: 52, extremeDistanceKm: 2, maxDistanceKm: 30, maxDurationMin: 480 },
     intermediate: { score: 66, extremeDistanceKm: 1.5, maxDistanceKm: 45, maxDurationMin: 660 },
@@ -254,13 +289,29 @@ function goNoGoDecision({ userLevel, riskScore, impacts }) {
   );
   const exceedsDistanceCap = (impacts.routeDistanceKm || 0) > current.maxDistanceKm;
   const exceedsDurationCap = (impacts.routeDurationMin || 0) > current.maxDurationMin;
-  if (hasExtremeTooClose || exceedsDistanceCap || exceedsDurationCap || riskScore >= current.score) return 'No-Go';
+  const hasRouteClosure = Number(geographyProfile?.closureCount || 0) > 0;
+  const hasSevereCliffExposure = userLevel !== 'advanced' && Number(geographyProfile?.cliffExposureCount || 0) >= 2;
+  const hasSteepTerrainForUser =
+    (userLevel === 'newcomer' && Number(geographyProfile?.maxSlopePct || 0) >= 22)
+    || (userLevel === 'intermediate' && Number(geographyProfile?.maxSlopePct || 0) >= 30);
+  if (hasExtremeTooClose || exceedsDistanceCap || exceedsDurationCap || hasRouteClosure || hasSevereCliffExposure || hasSteepTerrainForUser || riskScore >= current.score) return 'No-Go';
   return 'Go';
 }
 
-function buildExplanation({ chosenRoute, fastestRoute, topHazards, goNoGo }) {
+function buildExplanation({ chosenRoute, fastestRoute, topHazards, goNoGo, geographyProfile }) {
+  if (Number(geographyProfile?.closureCount || 0) > 0) {
+    return 'This route intersects mapped trail or access closures. Treat it as unavailable until the closure is cleared or an alternate line is chosen.';
+  }
+
   if ((chosenRoute.durationMin || 0) >= 720 || (chosenRoute.distanceKm || 0) >= 60) {
     return `This route is unusually long for a hiking plan (${chosenRoute.distanceKm.toFixed(1)} km, about ${Math.round(chosenRoute.durationMin / 60)} hours). Shorten the route or split it into staged sections before departure.`;
+  }
+
+  if ((geographyProfile?.riverCrossingCount || 0) > 0 || (geographyProfile?.cliffExposureCount || 0) > 0) {
+    const parts = [];
+    if ((geographyProfile?.riverCrossingCount || 0) > 0) parts.push(`${geographyProfile.riverCrossingCount} river/ford crossing areas`);
+    if ((geographyProfile?.cliffExposureCount || 0) > 0) parts.push(`${geographyProfile.cliffExposureCount} cliff-exposure sections`);
+    return `This route needs extra caution because the terrain profile includes ${parts.join(' and ')} close to the path.`;
   }
 
   if (!topHazards.length) {
@@ -303,7 +354,7 @@ function riskAdviceByType({ type, severity, distanceKm, userLevel }) {
   return `${prefix}. Keep route flexibility and check nearby official incident updates.`;
 }
 
-function buildSuggestedPrep({ route, userLevel, keyRisks, riskScore, goNoGo }) {
+function buildSuggestedPrep({ route, userLevel, keyRisks, riskScore, goNoGo, geographyProfile }) {
   const tips = [];
   const distanceKm = route.distanceKm || 0;
   const durationMin = route.durationMin || 0;
@@ -327,6 +378,18 @@ function buildSuggestedPrep({ route, userLevel, keyRisks, riskScore, goNoGo }) {
   if (keyRisks.some((risk) => ['flood', 'storm'].includes(risk.type))) {
     tips.push('Rain/storm prep: waterproof gear, dry bag for phone, and avoid low-lying shortcuts.');
   }
+  if (Number(geographyProfile?.totalAscentM || 0) >= 700) {
+    tips.push('High-ascent route: pace conservatively, refuel early, and keep spare water for the climbing sections.');
+  }
+  if (Number(geographyProfile?.riverCrossingCount || 0) > 0) {
+    tips.push('River crossing exposure: check crossing depth and current before committing, especially after recent rain.');
+  }
+  if (Number(geographyProfile?.cliffExposureCount || 0) > 0) {
+    tips.push('Cliff exposure: avoid poor-visibility travel and keep extra spacing on narrow edges or loose sidesteps.');
+  }
+  if (Number(geographyProfile?.closureCount || 0) > 0) {
+    tips.push('Mapped closure on route: choose an alternate path rather than attempting to bypass the closure.');
+  }
 
   if (userLevel === 'newcomer') {
     tips.push('Newcomer safety: hike with a partner and share ETA/check-in time with a trusted contact.');
@@ -343,7 +406,7 @@ function buildSuggestedPrep({ route, userLevel, keyRisks, riskScore, goNoGo }) {
   return [...new Set(tips)].slice(0, 6);
 }
 
-export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute }) {
+export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute, geographyProfile = null }) {
   const geometry = route.geometry || [];
   const hazardAgg = topImpactAverage(hazards, geometry, () => true);
   const weatherAgg = topImpactAverage(hazards, geometry, (hazard) => isOpenWeatherHazard(hazard));
@@ -351,11 +414,13 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute })
   const zoneExposure = coverageZoneScore(coverageImpacts);
   const routeDifficultyScore = routeBurdenScore(route, fastestRoute);
   const feasibilityScore = feasibilityPenaltyScore(route);
+  const geographyScore = geographyRiskScore(geographyProfile);
   const rawWeighted = clamp(
-    (0.42 * hazardAgg.score)
-    + (0.16 * weatherAgg.score)
-    + (0.24 * zoneExposure)
-    + (0.18 * routeDifficultyScore)
+    (0.34 * hazardAgg.score)
+    + (0.12 * weatherAgg.score)
+    + (0.18 * zoneExposure)
+    + (0.16 * routeDifficultyScore)
+    + (0.20 * geographyScore)
     + feasibilityScore
   );
   const profileFactor = USER_RISK_FACTOR[userLevel] || USER_RISK_FACTOR.newcomer;
@@ -368,7 +433,8 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute })
     impacts: Object.assign([...hazardAgg.impacts], {
       routeDistanceKm: route.distanceKm || 0,
       routeDurationMin: route.durationMin || 0
-    })
+    }),
+    geographyProfile,
   });
 
   const keyRisks = coverageImpacts.slice(0, 3).map((item) => ({
@@ -392,7 +458,8 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute })
     chosenRoute: route,
     fastestRoute,
     topHazards: hazardAgg.impacts.slice(0, 2),
-    goNoGo
+    goNoGo,
+    geographyProfile,
   });
 
   return {
@@ -403,6 +470,7 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute })
     goNoGo,
     explanation,
     keyRisks,
+    geographyProfile,
     zoneSummary: {
       level1Count: coverageImpacts.filter((item) => item.zoneLevel === 1).length,
       level2Count: coverageImpacts.filter((item) => item.zoneLevel === 2).length,
@@ -413,13 +481,15 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute })
       userLevel,
       keyRisks,
       riskScore: weightedTotal,
-      goNoGo
+      goNoGo,
+      geographyProfile,
     }),
     scoringBreakdown: {
       hazardScore: Number(hazardAgg.score.toFixed(1)),
       weatherScore: Number(weatherAgg.score.toFixed(1)),
       zoneExposureScore: Number(zoneExposure.toFixed(1)),
       difficultyScore: Number(routeDifficultyScore.toFixed(1)),
+      geographyScore: Number(geographyScore.toFixed(1)),
       feasibilityScore: Number(feasibilityScore.toFixed(1)),
       baseWeightedTotal: Number(rawWeighted.toFixed(1)),
       profileFactor: Number(profileFactor.toFixed(2)),

@@ -114,6 +114,9 @@ npm run dev
 - `OSRM_API_BASE_URL=https://router.project-osrm.org`
 - `OSRM_ROUTE_PROFILE=foot`
 - `HIKING_BASE_SPEED_KMH=4.5`
+- `OPENTOPO_DATA_API_URL=https://api.opentopodata.org/`
+- `OPENTOPO_DATA_DATASET=aster30m`
+- `OVERPASS_API_URL=https://overpass-api.de/api/interpreter`
 - `VIC_EMERGENCY_FEED_URL=...`（你申请/确认可用的 VicEmergency feed）
 - `VIC_EMERGENCY_API_KEY=...`（如果源要求鉴权）
 - `REDIS_URL=...`（若绑定 Railway Redis 插件）
@@ -213,14 +216,18 @@ Header: `Authorization: Bearer <token>`
 返回：
 - `recommendedRoute`：包含 `geometry / distanceKm / durationMin / difficulty / riskScore / riskLevel / goNoGo / explanation / keyRisks`
 - `alternatives`：备选路线摘要
-- `scoringBreakdown`：`hazardScore / weatherScore / zoneExposureScore / difficultyScore / weightedTotal`
+- `recommendedRoute.geographyProfile`：包含 `totalAscentM / totalDescentM / maxSlopePct / terrainType / surfaceType / trailCondition / riverCrossingCount / cliffExposureCount / closureCount`
+- `scoringBreakdown`：`hazardScore / weatherScore / zoneExposureScore / difficultyScore / geographyScore / feasibilityScore / weightedTotal`
 
 说明：
 - 路线几何仍由 OSRM 生成，但默认 profile 改为 `foot`
 - `durationMin` 现在按徒步语义输出，不再直接沿用驾车时间
+- 风险输入源现在会合并官方 hazard、manual hazard、community report
+- 地理特征会按 route geometry hash 缓存在 PostgreSQL，避免重复抓 elevation / OSM 约束
 - 风险总分会同时考虑：
   - hazard proximity（危险源与路径贴近程度）
   - weather overlap（天气类风险）
   - zone exposure（L1/L2/L3 风险区覆盖）
   - route burden（距离、徒步时长、绕路成本）
+  - geography profile（海拔、累计爬升/下降、坡度、地表与路线约束）
 - 超长徒步路线会触发额外 `No-Go` 判定，避免出现“几百公里仍然低风险”的不合理结果

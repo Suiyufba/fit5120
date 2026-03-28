@@ -13,6 +13,18 @@ function normalizeRoute(route) {
     goNoGo: route?.goNoGo || 'Go',
     explanation: route?.explanation || '',
     keyRisks: Array.isArray(route?.keyRisks) ? route.keyRisks : [],
+    geographyProfile: route?.geographyProfile || {
+      totalAscentM: 0,
+      totalDescentM: 0,
+      maxSlopePct: 0,
+      avgSlopePct: 0,
+      terrainType: 'mixed',
+      surfaceType: 'unknown',
+      trailCondition: 'unknown',
+      riverCrossingCount: 0,
+      cliffExposureCount: 0,
+      closureCount: 0,
+    },
     zoneSummary: route?.zoneSummary || { level1Count: 0, level2Count: 0, level3Count: 0 },
     suggestedPrep: Array.isArray(route?.suggestedPrep) ? route.suggestedPrep : [],
   }

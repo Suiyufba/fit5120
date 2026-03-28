@@ -35,6 +35,7 @@ const layerMeta = {
 
 const recommended = computed(() => plan.value?.recommendedRoute || null)
 const prepTips = computed(() => recommended.value?.suggestedPrep || [])
+const geography = computed(() => recommended.value?.geographyProfile || null)
 
 function formatDuration(durationMin) {
   const mins = Math.max(Number(durationMin) || 0, 0)
@@ -325,6 +326,25 @@ onUnmounted(() => {
           L2 {{ recommended.zoneSummary?.level2Count || 0 }} ·
           L3 {{ recommended.zoneSummary?.level3Count || 0 }}
         </p>
+
+        <section v-if="geography" class="risk-block">
+          <h2>Geography Profile</h2>
+          <article class="tip-item">
+            Ascent {{ Math.round(geography.totalAscentM || 0) }} m ·
+            Descent {{ Math.round(geography.totalDescentM || 0) }} m ·
+            Max slope {{ Math.round(geography.maxSlopePct || 0) }}%
+          </article>
+          <article class="tip-item">
+            Terrain {{ geography.terrainType || 'mixed' }} ·
+            Surface {{ geography.surfaceType || 'unknown' }} ·
+            Trail {{ geography.trailCondition || 'unknown' }}
+          </article>
+          <article class="tip-item">
+            Rivers {{ geography.riverCrossingCount || 0 }} ·
+            Cliffs {{ geography.cliffExposureCount || 0 }} ·
+            Closures {{ geography.closureCount || 0 }}
+          </article>
+        </section>
 
         <section class="risk-block">
           <h2>Key Risk Sections</h2>

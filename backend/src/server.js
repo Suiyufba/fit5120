@@ -8,6 +8,7 @@ import { initUserStore } from './modules/auth/repositories/userRepository.js';
 import { initKnowledgeArticleStore } from './modules/knowledge/repositories/articleRepository.js';
 import { initCommunityReportStore } from './modules/communityReports/repositories/communityReportRepository.js';
 import { initManualHazardStore } from './modules/hazards/repositories/manualHazardRepository.js';
+import { initRouteGeographyStore } from './modules/routes/repositories/routeGeographyRepository.js';
 
 const app = express();
 
@@ -22,6 +23,7 @@ async function boot() {
     const knowledgeReady = await initKnowledgeArticleStore();
     const communityReportStoreReady = await initCommunityReportStore();
     const manualHazardStoreReady = await initManualHazardStore();
+    const routeGeographyStoreReady = await initRouteGeographyStore();
 
     if (dbReady) {
       console.log('Postgres snapshot store ready');
@@ -43,6 +45,11 @@ async function boot() {
       console.log('Manual hazard store ready');
     } else {
       console.warn('DATABASE_URL is not set, manual hazard fallback to in-memory');
+    }
+    if (routeGeographyStoreReady) {
+      console.log('Route geography store ready');
+    } else {
+      console.warn('DATABASE_URL is not set, route geography cache disabled');
     }
   } catch (error) {
     console.error('Failed to initialize database stores:', error.message);
