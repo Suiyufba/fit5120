@@ -186,6 +186,28 @@ function findNearestEntityFromMapClickWithThreshold(latlng, thresholdPx = 20) {
   return bestDistance <= thresholdPx ? best : null
 }
 
+function findNearestEntityNoThreshold(latlng) {
+  if (!mapInstance || !mapEntities.value.length) return null
+  const clickPoint = mapInstance.latLngToContainerPoint(latlng)
+
+  let best = null
+  let bestDistance = Number.POSITIVE_INFINITY
+
+  mapEntities.value.forEach((entity) => {
+    if (!Array.isArray(entity.coordinates) || entity.coordinates.length !== 2) return
+    const point = mapInstance.latLngToContainerPoint(L.latLng(entity.coordinates[0], entity.coordinates[1]))
+    const dx = point.x - clickPoint.x
+    const dy = point.y - clickPoint.y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    if (distance < bestDistance) {
+      bestDistance = distance
+      best = entity
+    }
+  })
+
+  return best
+}
+
 async function loadAdminData() {
   const token = tokenOrThrow()
   const [overviewPayload, riskPayload, reportPayload, userPayload, articlePayload] = await Promise.all([
@@ -459,7 +481,13 @@ onMounted(async () => {
         info.value = 'Item selected'
         return
       }
-      info.value = 'Modify mode: click on/near an existing risk/report marker to edit.'
+      const fallback = findNearestEntityNoThreshold(event.latlng)
+      if (fallback) {
+        applyEntityToForm(fallback)
+        info.value = 'Selected nearest item (zoom in for precise selection).'
+        return
+      }
+      info.value = 'No editable risk/report items found on map.'
       return
     }
     selectedEntity.value = { kind: '', id: '' }

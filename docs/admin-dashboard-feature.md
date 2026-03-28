@@ -98,6 +98,7 @@ Base path: `/api/admin`
   - click map to set draft point
   - click existing marker (risk or report) to edit
   - in `Modify` mode, map click now supports larger-radius nearest-marker selection fallback
+  - in `Modify` mode, if no marker is hit, map click now auto-selects the nearest editable item
   - marker selection now listens to click/mousedown/touchstart for more reliable interaction
   - drag existing marker (risk or report) to update coordinates
   - save/remove directly from unified map-linked form
