@@ -4,6 +4,7 @@ import { healthRoutes } from './healthRoutes.js';
 import { authRoutes } from './authRoutes.js';
 import { routePlannerRoutes } from './routePlannerRoutes.js';
 import { knowledgeRoutes } from './knowledgeRoutes.js';
+import { communityReportsRoutes } from './communityReportsRoutes.js';
 
 const apiRouter = Router();
 
@@ -12,5 +13,6 @@ apiRouter.use(hazardRoutes);
 apiRouter.use(authRoutes);
 apiRouter.use(routePlannerRoutes);
 apiRouter.use(knowledgeRoutes);
+apiRouter.use(communityReportsRoutes);
 
 export { apiRouter };

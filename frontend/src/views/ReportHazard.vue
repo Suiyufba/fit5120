@@ -1,122 +1,158 @@
 <script setup>
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import SiteFooter from '../components/SiteFooter.vue'
+import { submitCommunityReport } from '../services/communityReportApi'
 
-const selectedSeverity = ref('high')
+const router = useRouter()
+
+const form = reactive({
+  title: '',
+  description: '',
+  locationName: '',
+  latitude: '-37.8136',
+  longitude: '144.9631',
+  hazardType: 'fire',
+  severity: 'high',
+  reporterName: '',
+  imageUrl: '',
+})
+
+const isSubmitting = ref(false)
+const submitError = ref('')
+const submitSuccess = ref('')
+
+async function handleSubmit() {
+  submitError.value = ''
+  submitSuccess.value = ''
+  isSubmitting.value = true
+
+  try {
+    await submitCommunityReport({
+      title: form.title,
+      description: form.description,
+      locationName: form.locationName,
+      latitude: Number(form.latitude),
+      longitude: Number(form.longitude),
+      hazardType: form.hazardType,
+      severity: form.severity,
+      reporterName: form.reporterName || 'Anonymous Hiker',
+      imageUrl: form.imageUrl,
+    })
+
+    submitSuccess.value = 'Report submitted successfully. Redirecting to community reports...'
+    window.setTimeout(() => {
+      router.push('/community-reports')
+    }, 900)
+  } catch (error) {
+    submitError.value = error?.message || 'Failed to submit the report.'
+  } finally {
+    isSubmitting.value = false
+  }
+}
 </script>
 
 <template>
   <div>
-  <main class="max-w-3xl mx-auto px-6 py-12 md:py-20">
-    <!-- Header -->
-    <header class="mb-12 text-center md:text-left">
-      <h1 class="font-headline text-5xl font-extrabold tracking-tight text-primary mb-4">Submit Hazard Report</h1>
-      <p class="text-on-surface-variant text-lg max-w-xl">
-        Your report helps keep fellow hikers safe. Please only report active hazards you have seen in person.
-      </p>
-    </header>
-
-    <!-- Form -->
-    <section class="bg-surface-container-low p-8 md:p-12 rounded-xl shadow-sm space-y-12">
-      <!-- Photo Upload -->
-      <div class="space-y-4">
-        <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Visual Evidence</label>
-        <div class="group relative flex flex-col items-center justify-center border-2 border-dashed border-outline-variant/30 rounded-xl bg-surface-container-lowest h-64 cursor-pointer hover:bg-surface-container transition-colors">
-          <span class="material-symbols-outlined text-4xl text-primary mb-2">add_a_photo</span>
-          <p class="font-medium text-on-surface-variant">Click to add a hazard photo.</p>
-          <p class="text-xs text-outline mt-1">Maximum file size: 10MB (JPG, PNG)</p>
-          <input class="absolute inset-0 opacity-0 cursor-pointer" type="file" accept="image/*" />
-        </div>
-      </div>
-
-      <!-- Map Picker -->
-      <div class="space-y-4">
-        <div class="flex justify-between items-end">
-          <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Exact Location</label>
-          <span class="text-xs font-medium text-primary bg-primary-container/10 px-3 py-1 rounded-full">Wilsons Promontory</span>
-        </div>
-        <div class="relative rounded-xl overflow-hidden h-80 ring-1 ring-outline-variant/20">
-          <img
-            class="w-full h-full object-cover"
-            alt="Satellite map of Wilsons Promontory"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJTeZ4cgHt3sIJRN6qm-nMKTu2PpnIIW1Gc50pt1FPb_ME5OR6zOLegUPsIU1T4o3EQvBABduirzLh89XcsbDMOmbhsLEl5S7bIXiklbcH_5M7mfduxt2u02B0VrOhyxnsJV1j0RKQGbPI1o19G6jrhsV93drPb-GQGKT_SS9u3WeBMWrCxYLaDEa12A4Sb4JoY8Duv9ptgfXppqB8zEUAIuqOhJYuotYqD7nK69N9RS1GmARnbzTygLgV4Gj5K23AktQdGvuuKno"
-          />
-          <div class="absolute inset-0 bg-black/5 pointer-events-none"></div>
-          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-            <span class="material-symbols-outlined text-error text-4xl drop-shadow-lg" style="font-variation-settings: 'FILL' 1">location_on</span>
-          </div>
-          <div class="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur p-3 rounded-lg flex items-center gap-3">
-            <span class="material-symbols-outlined text-primary">explore</span>
-            <p class="text-sm font-medium text-on-surface">Where is the hazard located?</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Incident Details -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div class="space-y-3">
-          <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Incident Type</label>
-          <div class="relative">
-            <select class="w-full appearance-none bg-surface-container-high border-none rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-highest transition-all">
-              <option disabled selected value="">Select type...</option>
-              <option>Bushfire</option>
-              <option>Fallen Tree</option>
-              <option>Flood</option>
-              <option>Track Damage</option>
-            </select>
-            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">expand_more</span>
-          </div>
-        </div>
-        <div class="space-y-3">
-          <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Time Spotted</label>
-          <input class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-highest transition-all" type="datetime-local" />
-        </div>
-      </div>
-
-      <!-- Severity -->
-      <div class="space-y-4">
-        <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Severity Level</label>
-        <div class="grid grid-cols-3 gap-4">
-          <button
-            class="flex flex-col items-center gap-2 p-4 rounded-xl transition-all"
-            :class="selectedSeverity === 'low' ? 'border-2 border-primary/40 bg-primary/5' : 'border border-outline-variant/30 bg-surface-container-highest hover:bg-surface'"
-            @click="selectedSeverity = 'low'"
-          >
-            <div class="w-3 h-3 rounded-full bg-green-500"></div>
-            <span class="font-bold text-sm" :class="selectedSeverity === 'low' ? 'text-primary' : 'text-on-surface'">Low</span>
-          </button>
-          <button
-            class="flex flex-col items-center gap-2 p-4 rounded-xl transition-all"
-            :class="selectedSeverity === 'moderate' ? 'border-2 border-primary/40 bg-primary/5' : 'border border-outline-variant/30 bg-surface-container-highest hover:bg-surface'"
-            @click="selectedSeverity = 'moderate'"
-          >
-            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
-            <span class="font-bold text-sm" :class="selectedSeverity === 'moderate' ? 'text-primary' : 'text-on-surface'">Moderate</span>
-          </button>
-          <button
-            class="flex flex-col items-center gap-2 p-4 rounded-xl transition-all"
-            :class="selectedSeverity === 'high' ? 'border-2 border-primary/40 bg-primary/5' : 'border border-outline-variant/30 bg-surface-container-highest hover:bg-surface'"
-            @click="selectedSeverity = 'high'"
-          >
-            <div class="w-3 h-3 rounded-full bg-red-600"></div>
-            <span class="font-bold text-sm" :class="selectedSeverity === 'high' ? 'text-primary' : 'text-on-surface'">High</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Submit -->
-      <div class="pt-8">
-        <button class="w-full primary-gradient text-on-primary font-headline font-bold py-5 px-8 rounded-lg shadow-xl hover:opacity-95 transition-all active:scale-[0.98] flex items-center justify-center gap-3">
-          <span class="material-symbols-outlined">send</span>
-          Submit Hazard Report
-        </button>
-        <p class="text-center text-xs text-outline mt-6 italic">
-          By submitting, you confirm this information is accurate to the best of your knowledge.
+    <main class="max-w-3xl mx-auto px-6 py-12 md:py-20">
+      <header class="mb-10 text-center md:text-left">
+        <h1 class="font-headline text-5xl font-extrabold tracking-tight text-primary mb-4">Submit Community Hazard Report</h1>
+        <p class="text-on-surface-variant text-lg max-w-xl">
+          Your report is saved to the live community database and shown on the Community Reports page.
         </p>
-      </div>
-    </section>
-  </main>
+      </header>
 
-  <SiteFooter />
+      <section class="bg-surface-container-low p-8 md:p-12 rounded-xl shadow-sm space-y-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-3 md:col-span-2">
+            <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Report Title</label>
+            <input
+              v-model="form.title"
+              class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/20"
+              type="text"
+              placeholder="e.g. Fallen tree blocking summit trail"
+            />
+          </div>
+
+          <div class="space-y-3 md:col-span-2">
+            <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Details</label>
+            <textarea
+              v-model="form.description"
+              rows="4"
+              class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/20"
+              placeholder="Describe what happened, current risk, and what hikers should do."
+            ></textarea>
+          </div>
+
+          <div class="space-y-3">
+            <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Hazard Type</label>
+            <select v-model="form.hazardType" class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-on-surface">
+              <option value="fire">Fire / Smoke</option>
+              <option value="flood">Flood / Water Rise</option>
+              <option value="storm">Weather / Mud / Storm</option>
+              <option value="trail">Trail Obstacle</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="space-y-3">
+            <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Severity</label>
+            <select v-model="form.severity" class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-on-surface">
+              <option value="low">Low</option>
+              <option value="moderate">Moderate</option>
+              <option value="high">High</option>
+              <option value="extreme">Extreme</option>
+            </select>
+          </div>
+
+          <div class="space-y-3 md:col-span-2">
+            <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Location Name</label>
+            <input
+              v-model="form.locationName"
+              class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/20"
+              type="text"
+              placeholder="e.g. Razorback Trail, Alpine National Park"
+            />
+          </div>
+
+          <div class="space-y-3">
+            <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Latitude</label>
+            <input v-model="form.latitude" class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3" type="number" step="0.000001" />
+          </div>
+          <div class="space-y-3">
+            <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Longitude</label>
+            <input v-model="form.longitude" class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3" type="number" step="0.000001" />
+          </div>
+
+          <div class="space-y-3">
+            <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Reporter Name (Optional)</label>
+            <input v-model="form.reporterName" class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3" type="text" placeholder="Anonymous Hiker" />
+          </div>
+
+          <div class="space-y-3">
+            <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Image URL (Optional)</label>
+            <input v-model="form.imageUrl" class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3" type="url" placeholder="https://..." />
+          </div>
+        </div>
+
+        <p v-if="submitError" class="text-sm font-semibold text-red-700 bg-red-50 border border-red-100 rounded-lg px-4 py-3">
+          {{ submitError }}
+        </p>
+        <p v-if="submitSuccess" class="text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-4 py-3">
+          {{ submitSuccess }}
+        </p>
+
+        <button
+          class="w-full primary-gradient text-on-primary font-headline font-bold py-5 px-8 rounded-lg shadow-xl hover:opacity-95 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-60"
+          :disabled="isSubmitting"
+          @click="handleSubmit"
+        >
+          <span class="material-symbols-outlined">send</span>
+          {{ isSubmitting ? 'Submitting...' : 'Submit Hazard Report' }}
+        </button>
+      </section>
+    </main>
+
+    <SiteFooter />
   </div>
 </template>
