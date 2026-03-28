@@ -1,4 +1,4 @@
-# 🌿 goHiking Frontend
+# 🌿 HikeShield Frontend
 
 > 让环保知识变得有趣，让行动变得简单
 
@@ -31,7 +31,7 @@
 ## 📁 项目结构
 
 ```
-goHiking-frontend/
+hikeshield-frontend/
 ├── src/
 │   ├── components/      # 组件
 │   │   └── Navbar.vue   # 导航栏

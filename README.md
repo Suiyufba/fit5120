@@ -1,11 +1,11 @@
-# goHiking
+# HikeShield
 
 FIT5120 monorepo for hiking safety platform.
 
 ## Repository Structure
 
 ```text
-goHiking/
+hikeshield/
 ├── frontend/          # Frontend app (Vercel)
 ├── backend/           # Main backend API (Railway)
 ├── ai-service/        # AI recommendations / risk analysis (Railway)

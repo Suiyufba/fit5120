@@ -1,5 +1,5 @@
 {
-  "name": "goHiking-backend",
+  "name": "hikeshield-backend",
   "version": "0.1.0",
   "description": "Hazard aggregation backend for RiskMap",
   "main": "src/server.js",

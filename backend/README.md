@@ -1,4 +1,4 @@
-# goHiking Backend (Railway-ready)
+# HikeShield Backend (Railway-ready)
 
 后端已提供前端所需最小可用接口：
 - `GET /api/hazards/realtime?bbox=west,south,east,north&layers=fire,flood,storm,heat`

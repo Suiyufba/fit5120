@@ -60,7 +60,7 @@ function goAccount() {
   <header class="bg-white/80 backdrop-blur-xl sticky top-0 z-[3000] shadow-sm bg-surface-container-low">
     <nav class="flex justify-between items-center px-8 py-4 max-w-full mx-auto">
       <router-link to="/" class="brand-lockup">
-        <img src="/gohiking-logo.svg" alt="HikeShield logo" class="brand-mark" />
+        <img src="/hikeshield-logo.svg" alt="HikeShield logo" class="brand-mark" />
         <span class="brand-wordmark">HikeShield</span>
       </router-link>
 
