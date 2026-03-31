@@ -1,4 +1,5 @@
 import * as L from 'leaflet'
+import { VICTORIA_BOUNDARY_COORDINATES } from './victoriaBoundaryData'
 
 export const VICTORIA_VIEW = {
   center: [-37.8136, 144.9631],
@@ -11,94 +12,62 @@ export const VICTORIA_BOUNDS = L.latLngBounds(
   [-33.85, 150.05]
 )
 
-const VICTORIA_BORDER_POLYGON = [
-  [-34.02, 141.0],
-  [-34.14, 141.35],
-  [-34.32, 141.8],
-  [-34.55, 142.25],
-  [-34.82, 142.78],
-  [-35.02, 143.22],
-  [-35.2, 143.72],
-  [-35.4, 144.22],
-  [-35.6, 144.72],
-  [-35.8, 145.18],
-  [-35.98, 145.65],
-  [-36.12, 146.1],
-  [-36.22, 146.52],
-  [-36.3, 146.95],
-  [-36.4, 147.38],
-  [-36.52, 147.82],
-  [-36.64, 148.24],
-  [-36.76, 148.65],
-  [-36.9, 149.02],
-  [-36.62, 149.98],
-  [-37.15, 149.95],
-  [-37.62, 149.82],
-  [-38.06, 149.66],
-  [-38.42, 149.44],
-  [-38.78, 149.0],
-  [-39.0, 148.35],
-  [-39.12, 147.52],
-  [-39.18, 146.5],
-  [-39.08, 145.45],
-  [-38.92, 144.55],
-  [-38.7, 143.72],
-  [-38.48, 142.95],
-  [-38.34, 142.3],
-  [-38.3, 141.78],
-  [-38.42, 141.26],
-  [-38.8, 140.96],
-  [-37.95, 140.95],
-  [-37.1, 141.0],
-  [-36.15, 141.0],
-  [-35.15, 141.0],
-  [-34.02, 141.0],
-]
-
 function isPointOnSegment(point, start, end, epsilon = 1e-9) {
   const cross =
-    (point.lng - start.lng) * (end.lat - start.lat)
-    - (point.lat - start.lat) * (end.lng - start.lng)
+    (point.lng - start[0]) * (end[1] - start[1])
+    - (point.lat - start[1]) * (end[0] - start[0])
 
   if (Math.abs(cross) > epsilon) return false
 
   const dot =
-    (point.lng - start.lng) * (end.lng - start.lng)
-    + (point.lat - start.lat) * (end.lat - start.lat)
+    (point.lng - start[0]) * (end[0] - start[0])
+    + (point.lat - start[1]) * (end[1] - start[1])
 
   if (dot < 0) return false
 
   const squaredLength =
-    (end.lng - start.lng) * (end.lng - start.lng)
-    + (end.lat - start.lat) * (end.lat - start.lat)
+    (end[0] - start[0]) * (end[0] - start[0])
+    + (end[1] - start[1]) * (end[1] - start[1])
 
   return dot <= squaredLength
 }
 
-function isPointInPolygon(latlng, polygon) {
-  const point = L.latLng(latlng)
+function isPointInRing(point, ring) {
   let inside = false
 
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
-    const current = L.latLng(polygon[i])
-    const previous = L.latLng(polygon[j])
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const current = ring[i]
+    const previous = ring[j]
 
     if (isPointOnSegment(point, current, previous)) {
       return true
     }
 
     const intersects =
-      ((current.lat > point.lat) !== (previous.lat > point.lat))
+      ((current[1] > point.lat) !== (previous[1] > point.lat))
       && (
         point.lng
-        < ((previous.lng - current.lng) * (point.lat - current.lat)) / (previous.lat - current.lat)
-          + current.lng
+        < ((previous[0] - current[0]) * (point.lat - current[1])) / (previous[1] - current[1])
+          + current[0]
       )
 
     if (intersects) inside = !inside
   }
 
   return inside
+}
+
+function isPointInPolygon(point, polygonRings) {
+  if (!polygonRings.length) return false
+  if (!isPointInRing(point, polygonRings[0])) return false
+
+  for (let index = 1; index < polygonRings.length; index += 1) {
+    if (isPointInRing(point, polygonRings[index])) {
+      return false
+    }
+  }
+
+  return true
 }
 
 export function clampLatLngToVictoria(latlng) {
@@ -114,7 +83,8 @@ export function clampLatLngToVictoria(latlng) {
 
 export function isLatLngInVictoria(latlng) {
   const point = L.latLng(latlng)
-  return VICTORIA_BOUNDS.contains(point) && isPointInPolygon(point, VICTORIA_BORDER_POLYGON)
+  return VICTORIA_BOUNDS.contains(point)
+    && VICTORIA_BOUNDARY_COORDINATES.some((polygonRings) => isPointInPolygon(point, polygonRings))
 }
 
 export function getVictoriaBbox() {
