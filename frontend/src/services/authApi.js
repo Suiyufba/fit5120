@@ -5,10 +5,15 @@ function buildApiUrl(path) {
   return `${DEFAULT_BASE_URL}${path}`
 }
 
+function isProfileWritePath(path) {
+  return path === '/auth/profile' || path === '/auth/profile/sensitive'
+}
+
 async function requestJson(path, { method = 'GET', token, body } = {}) {
+  const url = buildApiUrl(path)
   let response
   try {
-    response = await fetch(buildApiUrl(path), {
+    response = await fetch(url, {
       method,
       headers: {
         'Content-Type': 'application/json',
@@ -22,13 +27,25 @@ async function requestJson(path, { method = 'GET', token, body } = {}) {
 
   const payload = await response.json().catch(() => ({}))
   if (!response.ok) {
-    if (response.status === 401 && (path === '/auth/profile' || path === '/auth/profile/sensitive')) {
+    const backendMessage = String(payload?.error || '').trim()
+
+    if (response.status === 401 && isProfileWritePath(path)) {
       throw new Error('Session expired. Please sign in again.')
     }
-    if (response.status === 404 && (path === '/auth/profile' || path === '/auth/profile/sensitive')) {
-      throw new Error('Profile update endpoint is not available on current backend deployment.')
+
+    if (response.status === 404 && isProfileWritePath(path)) {
+      if (backendMessage.toLowerCase() === 'user not found') {
+        throw new Error('Account record was not found. Please sign in again and try once more.')
+      }
+
+      if (backendMessage) {
+        throw new Error(backendMessage)
+      }
+
+      throw new Error(`Profile update failed because ${url} is unavailable on the current backend deployment.`)
     }
-    throw new Error(payload?.error || `Request failed with ${response.status}`)
+
+    throw new Error(backendMessage || `Request failed with ${response.status}`)
   }
 
   return payload
