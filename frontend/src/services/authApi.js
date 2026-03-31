@@ -6,17 +6,28 @@ function buildApiUrl(path) {
 }
 
 async function requestJson(path, { method = 'GET', token, body } = {}) {
-  const response = await fetch(buildApiUrl(path), {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  })
+  let response
+  try {
+    response = await fetch(buildApiUrl(path), {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    })
+  } catch (_error) {
+    throw new Error('Network error: failed to reach backend API')
+  }
 
   const payload = await response.json().catch(() => ({}))
   if (!response.ok) {
+    if (response.status === 401 && (path === '/auth/profile' || path === '/auth/profile/sensitive')) {
+      throw new Error('Session expired. Please sign in again.')
+    }
+    if (response.status === 404 && (path === '/auth/profile' || path === '/auth/profile/sensitive')) {
+      throw new Error('Profile update endpoint is not available on current backend deployment.')
+    }
     throw new Error(payload?.error || `Request failed with ${response.status}`)
   }
 

@@ -120,6 +120,7 @@ h1 {
 .forgot-form {
   margin-top: 1rem;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.85rem;
 }
 
@@ -137,6 +138,7 @@ span {
 }
 
 input {
+  width: 100%;
   border: 1px solid #cfddd2;
   border-radius: 0.7rem;
   padding: 0.68rem 0.8rem;
@@ -158,6 +160,7 @@ input {
 }
 
 select {
+  width: 100%;
   border: 1px solid #cfddd2;
   border-radius: 0.7rem;
   padding: 0.68rem 0.8rem;
@@ -165,6 +168,7 @@ select {
 }
 
 button {
+  width: 100%;
   margin-top: 0.2rem;
   border: none;
   border-radius: 0.8rem;

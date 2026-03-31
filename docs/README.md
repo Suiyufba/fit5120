@@ -10,3 +10,5 @@ Store UML diagrams, architecture documents, and final report assets for FIT5120.
 - [Security Hardening Update (2026-03-31)](./security-hardening-2026-03-31.md)
 - [Register Form Layout Fix (2026-03-31)](./register-form-layout-fix.md)
 - [Auth Endpoint Default Fix (2026-03-31)](./auth-endpoint-default-fix.md)
+- [Forgot Password Layout Fix (2026-03-31)](./forgot-password-layout-fix.md)
+- [Profile Update Auth Fix (2026-03-31)](./profile-update-auth-fix.md)

@@ -8,8 +8,10 @@ import {
   updateCurrentUserSensitiveProfile,
 } from './authApi'
 
+const SESSION_TOKEN_KEY = 'hikeshield_auth_token'
+
 const state = reactive({
-  token: '',
+  token: sessionStorage.getItem(SESSION_TOKEN_KEY) || '',
   user: null,
   ready: false,
 })
@@ -32,6 +34,15 @@ function isTokenExpired(token) {
 function setSession({ token, user }) {
   state.token = token || ''
   state.user = user || null
+  if (state.token) {
+    sessionStorage.setItem(SESSION_TOKEN_KEY, state.token)
+  } else {
+    sessionStorage.removeItem(SESSION_TOKEN_KEY)
+  }
+}
+
+function extractToken(payload) {
+  return String(payload?.token || payload?.accessToken || payload?.jwt || '')
 }
 
 export function logout() {
@@ -59,7 +70,7 @@ export async function restoreSession() {
 
 export async function signIn({ email, password }) {
   const payload = await loginUser({ email, password })
-  setSession(payload)
+  setSession({ token: extractToken(payload), user: payload?.user || null })
   return payload.user
 }
 
@@ -73,7 +84,7 @@ export async function signUp({ email, password, age, region, securityQuestion, s
     securityAnswer,
     assessmentAnswers,
   })
-  setSession(payload)
+  setSession({ token: extractToken(payload), user: payload?.user || null })
   return payload.user
 }
 
