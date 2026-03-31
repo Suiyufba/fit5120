@@ -1,5 +1,5 @@
 const DEFAULT_BASE_URL =
-  import.meta.env.VITE_HAZARD_API_BASE_URL || 'http://localhost:8080/api'
+  import.meta.env.VITE_HAZARD_API_BASE_URL || 'https://backend-production-f55c.up.railway.app/api'
 
 function buildApiUrl(path) {
   return `${DEFAULT_BASE_URL}${path}`

@@ -1,5 +1,5 @@
 const BASE_URL =
-  (import.meta.env.VITE_HAZARD_API_BASE_URL || '').trim() || 'http://localhost:8080/api'
+  (import.meta.env.VITE_HAZARD_API_BASE_URL || '').trim() || 'https://backend-production-f55c.up.railway.app/api'
 
 function apiUrl(path) {
   return BASE_URL.replace(/\/+$/, '') + path

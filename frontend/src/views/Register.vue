@@ -108,7 +108,7 @@ async function handleSubmit() {
             <span>Region</span>
             <input v-model="form.region" type="text" placeholder="e.g. Melbourne, VIC" required />
           </label>
-          <label>
+          <label class="security-question-field">
             <span>Security Question</span>
             <select v-model="form.securityQuestion" required>
               <option>What was the passphrase of your first personal emergency contact card?</option>
@@ -200,6 +200,10 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.8rem;
+}
+
+.security-question-field {
+  grid-column: 1 / -1;
 }
 
 label {
