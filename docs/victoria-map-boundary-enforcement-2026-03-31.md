@@ -22,8 +22,8 @@ Applied to:
   - `frontend/src/utils/victoriaBoundaryData.js`
 - Introduced a shared Victoria map boundary model using a bounding box for viewport limits and official Victoria polygon data for in-state point validation.
 - Added reusable helpers to:
-  - lock Leaflet maps to a fixed Victoria-only viewport
-  - prevent dragging and zooming outside the default Victoria view
+  - keep Leaflet maps draggable while constraining movement to Victoria
+  - prevent zooming out beyond the default Victoria view
   - reject out-of-state point selection on interactive maps
   - clamp map bbox requests before hazard fetches
 - Updated these views to use the shared Victoria map constraints:
@@ -36,7 +36,7 @@ Applied to:
 ## Behavior Changes
 
 - Users can no longer pan interactive maps beyond Victoria.
-- Interactive maps are now locked to a fixed Victoria-wide viewport.
+- Interactive maps remain draggable inside Victoria, but cannot be moved beyond the Victoria bounds.
 - Home page preview map now stays within Victoria when fitting hazard markers.
 - Point selection on planner/report/admin maps is validated against the real Victoria state boundary polygons, not only a rectangular viewport.
 - Dragged admin map items are clamped back into Victoria.

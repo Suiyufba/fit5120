@@ -126,7 +126,6 @@ export function applyVictoriaMapConstraints(mapInstance) {
     padding: [24, 24],
   })
 
-  mapInstance.dragging.disable()
   mapInstance.boxZoom.disable()
   mapInstance.keyboard.disable()
 
