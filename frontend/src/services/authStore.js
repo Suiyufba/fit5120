@@ -8,48 +8,30 @@ import {
   updateCurrentUserSensitiveProfile,
 } from './authApi'
 
-const TOKEN_KEY = 'hikeshield_auth_token'
-const LEGACY_TOKEN_KEY = 'gohiking_auth_token'
-const ADMIN_TOKEN = 'local-admin-token'
-const ADMIN_USERNAME = 'admin'
-const ADMIN_PASSWORD = '123456'
-
 const state = reactive({
-  token: localStorage.getItem(TOKEN_KEY) || localStorage.getItem(LEGACY_TOKEN_KEY) || '',
+  token: '',
   user: null,
   ready: false,
 })
 
 const isAuthenticated = computed(() => Boolean(state.token && state.user))
 
-function persistToken(token) {
-  if (token) {
-    localStorage.setItem(TOKEN_KEY, token)
-    localStorage.removeItem(LEGACY_TOKEN_KEY)
-    return
+function isTokenExpired(token) {
+  try {
+    const payloadBase64 = String(token).split('.')[1]
+    if (!payloadBase64) return true
+    const payload = JSON.parse(atob(payloadBase64))
+    const exp = Number(payload?.exp || 0)
+    if (!exp) return true
+    return exp * 1000 <= Date.now()
+  } catch (_error) {
+    return true
   }
-  localStorage.removeItem(TOKEN_KEY)
-  localStorage.removeItem(LEGACY_TOKEN_KEY)
 }
 
 function setSession({ token, user }) {
   state.token = token || ''
   state.user = user || null
-  persistToken(state.token)
-}
-
-function buildLocalAdminUser() {
-  return {
-    id: 'local-admin',
-    email: 'admin',
-    age: 0,
-    region: 'Admin Console',
-    securityQuestion: '',
-    experienceLevel: 'advanced',
-    assessmentScore: 100,
-    createdAt: new Date().toISOString(),
-    isAdmin: true,
-  }
 }
 
 export function logout() {
@@ -59,13 +41,8 @@ export function logout() {
 export async function restoreSession() {
   if (state.ready) return
 
-  if (!state.token) {
-    state.ready = true
-    return
-  }
-
-  if (state.token === ADMIN_TOKEN) {
-    setSession({ token: ADMIN_TOKEN, user: buildLocalAdminUser() })
+  if (!state.token || isTokenExpired(state.token)) {
+    logout()
     state.ready = true
     return
   }
@@ -81,13 +58,6 @@ export async function restoreSession() {
 }
 
 export async function signIn({ email, password }) {
-  const normalizedEmail = String(email || '').trim().toLowerCase()
-  if (normalizedEmail === ADMIN_USERNAME && String(password || '') === ADMIN_PASSWORD) {
-    const user = buildLocalAdminUser()
-    setSession({ token: ADMIN_TOKEN, user })
-    return user
-  }
-
   const payload = await loginUser({ email, password })
   setSession(payload)
   return payload.user
@@ -101,7 +71,7 @@ export async function signUp({ email, password, age, region, securityQuestion, s
     region,
     securityQuestion,
     securityAnswer,
-    assessmentAnswers
+    assessmentAnswers,
   })
   setSession(payload)
   return payload.user
@@ -112,7 +82,7 @@ export async function resetPassword({ email, securityQuestion, securityAnswer, n
 }
 
 export async function saveProfile({ age, region }) {
-  if (!state.token || !state.user || state.token === ADMIN_TOKEN) {
+  if (!state.token || !state.user) {
     throw new Error('Profile editing is unavailable for this session')
   }
 
@@ -122,7 +92,7 @@ export async function saveProfile({ age, region }) {
 }
 
 export async function saveSensitiveProfile({ email, newPassword, securityQuestion, securityAnswer }) {
-  if (!state.token || !state.user || state.token === ADMIN_TOKEN) {
+  if (!state.token || !state.user) {
     throw new Error('Credential editing is unavailable for this session')
   }
 

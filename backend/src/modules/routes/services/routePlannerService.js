@@ -6,12 +6,6 @@ import { listManualHazards } from '../../hazards/repositories/manualHazardReposi
 import { buildDetourWaypointCandidates, scoreRouteCandidate } from '../domain/routeRisk.js';
 import { getRouteGeographyProfileForRoute } from './routeGeographyService.js';
 
-const LOCAL_ADMIN_ROUTE_PROFILE = {
-  id: 'local-admin',
-  email: 'admin',
-  experienceLevel: 'advanced',
-};
-
 function assertCoordinate(point, fieldName) {
   const lat = Number(point?.lat);
   const lng = Number(point?.lng);
@@ -75,9 +69,7 @@ export async function planSaferRoute({ userId, start, end }) {
   const normalizedStart = assertCoordinate(start, 'start');
   const normalizedEnd = assertCoordinate(end, 'end');
 
-  const user = userId === 'local-admin'
-    ? LOCAL_ADMIN_ROUTE_PROFILE
-    : await getProfileByUserId(userId);
+  const user = await getProfileByUserId(userId);
   if (!user) throw new Error('User not found');
 
   const candidates = await buildCandidateRoutes(normalizedStart, normalizedEnd);

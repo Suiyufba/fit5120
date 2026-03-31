@@ -11,6 +11,15 @@ import {
   updateUserPasswordByEmail
 } from '../repositories/userRepository.js';
 
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/;
+const RESET_MAX_ATTEMPTS = 3;
+const RESET_LOCK_WINDOW_MS = 60 * 60 * 1000;
+const passwordResetAttemptStore = new Map();
+
+function isAdminEmail(email) {
+  return config.adminEmails.includes(normalizeEmail(email));
+}
+
 function sanitizeUser(user) {
   if (!user) return null;
   return {
@@ -22,6 +31,7 @@ function sanitizeUser(user) {
     experienceLevel: user.experienceLevel,
     assessmentScore: user.assessmentScore,
     createdAt: user.createdAt,
+    isAdmin: isAdminEmail(user.email),
   };
 }
 
@@ -39,15 +49,62 @@ function normalizeSecurityAnswer(answer) {
   return String(answer || '').trim().toLowerCase();
 }
 
+function normalizeSecurityQuestion(question) {
+  return String(question || '').trim().toLowerCase();
+}
+
+function validatePasswordStrength(password, fieldName = 'Password') {
+  const text = String(password || '');
+  if (!PASSWORD_REGEX.test(text)) {
+    throw new Error(`${fieldName} must be at least 12 characters and include uppercase, lowercase, number, and special character`);
+  }
+}
+
+function getResetAttemptState(email) {
+  const key = normalizeEmail(email);
+  const state = passwordResetAttemptStore.get(key) || { failures: 0, lockedUntil: 0 };
+  if (state.lockedUntil && state.lockedUntil <= Date.now()) {
+    const cleared = { failures: 0, lockedUntil: 0 };
+    passwordResetAttemptStore.set(key, cleared);
+    return cleared;
+  }
+  return state;
+}
+
+function ensureResetNotLocked(email) {
+  const state = getResetAttemptState(email);
+  if (state.lockedUntil > Date.now()) {
+    throw new Error('Too many failed reset attempts. Try again in 1 hour.');
+  }
+}
+
+function markResetFailure(email) {
+  const key = normalizeEmail(email);
+  const current = getResetAttemptState(email);
+  const nextFailures = current.failures + 1;
+  const next = {
+    failures: nextFailures,
+    lockedUntil: nextFailures >= RESET_MAX_ATTEMPTS ? Date.now() + RESET_LOCK_WINDOW_MS : 0,
+  };
+  passwordResetAttemptStore.set(key, next);
+}
+
+function clearResetFailures(email) {
+  passwordResetAttemptStore.delete(normalizeEmail(email));
+}
+
+function throwResetCredentialError(email) {
+  markResetFailure(email);
+  throw new Error('Invalid credentials for password reset');
+}
+
 function validateRegisterInput({ email, password, age, region, securityQuestion, securityAnswer }) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail || !normalizedEmail.includes('@')) {
     throw new Error('Please provide a valid email');
   }
 
-  if (!password || String(password).length < 8) {
-    throw new Error('Password must be at least 8 characters');
-  }
+  validatePasswordStrength(password);
 
   const ageNumber = Number.parseInt(age, 10);
   if (Number.isNaN(ageNumber) || ageNumber < 10 || ageNumber > 100) {
@@ -145,16 +202,18 @@ export async function resetPasswordWithSecurityAnswer({ email, securityQuestion,
   if (!normalizedEmail || !normalizedEmail.includes('@')) {
     throw new Error('Please provide a valid email');
   }
-  if (!newPassword || String(newPassword).length < 8) {
-    throw new Error('New password must be at least 8 characters');
-  }
+  validatePasswordStrength(newPassword, 'New password');
+  ensureResetNotLocked(normalizedEmail);
 
   const user = await findUserByEmail(normalizedEmail);
   if (!user || !user.securityAnswerHash) {
-    throw new Error('Invalid credentials for password reset');
+    throwResetCredentialError(normalizedEmail);
   }
-  if (!String(securityQuestion || '').trim() || user.securityQuestion !== String(securityQuestion).trim()) {
-    throw new Error('Invalid credentials for password reset');
+  if (
+    !normalizeSecurityQuestion(securityQuestion)
+    || normalizeSecurityQuestion(user.securityQuestion) !== normalizeSecurityQuestion(securityQuestion)
+  ) {
+    throwResetCredentialError(normalizedEmail);
   }
 
   const isValidAnswer = await bcrypt.compare(
@@ -162,7 +221,7 @@ export async function resetPasswordWithSecurityAnswer({ email, securityQuestion,
     user.securityAnswerHash
   );
   if (!isValidAnswer) {
-    throw new Error('Invalid credentials for password reset');
+    throwResetCredentialError(normalizedEmail);
   }
 
   const passwordHash = await bcrypt.hash(String(newPassword), 10);
@@ -170,6 +229,7 @@ export async function resetPasswordWithSecurityAnswer({ email, securityQuestion,
     email: normalizedEmail,
     passwordHash,
   });
+  clearResetFailures(normalizedEmail);
 
   return { ok: true };
 }
@@ -215,7 +275,10 @@ export async function updateSensitiveProfileByUserId(userId, { email, newPasswor
     throw new Error('Email or password update is required');
   }
 
-  if (!String(securityQuestion || '').trim() || user.securityQuestion !== String(securityQuestion).trim()) {
+  if (
+    !normalizeSecurityQuestion(securityQuestion)
+    || normalizeSecurityQuestion(user.securityQuestion) !== normalizeSecurityQuestion(securityQuestion)
+  ) {
     throw new Error('Security question verification failed');
   }
 
@@ -234,9 +297,7 @@ export async function updateSensitiveProfileByUserId(userId, { email, newPasswor
 
   let nextPasswordHash = null;
   if (wantsPasswordUpdate) {
-    if (String(newPassword).length < 8) {
-      throw new Error('New password must be at least 8 characters');
-    }
+    validatePasswordStrength(newPassword, 'New password');
     nextPasswordHash = await bcrypt.hash(String(newPassword), 10);
   }
 

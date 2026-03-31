@@ -19,7 +19,7 @@ async function handleSubmit() {
       password: password.value,
     })
 
-    if (user?.isAdmin || String(user?.email || '').toLowerCase() === 'admin') {
+    if (user?.isAdmin) {
       router.push('/admin-dashboard')
       return
     }
@@ -45,13 +45,13 @@ async function handleSubmit() {
 
       <form class="auth-form" @submit.prevent="handleSubmit">
         <label>
-          <span>Email / Username</span>
-          <input v-model="email" type="text" required autocomplete="username" />
+          <span>Email</span>
+          <input v-model="email" type="email" required autocomplete="username" />
         </label>
 
         <label>
           <span>Password</span>
-          <input v-model="password" type="password" required minlength="6" autocomplete="current-password" />
+          <input v-model="password" type="password" required minlength="12" autocomplete="current-password" />
         </label>
 
         <p class="auth-forgot">

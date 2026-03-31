@@ -6,7 +6,7 @@ import { resetPassword } from '../services/authStore'
 const router = useRouter()
 const loading = ref(false)
 const email = ref('')
-const securityQuestion = ref('What is the name of your first hiking trail?')
+const securityQuestion = ref('What was the passphrase of your first personal emergency contact card?')
 const securityAnswer = ref('')
 const newPassword = ref('')
 const errorMessage = ref('')
@@ -50,10 +50,10 @@ async function handleConfirmReset() {
         <label>
           <span>Security Question</span>
           <select v-model="securityQuestion" required>
-            <option>What is the name of your first hiking trail?</option>
-            <option>Which city were you born in?</option>
-            <option>What is your favorite outdoor activity?</option>
-            <option>What was your childhood nickname?</option>
+            <option>What was the passphrase of your first personal emergency contact card?</option>
+            <option>What private nickname did your family use for your first camping stove?</option>
+            <option>What is the hidden word in your personal offline route notebook?</option>
+            <option>What custom name did you give your first headlamp?</option>
           </select>
         </label>
 
@@ -64,7 +64,7 @@ async function handleConfirmReset() {
 
         <label>
           <span>New Password</span>
-          <input v-model="newPassword" type="password" minlength="8" required />
+          <input v-model="newPassword" type="password" minlength="12" required />
         </label>
 
         <p v-if="successMessage" class="forgot-success">{{ successMessage }}</p>

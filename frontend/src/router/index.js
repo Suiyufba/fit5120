@@ -80,20 +80,24 @@ const router = createRouter({
       path: '/admin-dashboard',
       name: 'admin-dashboard',
       component: () => import('../views/AdminDashboard.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresAdmin: true }
     },
   ]
 })
 
 router.beforeEach(async (to) => {
   await restoreSession()
-  const { isAuthenticated } = useAuthState()
+  const { isAuthenticated, state } = useAuthState()
 
   if (to.meta.requiresAuth && !isAuthenticated.value) {
     return { name: 'login', query: { redirect: encodeURIComponent(to.fullPath) } }
   }
 
   if (to.meta.guestOnly && isAuthenticated.value) {
+    return { name: 'profile' }
+  }
+
+  if (to.meta.requiresAdmin && !state.user?.isAdmin) {
     return { name: 'profile' }
   }
 

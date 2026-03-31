@@ -6,6 +6,7 @@ const CANDIDATE_TABLES = [
   'blog_articles',
   'articles'
 ];
+const SAFE_TABLE_NAME = /^[a-z_][a-z0-9_]*$/;
 
 const CREATE_TABLE_SQL = `
 CREATE TABLE IF NOT EXISTS knowledge_articles (
@@ -201,6 +202,14 @@ async function findArticleTableName(pool) {
   return null;
 }
 
+function toSafeTableIdentifier(tableName) {
+  const normalized = String(tableName || '').trim();
+  if (!SAFE_TABLE_NAME.test(normalized)) {
+    throw new Error('Invalid table identifier for knowledge articles');
+  }
+  return `"${normalized}"`;
+}
+
 export async function fetchKnowledgeArticles({ topic }) {
   const pool = getPgPool();
   if (!pool) {
@@ -214,7 +223,8 @@ export async function fetchKnowledgeArticles({ topic }) {
   }
   if (!tableName) throw new Error('No knowledge article table found');
 
-  const result = await pool.query(`SELECT * FROM ${tableName} LIMIT 200`);
+  const safeTableIdentifier = toSafeTableIdentifier(tableName);
+  const result = await pool.query(`SELECT * FROM ${safeTableIdentifier} LIMIT 200`);
   let articles = result.rows.map(rowToArticle).filter(Boolean);
 
   if (topic) {

@@ -7,16 +7,52 @@ const toInt = (value, fallback) => {
   return Number.isNaN(parsed) ? fallback : parsed;
 };
 
+const isTestEnv = process.env.NODE_ENV === 'test';
+
+function requireEnv(name, { minLength = 1 } = {}) {
+  const value = String(process.env[name] || '').trim();
+  if (isTestEnv) return value;
+  if (!value || value.length < minLength) {
+    throw new Error(`Missing or invalid required environment variable: ${name}`);
+  }
+  return value;
+}
+
+function parseCsv(value) {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+const corsOriginRaw = isTestEnv
+  ? String(process.env.CORS_ORIGIN || 'http://localhost:5173')
+  : requireEnv('CORS_ORIGIN');
+const corsOrigins = parseCsv(corsOriginRaw);
+if (!isTestEnv && (!corsOrigins.length || corsOrigins.includes('*'))) {
+  throw new Error('CORS_ORIGIN must explicitly list trusted origin(s), wildcard is not allowed');
+}
+
+const adminEmailRaw = isTestEnv
+  ? String(process.env.ADMIN_EMAILS || 'admin@example.com')
+  : requireEnv('ADMIN_EMAILS');
+const adminEmails = parseCsv(adminEmailRaw).map((value) => value.toLowerCase());
+if (!isTestEnv && !adminEmails.length) {
+  throw new Error('ADMIN_EMAILS must include at least one trusted admin email');
+}
+
 export const config = {
   port: toInt(process.env.PORT, 8080),
   fetchIntervalMs: toInt(process.env.FETCH_INTERVAL_MS, 7200000),
   requestTimeoutMs: toInt(process.env.REQUEST_TIMEOUT_MS, 10000),
   staleThresholdMs: toInt(process.env.STALE_THRESHOLD_MS, 600000),
-  defaultLayers: (process.env.DEFAULT_LAYERS || 'fire,flood,storm,heat').split(',').map((s) => s.trim()).filter(Boolean),
-  corsOrigin: process.env.CORS_ORIGIN || '*',
+  defaultLayers: parseCsv(process.env.DEFAULT_LAYERS || 'fire,flood,storm,heat'),
+  corsOrigins,
   databaseUrl: process.env.DATABASE_URL || '',
   databaseSsl: (process.env.DATABASE_SSL || 'true').toLowerCase() !== 'false',
-  authJwtSecret: process.env.AUTH_JWT_SECRET || 'dev-only-change-me',
+  authJwtSecret: isTestEnv
+    ? String(process.env.AUTH_JWT_SECRET || 'test-only-jwt-secret-please-change')
+    : requireEnv('AUTH_JWT_SECRET', { minLength: 32 }),
   authJwtExpiresIn: process.env.AUTH_JWT_EXPIRES_IN || '7d',
   redisUrl: process.env.REDIS_URL || '',
   redisTtlSeconds: toInt(process.env.REDIS_TTL_SECONDS, 90),
@@ -33,9 +69,5 @@ export const config = {
   overpassApiUrl: process.env.OVERPASS_API_URL || 'https://overpass-api.de/api/interpreter',
   vicEmergencyFeedUrl: process.env.VIC_EMERGENCY_FEED_URL || '',
   vicEmergencyApiKey: process.env.VIC_EMERGENCY_API_KEY || '',
-  adminEmails: (process.env.ADMIN_EMAILS || '1178804854@qq.com')
-    .split(',')
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean),
-  localAdminToken: process.env.LOCAL_ADMIN_TOKEN || 'local-admin-token',
+  adminEmails,
 };

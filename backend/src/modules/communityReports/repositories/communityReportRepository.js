@@ -81,6 +81,37 @@ function toNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function isBlockedHostname(hostname) {
+  const host = String(hostname || '').toLowerCase();
+  if (!host) return true;
+  if (host === 'localhost' || host.endsWith('.local')) return true;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+    const [a, b] = host.split('.').map(Number);
+    if (a === 10 || a === 127 || a === 0) return true;
+    if (a === 169 && b === 254) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+  }
+  return false;
+}
+
+function normalizeImageUrl(value) {
+  const raw = text(value);
+  if (!raw) return '';
+  try {
+    const parsed = new URL(raw);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      throw new Error('Invalid image protocol');
+    }
+    if (isBlockedHostname(parsed.hostname)) {
+      throw new Error('Image host is not allowed');
+    }
+    return parsed.toString();
+  } catch (_error) {
+    throw new Error('imageUrl must be a valid public HTTP/HTTPS URL');
+  }
+}
+
 function normalizeInput(payload = {}) {
   const title = text(payload.title);
   const description = text(payload.description);
@@ -88,7 +119,12 @@ function normalizeInput(payload = {}) {
   const hazardType = text(payload.hazardType).toLowerCase();
   const severity = text(payload.severity).toLowerCase();
   const reporterName = text(payload.reporterName, 'Anonymous Hiker');
-  const imageUrl = text(payload.imageUrl);
+  let imageUrl = '';
+  try {
+    imageUrl = normalizeImageUrl(payload.imageUrl);
+  } catch (error) {
+    return { error: error.message };
+  }
   const latitude = toNumber(payload.latitude);
   const longitude = toNumber(payload.longitude);
 

@@ -12,7 +12,7 @@ const form = reactive({
   password: '',
   age: '',
   region: '',
-  securityQuestion: 'What is the name of your first hiking trail?',
+  securityQuestion: 'What was the passphrase of your first personal emergency contact card?',
   securityAnswer: '',
   assessmentAnswers: {
     q_weather: '',
@@ -98,7 +98,7 @@ async function handleSubmit() {
           </label>
           <label>
             <span>Password</span>
-            <input v-model="form.password" type="password" required minlength="8" autocomplete="new-password" />
+            <input v-model="form.password" type="password" required minlength="12" autocomplete="new-password" />
           </label>
           <label>
             <span>Age</span>
@@ -111,10 +111,10 @@ async function handleSubmit() {
           <label>
             <span>Security Question</span>
             <select v-model="form.securityQuestion" required>
-              <option>What is the name of your first hiking trail?</option>
-              <option>Which city were you born in?</option>
-              <option>What is your favorite outdoor activity?</option>
-              <option>What was your childhood nickname?</option>
+              <option>What was the passphrase of your first personal emergency contact card?</option>
+              <option>What private nickname did your family use for your first camping stove?</option>
+              <option>What is the hidden word in your personal offline route notebook?</option>
+              <option>What custom name did you give your first headlamp?</option>
             </select>
           </label>
           <label>

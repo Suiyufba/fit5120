@@ -15,6 +15,7 @@ Updated the homepage so the `Recent Community Alerts` and `Knowledge Hub` sectio
 - Added loading, empty, and error states for both homepage sections.
 - The featured Knowledge Hub hero card now uses a real article image when available, with a styled fallback when no image exists.
 - Homepage preview cards only render real records from the database and no longer inject fake editorial placeholder copy.
+- Knowledge Hub preview cards now also use each article's own `imageUrl` as the card background when an image is available.
 
 ## Data Sources
 

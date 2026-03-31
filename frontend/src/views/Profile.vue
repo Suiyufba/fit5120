@@ -187,11 +187,11 @@ function handleLogout() {
           </label>
           <label>
             <span>New Password</span>
-            <input v-model="sensitiveForm.newPassword" type="password" minlength="8" placeholder="Leave blank to keep current password" />
+            <input v-model="sensitiveForm.newPassword" type="password" minlength="12" placeholder="Leave blank to keep current password" />
           </label>
           <label>
             <span>Confirm New Password</span>
-            <input v-model="sensitiveForm.confirmPassword" type="password" minlength="8" placeholder="Repeat your new password" />
+            <input v-model="sensitiveForm.confirmPassword" type="password" minlength="12" placeholder="Repeat your new password" />
           </label>
           <p v-if="sensitiveMessage" class="form-success">{{ sensitiveMessage }}</p>
           <p v-if="sensitiveError" class="form-error">{{ sensitiveError }}</p>
