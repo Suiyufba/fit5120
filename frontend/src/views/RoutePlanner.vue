@@ -267,8 +267,6 @@ onMounted(() => {
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
-    noWrap: true,
-    bounds: VICTORIA_BOUNDS,
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(mapInstance)
 
