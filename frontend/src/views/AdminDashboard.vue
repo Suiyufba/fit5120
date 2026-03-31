@@ -22,6 +22,14 @@ import {
   createAdminKnowledgeArticle,
   deleteAdminKnowledgeArticle,
 } from '../services/adminApi'
+import {
+  applyVictoriaMapConstraints,
+  clampLatLngToVictoria,
+  getMapBboxWithinVictoria,
+  isLatLngInVictoria,
+  VICTORIA_BOUNDS,
+  VICTORIA_VIEW,
+} from '../utils/victoriaMap'
 
 const router = useRouter()
 const { state: authState } = useAuthState()
@@ -154,9 +162,15 @@ function applyEntityToForm(entity) {
 
 function applyDraggedPosition(entity, latlng) {
   if (mapEditMode.value !== 'modify') return
+  if (!isLatLngInVictoria(latlng)) {
+    info.value = 'Map items must stay within Victoria.'
+    drawManagedEntities()
+    return
+  }
+  const nextLatLng = clampLatLngToVictoria(latlng)
   applyEntityToForm(entity)
-  entityForm.latitude = Number(latlng.lat.toFixed(6)).toString()
-  entityForm.longitude = Number(latlng.lng.toFixed(6)).toString()
+  entityForm.latitude = Number(nextLatLng.lat.toFixed(6)).toString()
+  entityForm.longitude = Number(nextLatLng.lng.toFixed(6)).toString()
   info.value = 'Position updated by drag. Click Save Changes to persist.'
 }
 
@@ -269,10 +283,8 @@ async function loadOfficialHazards() {
   hazardInflightController = new AbortController()
 
   try {
-    const bounds = mapInstance.getBounds()
-    const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
     const payload = await fetchRealtimeHazards({
-      bbox,
+      bbox: getMapBboxWithinVictoria(mapInstance),
       layers: ['fire', 'flood', 'storm', 'heat', 'other'],
       signal: hazardInflightController.signal,
     })
@@ -394,8 +406,9 @@ function drawDraftPoint() {
   const lat = Number(entityForm.latitude)
   const lng = Number(entityForm.longitude)
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
+  const nextLatLng = clampLatLngToVictoria([lat, lng])
 
-  L.marker([lat, lng], {
+  L.marker(nextLatLng, {
     icon: L.divIcon({
       className: 'planner-anchor-icon',
       html: '<div class="admin-draft-pin">D</div>',
@@ -410,14 +423,18 @@ async function handleCreateOrUpdateEntity() {
   info.value = ''
   try {
     const token = tokenOrThrow()
+    const nextLatLng = clampLatLngToVictoria([
+      Number(entityForm.latitude),
+      Number(entityForm.longitude),
+    ])
     const basePayload = {
       title: entityForm.title,
       description: entityForm.description,
       hazardType: entityForm.type,
       type: entityForm.type,
       severity: entityForm.severity,
-      latitude: Number(entityForm.latitude),
-      longitude: Number(entityForm.longitude),
+      latitude: Number(nextLatLng.lat.toFixed(6)),
+      longitude: Number(nextLatLng.lng.toFixed(6)),
       locationName: entityForm.locationName || 'Unknown location',
       reporterName: entityForm.reporterName || 'Admin',
       imageUrl: entityForm.imageUrl,
@@ -586,13 +603,16 @@ onMounted(async () => {
   mapInstance = L.map(mapElement.value, {
     zoomControl: false,
     attributionControl: true,
-  }).setView([-37.8136, 144.9631], 7)
+  }).setView(VICTORIA_VIEW.center, VICTORIA_VIEW.zoom)
+  applyVictoriaMapConstraints(mapInstance)
 
   mapInstance.attributionControl.setPrefix(false)
   L.control.zoom({ position: 'bottomright' }).addTo(mapInstance)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
+    noWrap: true,
+    bounds: VICTORIA_BOUNDS,
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(mapInstance)
 
@@ -602,6 +622,11 @@ onMounted(async () => {
   draftLayer = L.layerGroup().addTo(mapInstance)
 
   const handleMapPointer = (event) => {
+    if (!isLatLngInVictoria(event.latlng)) {
+      info.value = 'Map locations must be selected within Victoria.'
+      return
+    }
+
     if (mapEditMode.value !== 'create') {
       selectEntityForModify(event.latlng)
       return

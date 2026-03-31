@@ -3,11 +3,13 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { fetchRealtimeHazards } from '../services/hazardApi'
-
-const VICTORIA_VIEW = {
-  center: [-37.8136, 144.9631],
-  zoom: 7,
-}
+import {
+  applyVictoriaMapConstraints,
+  clampLatLngToVictoria,
+  getMapBboxWithinVictoria,
+  VICTORIA_BOUNDS,
+  VICTORIA_VIEW,
+} from '../utils/victoriaMap'
 
 const REFRESH_EVERY_MS = 60_000
 
@@ -154,18 +156,8 @@ async function loadHazards() {
   loading.value = true
 
   try {
-    const mapBounds = mapInstance?.getBounds()
-    const bbox = mapBounds
-      ? [
-          mapBounds.getWest(),
-          mapBounds.getSouth(),
-          mapBounds.getEast(),
-          mapBounds.getNorth(),
-        ]
-      : undefined
-
     const nextPayload = await fetchRealtimeHazards({
-      bbox,
+      bbox: getMapBboxWithinVictoria(mapInstance),
       layers: activeLayers.value,
       signal: inflightController.signal,
     })
@@ -238,8 +230,9 @@ async function centerOnUserLocation() {
     const lng = position.coords.longitude
     const accuracy = position.coords.accuracy
 
-    mapInstance?.setView([lat, lng], 11, { animate: true })
-    renderUserLocation(lat, lng, accuracy)
+    const nextLatLng = clampLatLngToVictoria([lat, lng])
+    mapInstance?.setView(nextLatLng, 11, { animate: true })
+    renderUserLocation(nextLatLng.lat, nextLatLng.lng, accuracy)
   } catch (error) {
     console.info('User location unavailable, fallback to default view:', error?.message || error)
   }
@@ -250,11 +243,14 @@ onMounted(async () => {
     zoomControl: false,
     attributionControl: true,
   }).setView(VICTORIA_VIEW.center, VICTORIA_VIEW.zoom)
+  applyVictoriaMapConstraints(mapInstance)
 
   mapInstance.attributionControl.setPrefix(false)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
+    noWrap: true,
+    bounds: VICTORIA_BOUNDS,
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(mapInstance)
 

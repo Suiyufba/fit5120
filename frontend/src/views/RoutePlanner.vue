@@ -7,6 +7,14 @@ import { useAuthState } from '../services/authStore'
 import { planSafeRoute } from '../services/routeApi'
 import { setLatestRoutePlan } from '../services/routePlanStore'
 import { fetchRealtimeHazards } from '../services/hazardApi'
+import {
+  applyVictoriaMapConstraints,
+  clampBoundsToVictoria,
+  getMapBboxWithinVictoria,
+  isLatLngInVictoria,
+  VICTORIA_BOUNDS,
+  VICTORIA_VIEW,
+} from '../utils/victoriaMap'
 
 const router = useRouter()
 const { state: authState } = useAuthState()
@@ -150,10 +158,8 @@ async function loadHazards() {
   hazardInflightController = new AbortController()
 
   try {
-    const bounds = mapInstance.getBounds()
-    const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
     const payload = await fetchRealtimeHazards({
-      bbox,
+      bbox: getMapBboxWithinVictoria(mapInstance),
       layers: ['fire', 'flood', 'storm', 'heat', 'other'],
       signal: hazardInflightController.signal,
     })
@@ -191,7 +197,7 @@ function drawRoutes() {
   })
 
   if (recommended?.geometry?.length) {
-    const bounds = L.latLngBounds(recommended.geometry)
+    const bounds = clampBoundsToVictoria(L.latLngBounds(recommended.geometry))
     mapInstance.fitBounds(bounds.pad(0.2))
   }
 }
@@ -253,13 +259,16 @@ onMounted(() => {
   mapInstance = L.map(mapElement.value, {
     zoomControl: false,
     attributionControl: true,
-  }).setView([-37.8136, 144.9631], 7)
+  }).setView(VICTORIA_VIEW.center, VICTORIA_VIEW.zoom)
+  applyVictoriaMapConstraints(mapInstance)
 
   mapInstance.attributionControl.setPrefix(false)
   L.control.zoom({ position: 'bottomright' }).addTo(mapInstance)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
+    noWrap: true,
+    bounds: VICTORIA_BOUNDS,
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(mapInstance)
 
@@ -271,10 +280,17 @@ onMounted(() => {
   mapInstance.on('moveend', loadHazards)
 
   mapInstance.on('click', (event) => {
+    if (!isLatLngInVictoria(event.latlng)) {
+      error.value = 'Start and destination points must be selected within Victoria.'
+      return
+    }
+
     const point = {
       lat: Number(event.latlng.lat.toFixed(6)),
       lng: Number(event.latlng.lng.toFixed(6)),
     }
+
+    error.value = ''
 
     if (!startPoint.value) {
       startPoint.value = point

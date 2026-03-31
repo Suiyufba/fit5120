@@ -2,6 +2,12 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import {
+  applyVictoriaMapConstraints,
+  clampBoundsToVictoria,
+  VICTORIA_BOUNDS,
+  VICTORIA_VIEW,
+} from '../utils/victoriaMap'
 
 const props = defineProps({
   hazards: {
@@ -68,7 +74,7 @@ function drawHazards() {
   })
 
   if (!hasFittedOnce && points.length) {
-    const bounds = L.latLngBounds(points.map((h) => h.coordinates))
+    const bounds = clampBoundsToVictoria(L.latLngBounds(points.map((h) => h.coordinates)))
     mapInstance.fitBounds(bounds.pad(0.28), { animate: false })
     hasFittedOnce = true
   }
@@ -78,12 +84,15 @@ onMounted(() => {
   mapInstance = L.map(mapElement.value, {
     zoomControl: false,
     attributionControl: true,
-  }).setView([-37.8136, 144.9631], 6)
+  }).setView(VICTORIA_VIEW.center, VICTORIA_VIEW.minZoom)
+  applyVictoriaMapConstraints(mapInstance)
 
   mapInstance.attributionControl.setPrefix(false)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
+    noWrap: true,
+    bounds: VICTORIA_BOUNDS,
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(mapInstance)
 
