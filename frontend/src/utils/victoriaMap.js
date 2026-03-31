@@ -145,16 +145,13 @@ export function applyVictoriaMapConstraints(mapInstance) {
   mapInstance.setMaxBounds(VICTORIA_BOUNDS)
   mapInstance.options.maxBoundsViscosity = 1
   mapInstance.setMinZoom(lockedZoom)
-  mapInstance.setMaxZoom(lockedZoom)
+  mapInstance.setMaxZoom(18)
   mapInstance.fitBounds(VICTORIA_BOUNDS, {
     animate: false,
     padding: [24, 24],
   })
 
   mapInstance.dragging.disable()
-  mapInstance.touchZoom.disable()
-  mapInstance.doubleClickZoom.disable()
-  mapInstance.scrollWheelZoom.disable()
   mapInstance.boxZoom.disable()
   mapInstance.keyboard.disable()
 
@@ -163,7 +160,7 @@ export function applyVictoriaMapConstraints(mapInstance) {
   })
 
   mapInstance.on('zoomend', () => {
-    if (mapInstance.getZoom() !== lockedZoom) {
+    if (mapInstance.getZoom() < lockedZoom) {
       mapInstance.setZoom(lockedZoom)
     }
     mapInstance.panInsideBounds(VICTORIA_BOUNDS, { animate: false })
