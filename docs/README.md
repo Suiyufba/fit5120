@@ -12,3 +12,4 @@ Store UML diagrams, architecture documents, and final report assets for FIT5120.
 - [Auth Endpoint Default Fix (2026-03-31)](./auth-endpoint-default-fix.md)
 - [Forgot Password Layout Fix (2026-03-31)](./forgot-password-layout-fix.md)
 - [Profile Update Auth Fix (2026-03-31)](./profile-update-auth-fix.md)
+- [Local Admin Credentials Update (2026-04-13)](./local-admin-credentials-update-2026-04-13.md)

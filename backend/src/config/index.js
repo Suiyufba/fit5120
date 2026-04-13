@@ -41,6 +41,11 @@ if (!isTestEnv && !adminEmails.length) {
   throw new Error('ADMIN_EMAILS must include at least one trusted admin email');
 }
 
+const localAdminEnabled = (process.env.LOCAL_ADMIN_ENABLED || 'true').toLowerCase() === 'true';
+const localAdminEmail = String(process.env.LOCAL_ADMIN_EMAIL || 'admin@123.com').trim().toLowerCase();
+const localAdminPassword = String(process.env.LOCAL_ADMIN_PASSWORD || 'abcde!123456');
+const localAdminUserId = String(process.env.LOCAL_ADMIN_USER_ID || 'local-admin').trim() || 'local-admin';
+
 export const config = {
   port: toInt(process.env.PORT, 8080),
   fetchIntervalMs: toInt(process.env.FETCH_INTERVAL_MS, 7200000),
@@ -70,4 +75,8 @@ export const config = {
   vicEmergencyFeedUrl: process.env.VIC_EMERGENCY_FEED_URL || '',
   vicEmergencyApiKey: process.env.VIC_EMERGENCY_API_KEY || '',
   adminEmails,
+  localAdminEnabled,
+  localAdminEmail,
+  localAdminPassword,
+  localAdminUserId,
 };

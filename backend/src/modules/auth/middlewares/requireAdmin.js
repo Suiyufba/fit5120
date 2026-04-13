@@ -9,6 +9,12 @@ export async function requireAdmin(req, res, next) {
       return;
     }
 
+    if (config.localAdminEnabled && String(userId) === config.localAdminUserId) {
+      req.auth = { ...req.auth, email: config.localAdminEmail };
+      next();
+      return;
+    }
+
     const user = await findUserById(userId);
     const email = String(user?.email || '').toLowerCase();
     if (!email || !config.adminEmails.includes(email)) {
