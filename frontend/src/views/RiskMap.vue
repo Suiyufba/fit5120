@@ -22,6 +22,16 @@ const layerMeta = {
   heat: { label: 'Heat', color: '#D08817' },
   other: { label: 'Other', color: '#2E7D6B' },
 }
+const otherCategoryPalette = [
+  '#2E7D6B',
+  '#9A3412',
+  '#0369A1',
+  '#7C3AED',
+  '#B45309',
+  '#BE185D',
+  '#0F766E',
+  '#475569',
+]
 
 const mapElement = ref(null)
 const selectedHazardId = ref('')
@@ -68,6 +78,24 @@ const mapStats = computed(() => {
 })
 
 const selectedWindowLabel = computed(() => timeWindowMeta[selectedTimeWindow.value]?.label || 'All available')
+const otherCategoryMeta = computed(() => {
+  const groups = new Map()
+  filteredHazards.value
+    .filter((hazard) => hazard.type === 'other')
+    .forEach((hazard) => {
+      const key = normalizeCategoryKey(hazard?.riskCategory)
+      const current = groups.get(key) || {
+        key,
+        label: key === 'unspecified' ? 'Unspecified' : formatCategoryLabel(hazard?.riskCategory),
+        color: colorForOtherCategory(key),
+        count: 0,
+      }
+      current.count += 1
+      groups.set(key, current)
+    })
+
+  return Array.from(groups.values()).sort((a, b) => b.count - a.count)
+})
 
 let mapInstance
 let markersLayer
@@ -116,10 +144,55 @@ function formatUpdatedTime(value) {
   return new Date(ts).toLocaleString()
 }
 
+function normalizeCategoryKey(value) {
+  const raw = String(value || '').trim().toLowerCase()
+  if (!raw) return 'unspecified'
+  return raw
+    .replace(/[._-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function formatCategoryLabel(value) {
+  const normalized = normalizeCategoryKey(value)
+  if (normalized === 'unspecified') return 'Unspecified'
+  return normalized
+    .split(' ')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
+function hashCode(value) {
+  let hash = 0
+  for (let index = 0; index < value.length; index += 1) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(index)
+    hash |= 0
+  }
+  return Math.abs(hash)
+}
+
+function colorForOtherCategory(categoryKey) {
+  const normalized = normalizeCategoryKey(categoryKey)
+  const bucket = hashCode(normalized) % otherCategoryPalette.length
+  return otherCategoryPalette[bucket]
+}
+
 function resolveCategory(hazard) {
   const raw = String(hazard?.riskCategory || '').trim()
   if (!raw) return 'Unspecified'
-  return raw
+  return formatCategoryLabel(raw)
+}
+
+function resolveHazardVisual(hazard) {
+  if (hazard?.type !== 'other') {
+    return layerMeta[hazard?.type] || layerMeta.other
+  }
+
+  const categoryKey = normalizeCategoryKey(hazard?.riskCategory)
+  return {
+    label: resolveCategory(hazard),
+    color: colorForOtherCategory(categoryKey),
+  }
 }
 
 function getMarkerRadius(severity) {
@@ -162,7 +235,7 @@ function renderMarkers() {
   markersLayer.clearLayers()
 
   filteredHazards.value.forEach((hazard) => {
-    const meta = layerMeta[hazard.type] || layerMeta.other
+    const meta = resolveHazardVisual(hazard)
     renderRiskCoverageZones(hazard, meta.color)
 
     const marker = L.circleMarker(hazard.coordinates, {
@@ -373,6 +446,19 @@ watch(filteredHazards, () => {
             <span class="risk-map-layer-dot" :style="{ background: meta.color }"></span>
             <span>{{ meta.label }}</span>
           </button>
+        </div>
+        <div v-if="activeLayers.includes('other') && otherCategoryMeta.length" class="risk-map-other-categories">
+          <p class="risk-map-filter-label">Other Categories</p>
+          <div class="risk-map-other-category-list">
+            <span
+              v-for="item in otherCategoryMeta"
+              :key="item.key"
+              class="risk-map-other-category-chip"
+            >
+              <i :style="{ background: item.color }"></i>
+              {{ item.label }} ({{ item.count }})
+            </span>
+          </div>
         </div>
       </div>
 
@@ -598,6 +684,38 @@ watch(filteredHazards, () => {
   border-color: #8eb39d;
   background: #edf6f0;
   color: #21453a;
+}
+
+.risk-map-other-categories {
+  margin-top: 0.65rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed #d8e4dc;
+}
+
+.risk-map-other-category-list {
+  margin-top: 0.35rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.risk-map-other-category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid #d9e4dc;
+  background: #fcfefd;
+  border-radius: 999px;
+  color: #37524a;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.46rem;
+}
+
+.risk-map-other-category-chip i {
+  width: 0.52rem;
+  height: 0.52rem;
+  border-radius: 999px;
+  display: inline-block;
 }
 
 .risk-map-feed-list {
