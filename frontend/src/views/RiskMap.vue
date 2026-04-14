@@ -244,9 +244,10 @@ function renderMarkers() {
       fillColor: meta.color,
       fillOpacity: 0.8,
       weight: 2,
+      bubblingMouseEvents: false,
     })
 
-    marker.bindPopup(
+    marker.bindTooltip(
       `
       <div style="min-width: 200px;">
         <div style="font-weight: 800; margin-bottom: 6px;">${escapeHtml(hazard.title)}</div>
@@ -259,9 +260,12 @@ function renderMarkers() {
         </div>
       </div>
       `
-    )
+    , { direction: 'top', offset: [0, -8], opacity: 0.95 })
 
-    marker.on('click', () => openLocationDetail(hazard))
+    marker.on('click', (event) => {
+      L.DomEvent.stop(event)
+      openLocationDetail(hazard)
+    })
 
     marker.addTo(markersLayer)
   })
