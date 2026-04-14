@@ -1,152 +1,490 @@
 <script setup>
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { fetchCommunityReports } from '../services/communityReportApi'
 
 const router = useRouter()
+const route = useRoute()
+
+const loadingReports = ref(false)
+const reportError = ref('')
+const relatedReports = ref([])
+
+const typeMeta = {
+  fire: { label: 'Bushfire', color: '#D84727' },
+  flood: { label: 'Heavy Rain / Flood', color: '#2165B5' },
+  storm: { label: 'Storm / Wind', color: '#5A4B81' },
+  heat: { label: 'Heat', color: '#D08817' },
+  trail: { label: 'Trail Hazard', color: '#6B5C4F' },
+  other: { label: 'Other', color: '#2E7D6B' },
+}
+
+const severityMeta = {
+  extreme: { label: 'Extreme', tone: 'detail-pill--danger' },
+  high: { label: 'High', tone: 'detail-pill--high' },
+  moderate: { label: 'Moderate', tone: 'detail-pill--moderate' },
+  low: { label: 'Low', tone: 'detail-pill--low' },
+}
+
+function asText(value, fallback = '') {
+  const next = Array.isArray(value) ? value[0] : value
+  const text = String(next || '').trim()
+  return text || fallback
+}
+
+function asNumber(value) {
+  const parsed = Number(Array.isArray(value) ? value[0] : value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function toIso(value) {
+  const raw = asText(value)
+  const ts = Date.parse(raw)
+  return Number.isNaN(ts) ? '' : new Date(ts).toISOString()
+}
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const toRad = (degrees) => (degrees * Math.PI) / 180
+  const earthRadiusKm = 6371
+  const dLat = toRad(lat2 - lat1)
+  const dLng = toRad(lng2 - lng1)
+  const a =
+    Math.sin(dLat / 2) ** 2
+    + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+const hazard = computed(() => {
+  const id = asText(route.params.id, 'hazard')
+  const title = asText(route.query.title, 'Selected Risk Area')
+  const type = asText(route.query.type, 'other').toLowerCase()
+  const severity = asText(route.query.severity, 'moderate').toLowerCase()
+  const source = asText(route.query.source, 'Official risk feed')
+  const description = asText(route.query.description, 'No detail provided')
+  const lat = asNumber(route.query.lat)
+  const lng = asNumber(route.query.lng)
+  const updatedAt = toIso(route.query.updatedAt)
+
+  return {
+    id,
+    title,
+    type: typeMeta[type] ? type : 'other',
+    severity: severityMeta[severity] ? severity : 'moderate',
+    source,
+    description,
+    lat,
+    lng,
+    updatedAt,
+  }
+})
+
+const riskTypeLabel = computed(() => typeMeta[hazard.value.type]?.label || typeMeta.other.label)
+const riskLevelLabel = computed(() => severityMeta[hazard.value.severity]?.label || severityMeta.moderate.label)
+const riskLevelTone = computed(() => severityMeta[hazard.value.severity]?.tone || severityMeta.moderate.tone)
+const riskColor = computed(() => typeMeta[hazard.value.type]?.color || typeMeta.other.color)
+const locationName = computed(() => hazard.value.title)
+
+const affectedTimeWindow = computed(() => {
+  if (!hazard.value.updatedAt) return 'Current cycle (time window unavailable)'
+  const startTs = Date.parse(hazard.value.updatedAt)
+  if (Number.isNaN(startTs)) return 'Current cycle (time window unavailable)'
+  const endTs = startTs + (24 * 60 * 60 * 1000)
+  return `${new Date(startTs).toLocaleString()} - ${new Date(endTs).toLocaleString()}`
+})
+
+const recommendedAction = computed(() => {
+  const type = hazard.value.type
+  const severity = hazard.value.severity
+
+  if (type === 'fire') {
+    return severity === 'extreme' || severity === 'high'
+      ? 'Delay this trip and avoid the area until alerts reduce. Prepare an alternate route.'
+      : 'Check alerts before departure and keep a clear turnaround plan.'
+  }
+  if (type === 'flood' || type === 'storm') {
+    return 'Avoid creek crossings, slippery sections, and low-lying tracks during this period.'
+  }
+  if (type === 'heat') {
+    return 'Start early, increase hydration, and reduce exposed midday hiking.'
+  }
+  if (type === 'trail') {
+    return 'Use a safer bypass where possible and allow extra time for detours.'
+  }
+  return 'Proceed conservatively and recheck official updates before leaving.'
+})
+
+function mapReport(raw, distanceKm) {
+  return {
+    id: raw.id,
+    title: raw.title,
+    hazardType: raw.hazardType,
+    severity: raw.severity,
+    locationName: raw.locationName,
+    description: raw.description,
+    imageUrl: raw.imageUrl,
+    reportedAt: raw.reportedAt,
+    reporterName: raw.reporterName,
+    distanceKm: Number(distanceKm.toFixed(1)),
+  }
+}
+
+async function loadRelatedReports() {
+  if (!Number.isFinite(hazard.value.lat) || !Number.isFinite(hazard.value.lng)) {
+    relatedReports.value = []
+    return
+  }
+
+  loadingReports.value = true
+  reportError.value = ''
+
+  try {
+    const payload = await fetchCommunityReports({ limit: 100 })
+    const nearby = payload.reports
+      .map((report) => {
+        const distanceKm = haversineKm(
+          hazard.value.lat,
+          hazard.value.lng,
+          Number(report.latitude),
+          Number(report.longitude)
+        )
+        return { report, distanceKm }
+      })
+      .filter((item) => item.distanceKm <= 30)
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .slice(0, 6)
+      .map((item) => mapReport(item.report, item.distanceKm))
+
+    relatedReports.value = nearby
+  } catch (error) {
+    reportError.value = error?.message || 'Failed to load community reports'
+  } finally {
+    loadingReports.value = false
+  }
+}
+
+onMounted(() => {
+  loadRelatedReports()
+})
 </script>
 
 <template>
-  <main class="location-detail-page relative flex" style="height: var(--mobile-safe-height)">
-    <!-- Background Map -->
-    <div class="absolute inset-0 z-0">
-      <img
-        class="w-full h-full object-cover brightness-95"
-        alt="Topographic map of Victorian alpine terrain"
-        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKzkE6zPVX5vWqHQu_cuwwD6BqwCru36GcB1nMPzf4MwDqNyuH48fLi8-q2-EVXkfwxPKWF1mtvTOR4rtnfWQTIQDvCXPi5UP8e3IitZyTpwGnEcE3Vc6RBJvmWFK7oVcw2ECeVqKISyRo9tkGupJk_FZvn3gRpd1vkNfUqK46EyWHiPNdZ22xrswXnlqhUgYFkMkQVZkuU8WpjdOhmx7UTW29ZvgZYdni6A1z4KGfqAvN3iZkqqHzBVIYc4WAAHQuuM2-qX5HApo"
-      />
-      <!-- Map Marker -->
-      <div class="absolute top-1/2 left-1/3 transform -translate-x-1/2 -translate-y-1/2">
-        <div class="relative flex items-center justify-center">
-          <div class="absolute animate-ping h-8 w-8 rounded-full bg-primary opacity-20"></div>
-          <div class="h-4 w-4 rounded-full bg-primary border-2 border-white shadow-lg"></div>
-        </div>
+  <main class="detail-page">
+    <section class="detail-map-hint">
+      <div class="detail-map-card">
+        <p class="detail-map-kicker">Selected Risk Area</p>
+        <h2>{{ locationName }}</h2>
+        <p v-if="Number.isFinite(hazard.lat) && Number.isFinite(hazard.lng)">
+          {{ hazard.lat.toFixed(5) }}, {{ hazard.lng.toFixed(5) }}
+        </p>
+        <p v-else>Location coordinates unavailable</p>
       </div>
-    </div>
+      <div class="detail-pulse" :style="{ borderColor: riskColor }"></div>
+    </section>
 
-    <!-- Overlay -->
-    <div class="absolute inset-0 bg-on-surface/5 backdrop-blur-[2px] z-10 pointer-events-none md:pointer-events-auto"></div>
-
-    <!-- Detail Panel -->
-    <aside class="location-detail-panel absolute right-0 top-0 h-full w-full md:w-[480px] z-20 custom-glass shadow-[-24px_0_48px_rgba(0,31,41,0.06)] md:rounded-tl-3xl flex flex-col overflow-hidden">
-      <!-- Panel Header -->
-      <div class="px-4 sm:px-6 md:px-8 pt-5 md:pt-8 pb-4 flex justify-between items-start sticky top-0 bg-white/65 backdrop-blur-md z-10">
-        <div>
-          <span class="inline-block px-3 py-1 bg-surface-container-highest text-primary font-label text-[10px] tracking-[0.1em] uppercase font-bold rounded-full mb-3">Location Detail</span>
-          <h1 class="font-headline text-3xl font-extrabold tracking-tight leading-tight text-on-surface">
-            Grampians National Park <span class="block text-primary/60">(Halls Gap Area)</span>
-          </h1>
-        </div>
-        <button class="p-2 rounded-full bg-surface-container-high hover:bg-surface-container-highest transition-colors active:scale-90" @click="router.back()">
-          <span class="material-symbols-outlined">close</span>
-        </button>
+    <aside class="detail-panel">
+      <div class="detail-panel-head">
+        <p class="detail-kicker">Location Detail Panel</p>
+        <button class="back-btn" @click="router.back()">Back</button>
       </div>
 
-      <!-- Scrollable Content -->
-      <div class="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-4 space-y-8 scroll-smooth">
-        <!-- Risk Alert -->
-        <section class="space-y-4">
-          <div class="p-6 bg-[#FFF9F2] rounded-xl flex items-start gap-5">
-            <div class="h-12 w-12 rounded-full bg-secondary-container flex items-center justify-center flex-shrink-0 text-secondary">
-              <span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1">warning</span>
-            </div>
-            <div class="space-y-1">
-              <div class="flex items-center gap-2">
-                <span class="font-label font-bold text-xs text-secondary-container bg-secondary px-2 py-0.5 rounded">MODERATE RISK</span>
-                <div class="w-2 h-2 rounded-full bg-[#E76F51]"></div>
-              </div>
-              <p class="font-headline text-lg font-bold text-on-surface">Heavy rainfall expected this afternoon.</p>
-            </div>
-          </div>
+      <section class="detail-card">
+        <h1>{{ locationName }}</h1>
+        <div class="detail-meta-line">
+          <span class="detail-chip" :style="{ borderColor: riskColor, color: riskColor }">{{ riskTypeLabel }}</span>
+          <span class="detail-pill" :class="riskLevelTone">{{ riskLevelLabel }} risk</span>
+        </div>
+        <p class="detail-row"><strong>Affected time window:</strong> {{ affectedTimeWindow }}</p>
+        <p class="detail-row"><strong>Recommended action:</strong> {{ recommendedAction }}</p>
+        <p class="detail-row"><strong>Source:</strong> {{ hazard.source }}</p>
+        <p class="detail-description">{{ hazard.description }}</p>
+      </section>
 
-          <div class="p-6 bg-surface-container-low rounded-xl space-y-3">
-            <div class="flex items-center gap-2 text-primary">
-              <span class="material-symbols-outlined text-sm">info</span>
-              <span class="font-label text-xs font-bold tracking-widest uppercase">Recommended Action</span>
+      <section class="detail-card">
+        <h2>Related Community Reports</h2>
+        <p v-if="loadingReports" class="detail-note">Loading nearby reports...</p>
+        <p v-else-if="reportError" class="detail-note detail-note--error">{{ reportError }}</p>
+        <p v-else-if="!relatedReports.length" class="detail-note">No nearby community reports found for this location right now.</p>
+
+        <article v-for="report in relatedReports" :key="report.id" class="report-item">
+          <img
+            v-if="report.imageUrl"
+            :src="report.imageUrl"
+            alt="Community report photo"
+            class="report-thumb"
+          />
+          <div class="report-body">
+            <div class="report-top">
+              <strong>{{ report.title }}</strong>
+              <span>{{ report.distanceKm }} km</span>
             </div>
-            <p class="text-on-surface-variant leading-relaxed font-medium">
-              Avoid low-lying creek crossings and move to higher ground if rain intensifies. Ensure GPS tracking is active.
+            <p class="report-meta">
+              {{ report.hazardType }} · {{ report.severity }} · {{ new Date(report.reportedAt).toLocaleString() }}
             </p>
+            <p class="report-meta">{{ report.locationName }} · {{ report.reporterName }}</p>
+            <p class="report-desc">{{ report.description }}</p>
           </div>
-        </section>
-
-        <!-- Nearby Trails -->
-        <section class="space-y-4">
-          <h2 class="font-label text-xs font-bold tracking-widest uppercase text-outline">Nearby Trails</h2>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="group cursor-pointer">
-              <div class="aspect-[4/5] rounded-xl overflow-hidden mb-3 relative">
-                <img
-                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  alt="Rock formations of the Wonderland Loop trail in Grampians"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuApOORevGOzzcAdwC5RUH5mMhx7IQi5HF_AMC_NkczYxJwVrlcz7GeE39_Rd_XMRbLhOz0qvwbkAwo0y3jDZB77NprocreRbpiqZ5vrxZpLKV0t8Xt5SQQUiYJpAgPTxseXjm3bjVFy6TDiLx7McWzYTx6HaSzWEiyL6YHHQsionblkewIdW8iVU2uut3vpT_-CT-A2DElUMJdVMgY8KsdZB6I9Ee1B7wOarzxhGHZ2_u3M0kIaZRhUe4sjBtGxElZEE7tcsdC44vY"
-                />
-                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                <div class="absolute bottom-4 left-4 text-white">
-                  <p class="font-headline font-bold text-sm">Wonderland Loop</p>
-                  <span class="text-[10px] opacity-80">9.6km &bull; Grade 4</span>
-                </div>
-              </div>
-            </div>
-            <div class="flex flex-col gap-4">
-              <div class="flex-1 group cursor-pointer bg-surface-container rounded-xl p-4 flex flex-col justify-end relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-3 opacity-20">
-                  <span class="material-symbols-outlined text-4xl">terrain</span>
-                </div>
-                <p class="font-headline font-bold text-sm mb-1">Pinnacle Walk</p>
-                <span class="font-label text-[10px] text-primary font-bold">4.2km &bull; Popular</span>
-              </div>
-              <div class="h-24 bg-surface-container-high rounded-xl flex items-center justify-center border-2 border-dashed border-outline/20">
-                <span class="material-symbols-outlined text-outline">add</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Community Reports -->
-        <section class="space-y-4">
-          <div class="flex justify-between items-center">
-            <h2 class="font-label text-xs font-bold tracking-widest uppercase text-outline">Community Reports</h2>
-            <span class="text-[10px] text-primary font-bold bg-primary-container/20 px-2 py-1 rounded">2 New</span>
-          </div>
-          <div class="space-y-4">
-            <div class="p-5 bg-white rounded-xl shadow-[0_4px_12px_rgba(0,31,41,0.03)] border border-outline-variant/20">
-              <div class="flex items-center gap-3 mb-3">
-                <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-[10px]">MK</div>
-                <div>
-                  <p class="text-xs font-bold">Marcus K.</p>
-                  <p class="text-[10px] text-outline">Verified Ranger</p>
-                </div>
-                <div class="ml-auto text-[10px] text-outline">2h ago</div>
-              </div>
-              <p class="text-sm italic text-on-surface-variant leading-relaxed">"Slippery tracks reported near Venus Baths. Watch your footing on the mossy sandstone."</p>
-            </div>
-          </div>
-        </section>
-
-        <!-- Action Button -->
-        <div class="pt-4 pb-8">
-          <button class="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-4 rounded-xl font-headline font-bold text-lg shadow-[0_8px_24px_rgba(51,79,43,0.2)] transition-all hover:brightness-110 active:scale-[0.98]">
-            Download Offline Map
-          </button>
-          <p class="text-center mt-4 text-[10px] text-outline font-medium">Last updated: 14:02 AEST</p>
-        </div>
-      </div>
+        </article>
+      </section>
     </aside>
   </main>
 </template>
 
 <style scoped>
-@media (max-width: 768px) {
-  .location-detail-page {
-    height: var(--mobile-safe-height) !important;
+.detail-page {
+  display: grid;
+  grid-template-columns: 1fr 440px;
+  height: calc(100vh - 72px);
+  height: var(--mobile-safe-height);
+  background: linear-gradient(135deg, #eef5f0 0%, #ecf3fa 55%, #f8f5ee 100%);
+}
+
+.detail-map-hint {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.detail-map-card {
+  border: 1px solid #cddfd4;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(5px);
+  padding: 1rem;
+  width: min(460px, 90%);
+  z-index: 2;
+}
+
+.detail-map-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #3c6558;
+}
+
+.detail-map-card h2 {
+  margin-top: 0.4rem;
+  color: #1e3a33;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.detail-map-card p {
+  margin-top: 0.35rem;
+  color: #4e645e;
+  font-size: 0.86rem;
+}
+
+.detail-pulse {
+  position: absolute;
+  width: 132px;
+  height: 132px;
+  border: 3px solid #2e7d6b;
+  border-radius: 999px;
+  opacity: 0.45;
+  animation: pulse 1.9s ease-out infinite;
+}
+
+.detail-panel {
+  border-left: 1px solid #d6e1d8;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(7px);
+  padding: 1rem;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.detail-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.detail-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #3f675a;
+}
+
+.back-btn {
+  border: 1px solid #c4d5cb;
+  border-radius: 0.6rem;
+  background: #fff;
+  color: #2d5146;
+  padding: 0.45rem 0.75rem;
+  font-weight: 700;
+}
+
+.detail-card {
+  border: 1px solid #dce6df;
+  border-radius: 0.85rem;
+  background: #fff;
+  padding: 0.8rem;
+}
+
+.detail-card h1 {
+  color: #1e3a33;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.detail-card h2 {
+  color: #2a4c42;
+  font-size: 0.98rem;
+  font-weight: 800;
+}
+
+.detail-meta-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.detail-chip,
+.detail-pill {
+  border-radius: 999px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  padding: 0.2rem 0.52rem;
+}
+
+.detail-chip {
+  border: 1px solid #92b7a5;
+  color: #246a54;
+}
+
+.detail-pill--danger {
+  background: #fee2dd;
+  color: #93291f;
+}
+
+.detail-pill--high {
+  background: #fff0df;
+  color: #905300;
+}
+
+.detail-pill--moderate {
+  background: #eaf3ff;
+  color: #1e4f8e;
+}
+
+.detail-pill--low {
+  background: #e8f7ef;
+  color: #1f6b45;
+}
+
+.detail-row {
+  margin-top: 0.55rem;
+  color: #3f5f57;
+  font-size: 0.86rem;
+}
+
+.detail-description {
+  margin-top: 0.55rem;
+  color: #47605a;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.detail-note {
+  margin-top: 0.45rem;
+  color: #48625b;
+  font-size: 0.82rem;
+}
+
+.detail-note--error {
+  color: #8d3025;
+}
+
+.report-item {
+  margin-top: 0.6rem;
+  border: 1px solid #dfe7e1;
+  border-radius: 0.72rem;
+  background: #fcfefd;
+  padding: 0.55rem;
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 0.55rem;
+}
+
+.report-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 0.5rem;
+  object-fit: cover;
+}
+
+.report-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.report-top strong {
+  color: #25453c;
+  font-size: 0.86rem;
+}
+
+.report-top span {
+  color: #5f726c;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.report-meta {
+  margin-top: 0.2rem;
+  color: #5b6d67;
+  font-size: 0.74rem;
+}
+
+.report-desc {
+  margin-top: 0.3rem;
+  color: #49625b;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.45);
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 980px) {
+  .detail-page {
+    grid-template-columns: 1fr;
+    min-height: var(--mobile-safe-height);
   }
 
-  .location-detail-panel {
-    border-top-left-radius: 1.35rem;
-    border-top-right-radius: 1.35rem;
-    top: auto;
-    bottom: 0;
-    height: min(84dvh, 860px);
-    box-shadow: 0 -20px 48px rgba(0, 31, 41, 0.12);
+  .detail-map-hint {
+    min-height: 32vh;
+  }
+
+  .detail-panel {
+    border-left: 0;
+    border-top: 1px solid #d6e1d8;
+  }
+
+  .report-item {
+    grid-template-columns: 1fr;
+  }
+
+  .report-thumb {
+    width: 100%;
+    height: 140px;
   }
 }
 </style>

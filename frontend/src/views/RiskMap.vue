@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { fetchRealtimeHazards } from '../services/hazardApi'
@@ -12,6 +13,7 @@ import {
 } from '../utils/victoriaMap'
 
 const REFRESH_EVERY_MS = 60_000
+const router = useRouter()
 
 const layerMeta = {
   fire: { label: 'Bushfire', color: '#D84727' },
@@ -24,6 +26,8 @@ const layerMeta = {
 const mapElement = ref(null)
 const selectedHazardId = ref('')
 const activeLayers = ref(['fire', 'flood', 'storm', 'heat', 'other'])
+const selectedTimeWindow = ref('24h')
+const selectedRiskLevels = ref(['extreme', 'high', 'moderate', 'low'])
 const hazards = ref([])
 const loading = ref(false)
 const lastUpdatedAt = ref(null)
@@ -31,10 +35,27 @@ const isSheetExpanded = ref(false)
 
 const severityOrder = { extreme: 4, high: 3, moderate: 2, low: 1 }
 const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
+const timeWindowMeta = {
+  '6h': { label: 'Last 6 hours', hours: 6 },
+  '24h': { label: 'Last 24 hours', hours: 24 },
+  '72h': { label: 'Last 3 days', hours: 72 },
+  '168h': { label: 'Last 7 days', hours: 168 },
+  all: { label: 'All available', hours: null },
+}
 
 const filteredHazards = computed(() => {
+  const windowHours = timeWindowMeta[selectedTimeWindow.value]?.hours ?? null
+  const cutoffTs = Number.isFinite(windowHours) ? Date.now() - (windowHours * 60 * 60 * 1000) : null
+
   return hazards.value
     .filter((hazard) => activeLayers.value.includes(hazard.type))
+    .filter((hazard) => selectedRiskLevels.value.includes(hazard.severity))
+    .filter((hazard) => {
+      if (cutoffTs === null) return true
+      const updatedTs = Date.parse(hazard.updatedAt || '')
+      if (Number.isNaN(updatedTs)) return false
+      return updatedTs >= cutoffTs
+    })
     .sort((a, b) => (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0))
 })
 
@@ -45,6 +66,8 @@ const mapStats = computed(() => {
   })
   return stats
 })
+
+const selectedWindowLabel = computed(() => timeWindowMeta[selectedTimeWindow.value]?.label || 'All available')
 
 let mapInstance
 let markersLayer
@@ -76,6 +99,21 @@ function toggleLayer(layerId) {
   }
 
   activeLayers.value = [...activeLayers.value, layerId]
+}
+
+function toggleRiskLevel(level) {
+  if (selectedRiskLevels.value.includes(level)) {
+    selectedRiskLevels.value = selectedRiskLevels.value.filter((item) => item !== level)
+    return
+  }
+
+  selectedRiskLevels.value = [...selectedRiskLevels.value, level]
+}
+
+function formatUpdatedTime(value) {
+  const ts = Date.parse(value || '')
+  if (Number.isNaN(ts)) return 'Time unknown'
+  return new Date(ts).toLocaleString()
 }
 
 function getMarkerRadius(severity) {
@@ -136,15 +174,14 @@ function renderMarkers() {
         <div style="font-size: 12px; margin-bottom: 8px;">${escapeHtml(cleanPopupDescription(hazard.description))}</div>
         <div style="font-size: 11px; color: #5f6b66;">
           ${escapeHtml(meta.label)} · ${escapeHtml(severityLabel[hazard.severity] || 'Unknown')}<br />
+          Updated: ${escapeHtml(formatUpdatedTime(hazard.updatedAt))}<br />
           Source: ${escapeHtml(hazard.source)}
         </div>
       </div>
       `
     )
 
-    marker.on('click', () => {
-      selectedHazardId.value = hazard.id
-    })
+    marker.on('click', () => openLocationDetail(hazard))
 
     marker.addTo(markersLayer)
   })
@@ -176,6 +213,26 @@ function selectHazard(hazard) {
   selectedHazardId.value = hazard.id
   isSheetExpanded.value = true
   mapInstance?.setView(hazard.coordinates, Math.max(mapInstance.getZoom(), 9), { animate: true })
+}
+
+function openLocationDetail(hazard) {
+  if (!hazard) return
+  selectedHazardId.value = hazard.id
+
+  router.push({
+    name: 'location-detail',
+    params: { id: hazard.id },
+    query: {
+      title: hazard.title,
+      type: hazard.type,
+      severity: hazard.severity,
+      source: hazard.source,
+      updatedAt: hazard.updatedAt || '',
+      lat: String(hazard.coordinates?.[0] ?? ''),
+      lng: String(hazard.coordinates?.[1] ?? ''),
+      description: hazard.description || '',
+    },
+  })
 }
 
 function toggleSheet() {
@@ -272,6 +329,9 @@ onUnmounted(() => {
 })
 
 watch(filteredHazards, () => {
+  if (!filteredHazards.value.some((hazard) => hazard.id === selectedHazardId.value)) {
+    selectedHazardId.value = ''
+  }
   renderMarkers()
 }, { deep: true })
 </script>
@@ -308,10 +368,40 @@ watch(filteredHazards, () => {
         </div>
       </div>
 
+      <div class="risk-map-filters">
+        <p class="risk-map-block-title">Time & Risk Filters</p>
+        <label class="risk-map-filter-label" for="time-window-select">Date/Time</label>
+        <select id="time-window-select" v-model="selectedTimeWindow" class="risk-map-time-select">
+          <option value="6h">Last 6 hours</option>
+          <option value="24h">Last 24 hours</option>
+          <option value="72h">Last 3 days</option>
+          <option value="168h">Last 7 days</option>
+          <option value="all">All available</option>
+        </select>
+
+        <p class="risk-map-filter-label">Risk Level</p>
+        <div class="risk-map-risk-level-list">
+          <button
+            v-for="(label, level) in severityLabel"
+            :key="level"
+            class="risk-map-risk-level-btn"
+            :class="{ 'risk-map-risk-level-btn--active': selectedRiskLevels.includes(level) }"
+            @click="toggleRiskLevel(level)"
+          >
+            {{ label }}
+          </button>
+        </div>
+      </div>
+
       <div class="risk-map-summary">
         <p class="risk-map-block-title">Current Summary</p>
         <p class="risk-map-subline">
           {{ filteredHazards.length }} events · Extreme {{ mapStats.extreme }} · High {{ mapStats.high }} · Moderate {{ mapStats.moderate }}
+        </p>
+        <p class="risk-map-subline">Time window: {{ selectedWindowLabel }}</p>
+        <p class="risk-map-subline">
+          Active risk levels:
+          {{ selectedRiskLevels.length ? selectedRiskLevels.map((level) => severityLabel[level]).join(', ') : 'None selected' }}
         </p>
         <p class="risk-map-subline">Coverage zones: L1 ≤1km · L2 1–3km · L3 3–5km</p>
         <p class="risk-map-subline">
@@ -327,7 +417,7 @@ watch(filteredHazards, () => {
             :key="hazard.id"
             class="risk-map-feed-item"
             :class="{ 'risk-map-feed-item--active': selectedHazardId === hazard.id }"
-            @click="selectHazard(hazard)"
+            @click="openLocationDetail(hazard)"
           >
             <span class="risk-map-feed-severity">{{ severityLabel[hazard.severity] || 'Low' }}</span>
             <strong>{{ hazard.title }}</strong>
@@ -405,6 +495,7 @@ watch(filteredHazards, () => {
 }
 
 .risk-map-layers,
+.risk-map-filters,
 .risk-map-summary,
 .risk-map-feed {
   background: #ffffff;
@@ -455,6 +546,50 @@ watch(filteredHazards, () => {
   margin-top: 0.55rem;
   font-size: 0.8rem;
   color: #48605a;
+}
+
+.risk-map-filter-label {
+  display: block;
+  margin-top: 0.65rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #557168;
+}
+
+.risk-map-time-select {
+  width: 100%;
+  margin-top: 0.35rem;
+  border: 1px solid #d6e3db;
+  border-radius: 0.5rem;
+  background: #fcfefd;
+  color: #304740;
+  font-size: 0.8rem;
+  padding: 0.46rem 0.55rem;
+}
+
+.risk-map-risk-level-list {
+  margin-top: 0.35rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.38rem;
+}
+
+.risk-map-risk-level-btn {
+  border: 1px solid #d8e1d7;
+  border-radius: 0.5rem;
+  background: #fcfefd;
+  color: #3b4f49;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 0.4rem 0.5rem;
+}
+
+.risk-map-risk-level-btn--active {
+  border-color: #8eb39d;
+  background: #edf6f0;
+  color: #21453a;
 }
 
 .risk-map-feed-list {
