@@ -116,6 +116,12 @@ function formatUpdatedTime(value) {
   return new Date(ts).toLocaleString()
 }
 
+function resolveCategory(hazard) {
+  const raw = String(hazard?.riskCategory || '').trim()
+  if (!raw) return 'Unspecified'
+  return raw
+}
+
 function getMarkerRadius(severity) {
   if (severity === 'extreme') return 12
   if (severity === 'high') return 10
@@ -174,6 +180,7 @@ function renderMarkers() {
         <div style="font-size: 12px; margin-bottom: 8px;">${escapeHtml(cleanPopupDescription(hazard.description))}</div>
         <div style="font-size: 11px; color: #5f6b66;">
           ${escapeHtml(meta.label)} · ${escapeHtml(severityLabel[hazard.severity] || 'Unknown')}<br />
+          Category: ${escapeHtml(resolveCategory(hazard))}<br />
           Updated: ${escapeHtml(formatUpdatedTime(hazard.updatedAt))}<br />
           Source: ${escapeHtml(hazard.source)}
         </div>
@@ -226,6 +233,7 @@ function openLocationDetail(hazard) {
       title: hazard.title,
       type: hazard.type,
       severity: hazard.severity,
+      category: hazard.riskCategory || '',
       source: hazard.source,
       updatedAt: hazard.updatedAt || '',
       lat: String(hazard.coordinates?.[0] ?? ''),
@@ -421,7 +429,7 @@ watch(filteredHazards, () => {
           >
             <span class="risk-map-feed-severity">{{ severityLabel[hazard.severity] || 'Low' }}</span>
             <strong>{{ hazard.title }}</strong>
-            <small>{{ hazard.source }}</small>
+            <small>{{ hazard.riskCategory || layerMeta[hazard.type]?.label || 'Unspecified' }} · {{ hazard.source }}</small>
           </button>
         </div>
       </div>

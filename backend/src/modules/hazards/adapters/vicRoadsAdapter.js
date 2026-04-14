@@ -41,6 +41,7 @@ export async function fetchVicRoadsHazards() {
         type,
         severity: toSeverity(record.severity || record.risk || record.impact),
         title,
+        riskCategory: record.event_type || record.subcategory || 'Road disruption',
         description: record.description || record.details || 'Unplanned road disruption',
         source: 'DataVic',
         sourceUrl: 'https://www.data.vic.gov.au/',

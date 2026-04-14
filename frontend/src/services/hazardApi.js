@@ -37,6 +37,7 @@ function normalizeFeature(feature) {
   return {
     id: props.id || feature.id || `${lat}-${lng}-${Date.now()}`,
     title: props.title || props.event || 'Unnamed hazard',
+    riskCategory: props.riskCategory || props.category || props.incidentType || '',
     description: props.description || props.headline || 'No detail provided',
     source: normalizeSource(props.source || props.provider || 'Official open data'),
     sourceUrl: props.sourceUrl || props.link || '',
@@ -56,6 +57,7 @@ function normalizeRecord(record) {
   return {
     id: record.id || `${lat}-${lng}-${Date.now()}`,
     title: record.title || 'Unnamed hazard',
+    riskCategory: record.riskCategory || record.category || record.incidentType || '',
     description: record.description || 'No detail provided',
     source: normalizeSource(record.source || 'Official open data'),
     sourceUrl: record.sourceUrl || '',

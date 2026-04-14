@@ -60,6 +60,7 @@ const hazard = computed(() => {
   const type = asText(route.query.type, 'other').toLowerCase()
   const severity = asText(route.query.severity, 'moderate').toLowerCase()
   const source = asText(route.query.source, 'Official risk feed')
+  const category = asText(route.query.category, '')
   const description = asText(route.query.description, 'No detail provided')
   const lat = asNumber(route.query.lat)
   const lng = asNumber(route.query.lng)
@@ -71,6 +72,7 @@ const hazard = computed(() => {
     type: typeMeta[type] ? type : 'other',
     severity: severityMeta[severity] ? severity : 'moderate',
     source,
+    category,
     description,
     lat,
     lng,
@@ -83,6 +85,7 @@ const riskLevelLabel = computed(() => severityMeta[hazard.value.severity]?.label
 const riskLevelTone = computed(() => severityMeta[hazard.value.severity]?.tone || severityMeta.moderate.tone)
 const riskColor = computed(() => typeMeta[hazard.value.type]?.color || typeMeta.other.color)
 const locationName = computed(() => hazard.value.title)
+const riskCategoryLabel = computed(() => hazard.value.category || riskTypeLabel.value)
 
 const affectedTimeWindow = computed(() => {
   if (!hazard.value.updatedAt) return 'Current cycle (time window unavailable)'
@@ -193,6 +196,7 @@ onMounted(() => {
           <span class="detail-chip" :style="{ borderColor: riskColor, color: riskColor }">{{ riskTypeLabel }}</span>
           <span class="detail-pill" :class="riskLevelTone">{{ riskLevelLabel }} risk</span>
         </div>
+        <p class="detail-row"><strong>Risk category:</strong> {{ riskCategoryLabel }}</p>
         <p class="detail-row"><strong>Affected time window:</strong> {{ affectedTimeWindow }}</p>
         <p class="detail-row"><strong>Recommended action:</strong> {{ recommendedAction }}</p>
         <p class="detail-row"><strong>Source:</strong> {{ hazard.source }}</p>

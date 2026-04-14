@@ -41,10 +41,10 @@ export const toSeverity = (value) => {
 };
 
 export const layerAliases = {
-  fire: ['fire', 'bushfire', 'smoke'],
-  flood: ['flood', 'inundation', 'flash flood'],
+  fire: ['fire', 'bushfire', 'smoke', 'grassfire', 'grass fire', 'scrub fire'],
+  flood: ['flood', 'inundation', 'flash flood', 'heavy rain', 'rainfall'],
   storm: ['storm', 'thunderstorm', 'hail', 'wind'],
-  heat: ['heat', 'heatwave', 'temperature']
+  heat: ['heat', 'heatwave', 'temperature', 'hot weather']
 };
 
 export const inferType = (text) => {
@@ -62,6 +62,7 @@ export const sanitizeHazard = (hazard) => ({
   type: normalizeLayer(hazard.type),
   severity: ['low', 'moderate', 'high', 'extreme'].includes(hazard.severity) ? hazard.severity : 'low',
   title: String(hazard.title || 'Untitled event'),
+  riskCategory: String(hazard.riskCategory || hazard.category || '').trim(),
   description: String(hazard.description || ''),
   source: String(hazard.source || 'Unknown'),
   sourceUrl: String(hazard.sourceUrl || ''),

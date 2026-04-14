@@ -79,6 +79,7 @@ function parseVicEmergencyRss(xmlText) {
         type: inferType(`${incidentType} ${title}`),
         severity: toSeverity(incidentStatus || incidentType || 'moderate'),
         title: decodeHtml(title).replace(/\s+/g, ' ').trim(),
+        riskCategory: incidentType || 'Incident',
         description: [
           `${incidentType || 'Incident'} at ${incidentLocation || 'Victoria'}`,
           incidentStatus ? `Status: ${incidentStatus}` : '',
@@ -120,11 +121,13 @@ export async function fetchVicEmergencyHazards() {
         const normalized = [maybeLngLat[1], maybeLngLat[0]];
 
         const title = item.title || item.name || 'VicEmergency event';
+        const incidentType = item.type || item.category || item.subcategory || '';
         return sanitizeHazard({
           id: `vicem-${item.id || index}`,
           type: item.type || inferType(`${title} ${item.category || ''}`),
           severity: toSeverity(item.severity || item.level),
           title,
+          riskCategory: incidentType || 'Incident',
           description: item.description || item.summary || '',
           source: 'VicEmergency',
           sourceUrl: item.sourceUrl || 'https://emergency.vic.gov.au/',
