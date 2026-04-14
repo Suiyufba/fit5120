@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { getRealtimeHazards } from '../controllers/hazardsController.js';
+import { getHazardHistory, getRealtimeHazards } from '../controllers/hazardsController.js';
 
 const hazardRoutes = Router();
 
 hazardRoutes.get('/hazards/realtime', getRealtimeHazards);
+hazardRoutes.get('/hazards/history', getHazardHistory);
 
 export { hazardRoutes };

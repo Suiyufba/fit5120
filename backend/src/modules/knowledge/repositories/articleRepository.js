@@ -187,7 +187,7 @@ async function findArticleTableName(pool) {
   const titleColumns = ['title', 'headline', 'name'];
   const contentColumns = ['content', 'body', 'article_text', 'description', 'summary', 'excerpt'];
   const imageColumns = ['image_url', 'cover_image', 'thumbnail_url', 'image'];
-  const excluded = new Set(['app_users', 'hazard_latest_snapshot']);
+  const excluded = new Set(['app_users', 'hazard_latest_snapshot', 'hazard_snapshot_history']);
 
   for (const [tableName, columns] of byTable.entries()) {
     if (excluded.has(tableName)) continue;

@@ -1,4 +1,5 @@
 import { getHazardsForRequest } from '../modules/hazards/services/hazardAggregator.js';
+import { listHazardSnapshotHistory } from '../infrastructure/db/hazardSnapshotRepository.js';
 
 const ALLOWED_LAYERS = new Set(['fire', 'flood', 'storm', 'heat', 'trail', 'other']);
 
@@ -44,6 +45,28 @@ export async function getRealtimeHazards(req, res) {
     res.status(500).json({
       hazards: [],
       error: 'Failed to fetch hazards',
+    });
+  }
+}
+
+export async function getHazardHistory(req, res) {
+  try {
+    const limit = Number(req.query?.limit || 24);
+    if (!Number.isFinite(limit) || limit <= 0) {
+      res.status(400).json({ snapshots: [], error: 'Invalid limit format' });
+      return;
+    }
+
+    const snapshots = await listHazardSnapshotHistory({ limit });
+    res.json({
+      snapshots,
+      fetchedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Hazard history endpoint failed:', error);
+    res.status(500).json({
+      snapshots: [],
+      error: 'Failed to fetch hazard history',
     });
   }
 }

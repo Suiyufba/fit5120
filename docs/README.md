@@ -15,3 +15,4 @@ Store UML diagrams, architecture documents, and final report assets for FIT5120.
 - [Local Admin Credentials Update (2026-04-13)](./local-admin-credentials-update-2026-04-13.md)
 - [Risk Map Filtering Update (2026-04-14)](./risk-map-filtering-update-2026-04-14.md)
 - [Location Detail Panel Integration (2026-04-14)](./location-detail-panel-integration-2026-04-14.md)
+- [Hazard History Retention Update (2026-04-14)](./hazard-history-retention-2026-04-14.md)
