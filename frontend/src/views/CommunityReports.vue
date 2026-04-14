@@ -161,15 +161,22 @@ function drawHazards() {
       }).addTo(hazardLayer)
     })
 
-    L.circleMarker(hazard.coordinates, {
+    const hazardMarker = L.circleMarker(hazard.coordinates, {
       radius: getMarkerRadius(hazard.severity),
       color: meta.color,
       fillColor: meta.color,
       fillOpacity: 0.86,
       weight: 2,
+      bubblingMouseEvents: false,
     })
+
+    hazardMarker
       .bindPopup(`${hazard.title}<br/>${meta.label} · ${severityLabel(hazard.severity)}`)
       .addTo(hazardLayer)
+
+    hazardMarker.on('click', (event) => {
+      L.DomEvent.stopPropagation(event)
+    })
   })
 }
 
@@ -181,18 +188,25 @@ function drawReports() {
     if (!Number.isFinite(report.latitude) || !Number.isFinite(report.longitude)) return
     const meta = hazardMeta[report.hazardType] || hazardMeta.other
 
-    L.marker([report.latitude, report.longitude], {
+    const reportMarker = L.marker([report.latitude, report.longitude], {
       icon: L.divIcon({
         className: 'community-report-pin',
         html: `<div class="community-report-pin__dot" style="background:${meta.color}"></div>`,
         iconSize: [14, 14],
         iconAnchor: [7, 7],
       }),
+      bubblingMouseEvents: false,
     })
+
+    reportMarker
       .bindPopup(
         `<strong>${report.title}</strong><br/>${meta.label} · ${severityLabel(report.severity)}<br/>${report.locationName}`
       )
       .addTo(reportLayer)
+
+    reportMarker.on('click', (event) => {
+      L.DomEvent.stopPropagation(event)
+    })
   })
 }
 
