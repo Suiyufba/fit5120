@@ -446,18 +446,14 @@ watch(filteredHazards, () => {
             <span class="risk-map-layer-dot" :style="{ background: meta.color }"></span>
             <span>{{ meta.label }}</span>
           </button>
-        </div>
-        <div v-if="activeLayers.includes('other') && otherCategoryMeta.length" class="risk-map-other-categories">
-          <p class="risk-map-filter-label">Other Categories</p>
-          <div class="risk-map-other-category-list">
-            <span
-              v-for="item in otherCategoryMeta"
-              :key="item.key"
-              class="risk-map-other-category-chip"
-            >
-              <i :style="{ background: item.color }"></i>
-              {{ item.label }} ({{ item.count }})
-            </span>
+          <div
+            v-for="item in otherCategoryMeta"
+            :key="`other-${item.key}`"
+            class="risk-map-layer-btn risk-map-layer-btn--dynamic"
+          >
+            <span class="risk-map-layer-dot" :style="{ background: item.color }"></span>
+            <span>{{ item.label }}</span>
+            <small>{{ item.count }}</small>
           </div>
         </div>
       </div>
@@ -630,6 +626,17 @@ watch(filteredHazards, () => {
   font-weight: 700;
 }
 
+.risk-map-layer-btn--dynamic {
+  justify-content: space-between;
+  background: #fbfdfc;
+}
+
+.risk-map-layer-btn--dynamic small {
+  font-size: 0.72rem;
+  color: #567069;
+  font-weight: 700;
+}
+
 .risk-map-layer-dot {
   width: 0.66rem;
   height: 0.66rem;
@@ -686,37 +693,6 @@ watch(filteredHazards, () => {
   color: #21453a;
 }
 
-.risk-map-other-categories {
-  margin-top: 0.65rem;
-  padding-top: 0.55rem;
-  border-top: 1px dashed #d8e4dc;
-}
-
-.risk-map-other-category-list {
-  margin-top: 0.35rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-
-.risk-map-other-category-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  border: 1px solid #d9e4dc;
-  background: #fcfefd;
-  border-radius: 999px;
-  color: #37524a;
-  font-size: 0.72rem;
-  padding: 0.2rem 0.46rem;
-}
-
-.risk-map-other-category-chip i {
-  width: 0.52rem;
-  height: 0.52rem;
-  border-radius: 999px;
-  display: inline-block;
-}
 
 .risk-map-feed-list {
   margin-top: 0.6rem;
