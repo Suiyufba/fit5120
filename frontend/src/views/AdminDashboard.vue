@@ -85,6 +85,17 @@ const riskMeta = {
   trail: { color: '#6B5C4F', label: 'Trail' },
   other: { color: '#2E7D6B', label: 'Other' },
 }
+const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
+const otherCategoryPalette = [
+  '#2E7D6B',
+  '#9A3412',
+  '#0369A1',
+  '#7C3AED',
+  '#B45309',
+  '#BE185D',
+  '#0F766E',
+  '#475569',
+]
 
 const isEditMode = computed(() => Boolean(selectedEntity.value.id))
 const isArticleEditMode = computed(() => Boolean(articleForm.id))
@@ -95,13 +106,18 @@ const selectedPointLabel = computed(() => {
 })
 
 const mapEntities = computed(() => {
-  const manual = risks.value.map((risk) => ({ kind: 'risk', ...risk }))
+  const manual = risks.value.map((risk) => ({
+    kind: 'risk',
+    ...risk,
+    riskCategory: risk.riskCategory || risk.category || risk.incidentType || risk.type || '',
+  }))
   const community = reports.value.map((report) => ({
     kind: 'report',
     id: report.id,
     title: report.title,
     description: report.description,
-    type: report.hazardType,
+    type: report.hazardType || report.type || 'other',
+    riskCategory: report.riskCategory || report.category || report.incidentType || report.hazardType || '',
     severity: report.severity,
     coordinates: [report.latitude, report.longitude],
     locationName: report.locationName,
@@ -109,6 +125,31 @@ const mapEntities = computed(() => {
     imageUrl: report.imageUrl,
   }))
   return [...manual, ...community]
+})
+const officialLegendItems = computed(() => {
+  const bucket = new Map()
+  officialHazards.value.forEach((hazard) => {
+    const meta = resolveHazardVisual(hazard)
+    const key = hazard?.type === 'other'
+      ? `other:${normalizeCategoryKey(hazard?.riskCategory)}`
+      : `type:${hazard?.type || 'other'}`
+    if (!bucket.has(key)) {
+      bucket.set(key, {
+        key,
+        label: meta.label,
+        color: meta.color,
+        count: 0,
+      })
+    }
+    bucket.get(key).count += 1
+  })
+
+  return Array.from(bucket.values())
+    .sort((a, b) => b.count - a.count)
+    .map((item) => ({
+      ...item,
+      dotStyle: { background: item.color },
+    }))
 })
 
 let mapInstance
@@ -118,6 +159,75 @@ let reportLayer
 let draftLayer
 let hazardInflightController
 let suppressNextMapClick = false
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function cleanPopupDescription(value = '') {
+  return String(value)
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/?strong>/gi, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
+function normalizeCategoryKey(value) {
+  const raw = String(value || '').trim().toLowerCase()
+  if (!raw) return 'unspecified'
+  return raw
+    .replace(/[._-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function formatCategoryLabel(value) {
+  const normalized = normalizeCategoryKey(value)
+  if (normalized === 'unspecified') return 'Unspecified'
+  return normalized
+    .split(' ')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
+function hashCode(value) {
+  let hash = 0
+  for (let index = 0; index < value.length; index += 1) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(index)
+    hash |= 0
+  }
+  return Math.abs(hash)
+}
+
+function colorForOtherCategory(categoryKey) {
+  const normalized = normalizeCategoryKey(categoryKey)
+  const bucket = hashCode(normalized) % otherCategoryPalette.length
+  return otherCategoryPalette[bucket]
+}
+
+function resolveCategory(entity) {
+  const raw = String(
+    entity?.riskCategory || entity?.category || entity?.incidentType || entity?.hazardType || ''
+  ).trim()
+  if (!raw) return 'Unspecified'
+  return formatCategoryLabel(raw)
+}
+
+function resolveHazardVisual(entity) {
+  if (entity?.type !== 'other') {
+    return riskMeta[entity?.type] || riskMeta.other
+  }
+
+  return {
+    label: resolveCategory(entity),
+    color: colorForOtherCategory(entity?.riskCategory || entity?.title || entity?.description || ''),
+  }
+}
 
 function tokenOrThrow() {
   const token = authState.token || ''
@@ -285,7 +395,7 @@ async function loadOfficialHazards() {
   try {
     const payload = await fetchRealtimeHazards({
       bbox: getMapBboxWithinVictoria(mapInstance),
-      layers: ['fire', 'flood', 'storm', 'heat', 'other'],
+      layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
       signal: hazardInflightController.signal,
     })
     officialHazards.value = payload.hazards || []
@@ -315,14 +425,29 @@ function drawOfficialHazards() {
 
   officialHazards.value.forEach((hazard) => {
     if (!Array.isArray(hazard.coordinates) || hazard.coordinates.length !== 2) return
-    L.circleMarker(hazard.coordinates, {
+    const meta = resolveHazardVisual(hazard)
+    const marker = L.circleMarker(hazard.coordinates, {
       radius: 5,
-      color: '#8fa2ad',
-      fillColor: '#8fa2ad',
-      fillOpacity: 0.35,
+      color: meta.color,
+      fillColor: meta.color,
+      fillOpacity: 0.45,
       weight: 1,
-      interactive: false,
-    }).addTo(officialLayer)
+      bubblingMouseEvents: false,
+    })
+    marker.bindPopup(
+      `
+      <div style="min-width: 210px;">
+        <div style="font-weight: 800; margin-bottom: 6px;">${escapeHtml(hazard.title || 'Unnamed hazard')}</div>
+        <div style="font-size: 12px; margin-bottom: 8px;">${escapeHtml(cleanPopupDescription(hazard.description || 'No detail provided'))}</div>
+        <div style="font-size: 11px; color: #5f6b66;">
+          ${escapeHtml(meta.label)} · ${escapeHtml(severityLabel[hazard.severity] || 'Low')}<br />
+          Category: ${escapeHtml(resolveCategory(hazard))}<br />
+          Source: ${escapeHtml(hazard.source || 'Official open data')}
+        </div>
+      </div>
+      `
+    )
+    marker.addTo(officialLayer)
   })
 }
 
@@ -333,7 +458,8 @@ function drawManagedEntities() {
 
   mapEntities.value.forEach((entity) => {
     if (!Array.isArray(entity.coordinates) || entity.coordinates.length !== 2) return
-    const meta = riskMeta[entity.type] || riskMeta.other
+    const meta = resolveHazardVisual(entity)
+    const categoryLabel = resolveCategory(entity)
     const isSelected = entity.id === selectedEntity.value.id && entity.kind === selectedEntity.value.kind
 
     if (entity.kind === 'risk') {
@@ -358,7 +484,18 @@ function drawManagedEntities() {
           iconAnchor: [10, 10],
         }),
       })
-      marker.bindPopup(`[Risk] ${entity.title}<br/>${meta.label} · ${entity.severity}`)
+      marker.bindPopup(
+        `
+        <div style="min-width: 200px;">
+          <div style="font-weight: 800; margin-bottom: 6px;">[Risk] ${escapeHtml(entity.title || 'Untitled')}</div>
+          <div style="font-size: 12px; margin-bottom: 8px;">${escapeHtml(cleanPopupDescription(entity.description || 'No detail provided'))}</div>
+          <div style="font-size: 11px; color: #5f6b66;">
+            ${escapeHtml(meta.label)} · ${escapeHtml(severityLabel[entity.severity] || 'Low')}<br />
+            Category: ${escapeHtml(categoryLabel)}
+          </div>
+        </div>
+        `
+      )
       marker.on('click', (event) => handleEntityMarkerInteraction(entity, event))
       marker.on('mousedown', (event) => handleEntityMarkerInteraction(entity, event))
       marker.on('touchstart', (event) => handleEntityMarkerInteraction(entity, event))
@@ -389,7 +526,18 @@ function drawManagedEntities() {
         iconAnchor: [9, 9],
       }),
     })
-    marker.bindPopup(`[Report] ${entity.title}<br/>${meta.label} · ${entity.severity}`)
+    marker.bindPopup(
+      `
+      <div style="min-width: 200px;">
+        <div style="font-weight: 800; margin-bottom: 6px;">[Report] ${escapeHtml(entity.title || 'Untitled')}</div>
+        <div style="font-size: 12px; margin-bottom: 8px;">${escapeHtml(cleanPopupDescription(entity.description || 'No detail provided'))}</div>
+        <div style="font-size: 11px; color: #5f6b66;">
+          ${escapeHtml(meta.label)} · ${escapeHtml(severityLabel[entity.severity] || 'Low')}<br />
+          Category: ${escapeHtml(categoryLabel)}
+        </div>
+      </div>
+      `
+    )
     marker.on('click', (event) => handleEntityMarkerInteraction(entity, event))
     marker.on('mousedown', (event) => handleEntityMarkerInteraction(entity, event))
     marker.on('touchstart', (event) => handleEntityMarkerInteraction(entity, event))
@@ -776,7 +924,9 @@ onUnmounted(() => {
           <div ref="mapElement" class="risk-map"></div>
           <div class="map-legend">
             <p>Map Layers</p>
-            <span><i style="background:#8fa2ad"></i>Official Risk (read-only)</span>
+            <span v-for="item in officialLegendItems" :key="item.key">
+              <i :style="item.dotStyle"></i>{{ item.label }} ({{ item.count }})
+            </span>
             <span><i style="background:#1f6e57"></i>Manual Risk (editable)</span>
             <span><i style="border-color:#1f6e57; background:#fff"></i>Community Report (editable)</span>
           </div>
