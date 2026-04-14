@@ -16,6 +16,7 @@ function normalizeType(rawType) {
   if (value.includes('flood')) return 'flood'
   if (value.includes('storm') || value.includes('rain') || value.includes('wind')) return 'storm'
   if (value.includes('heat') || value.includes('temperature')) return 'heat'
+  if (value.includes('trail') || value.includes('track') || value.includes('obstacle') || value.includes('fall') || value.includes('tree')) return 'trail'
   return 'other'
 }
 

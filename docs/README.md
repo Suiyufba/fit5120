@@ -18,3 +18,4 @@ Store UML diagrams, architecture documents, and final report assets for FIT5120.
 - [Hazard History Retention Update (2026-04-14)](./hazard-history-retention-2026-04-14.md)
 - [Risk Category Visibility Update (2026-04-14)](./risk-category-visibility-update-2026-04-14.md)
 - [Risk Map Other-Category Color Update (2026-04-14)](./risk-map-other-category-colors-2026-04-14.md)
+- [Community Map Risk Category Alignment (2026-04-14)](./community-map-risk-category-alignment-2026-04-14.md)

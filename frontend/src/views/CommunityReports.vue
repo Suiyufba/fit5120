@@ -49,6 +49,7 @@ const hazardMeta = {
   trail: { label: 'Trail', color: '#6B5C4F', icon: 'warning' },
   other: { label: 'Other', color: '#2E7D6B', icon: 'campaign' },
 }
+const otherCategoryPalette = ['#2E7D6B', '#9A3412', '#0369A1', '#7C3AED', '#B45309', '#BE185D', '#0F766E', '#475569']
 
 const severityRank = { extreme: 4, high: 3, moderate: 2, low: 1 }
 
@@ -105,6 +106,48 @@ function formatRelativeTime(date) {
   return `${Math.floor(secs / 86400)}d ago`
 }
 
+function normalizeCategoryKey(value) {
+  const raw = String(value || '').trim().toLowerCase()
+  if (!raw) return 'unspecified'
+  return raw.replace(/[._-]+/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function formatCategoryLabel(value) {
+  const normalized = normalizeCategoryKey(value)
+  if (normalized === 'unspecified') return 'Unspecified'
+  return normalized
+    .split(' ')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
+function hashCode(value) {
+  let hash = 0
+  for (let index = 0; index < value.length; index += 1) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(index)
+    hash |= 0
+  }
+  return Math.abs(hash)
+}
+
+function colorForOtherCategory(categoryKey) {
+  const bucket = hashCode(normalizeCategoryKey(categoryKey)) % otherCategoryPalette.length
+  return otherCategoryPalette[bucket]
+}
+
+function resolveHazardCategory(hazard) {
+  return formatCategoryLabel(hazard?.riskCategory || hazard?.category || '')
+}
+
+function resolveHazardVisual(hazard) {
+  if (hazard?.type !== 'other') return hazardMeta[hazard?.type] || hazardMeta.other
+  const category = resolveHazardCategory(hazard)
+  return {
+    label: category,
+    color: colorForOtherCategory(category),
+  }
+}
+
 function getMarkerRadius(severity) {
   if (severity === 'extreme') return 11
   if (severity === 'high') return 9
@@ -142,7 +185,7 @@ function drawHazards() {
 
   hazards.value.forEach((hazard) => {
     if (!Array.isArray(hazard.coordinates) || hazard.coordinates.length !== 2) return
-    const meta = hazardMeta[hazard.type] || hazardMeta.other
+    const meta = resolveHazardVisual(hazard)
     const opacity = zoneOpacitiesBySeverity(hazard.severity)
 
     ;[
@@ -171,7 +214,9 @@ function drawHazards() {
     })
 
     hazardMarker
-      .bindPopup(`${hazard.title}<br/>${meta.label} · ${severityLabel(hazard.severity)}`)
+      .bindPopup(
+        `<strong>${hazard.title}</strong><br/>${meta.label} · ${severityLabel(hazard.severity)}<br/>Category: ${resolveHazardCategory(hazard)}`
+      )
       .addTo(hazardLayer)
 
     hazardMarker.on('click', (event) => {
@@ -200,7 +245,7 @@ function drawReports() {
 
     reportMarker
       .bindPopup(
-        `<strong>${report.title}</strong><br/>${meta.label} · ${severityLabel(report.severity)}<br/>${report.locationName}`
+        `<strong>${report.title}</strong><br/>${meta.label} · ${severityLabel(report.severity)}<br/>${report.locationName}<br/>${report.description}`
       )
       .addTo(reportLayer)
 
@@ -218,7 +263,7 @@ async function loadHazards() {
   try {
     const payload = await fetchRealtimeHazards({
       bbox: getMapBboxWithinVictoria(mapInstance),
-      layers: ['fire', 'flood', 'storm', 'heat', 'other'],
+      layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
       signal: inflightHazardController.signal,
     })
     hazards.value = payload.hazards

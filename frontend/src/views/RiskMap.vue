@@ -20,6 +20,7 @@ const layerMeta = {
   flood: { label: 'Flood', color: '#2165B5' },
   storm: { label: 'Storm', color: '#5A4B81' },
   heat: { label: 'Heat', color: '#D08817' },
+  trail: { label: 'Trail', color: '#6B5C4F' },
   other: { label: 'Other', color: '#2E7D6B' },
 }
 const otherCategoryPalette = [
@@ -35,7 +36,7 @@ const otherCategoryPalette = [
 
 const mapElement = ref(null)
 const selectedHazardId = ref('')
-const activeLayers = ref(['fire', 'flood', 'storm', 'heat', 'other'])
+const activeLayers = ref(['fire', 'flood', 'storm', 'heat', 'trail', 'other'])
 const selectedTimeWindow = ref('24h')
 const selectedRiskLevels = ref(['extreme', 'high', 'moderate', 'low'])
 const hazards = ref([])

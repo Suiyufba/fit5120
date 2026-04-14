@@ -31,6 +31,7 @@ const layerMeta = {
   flood: { label: 'Flood', color: '#2165B5' },
   storm: { label: 'Storm', color: '#5A4B81' },
   heat: { label: 'Heat', color: '#D08817' },
+  trail: { label: 'Trail', color: '#6B5C4F' },
   other: { label: 'Other', color: '#2E7D6B' },
 }
 
@@ -114,7 +115,7 @@ async function loadHazards() {
     const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
     const payload = await fetchRealtimeHazards({
       bbox,
-      layers: ['fire', 'flood', 'storm', 'heat', 'other'],
+      layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
       signal: hazardInflightController.signal,
     })
     hazards.value = payload.hazards
