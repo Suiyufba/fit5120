@@ -1,26 +1,65 @@
-# docs
+# Docs Hub
 
-Store UML diagrams, architecture documents, and final report assets for FIT5120.
+Project documentation has been reorganized by domain for easier maintenance.
 
-## Feature/API Change Log
+## Directory Structure
 
-- [Community Report Feature + API (2026-03-28)](./community-report-feature.md)
-- [Admin Dashboard Feature + API (2026-03-28)](./admin-dashboard-feature.md)
-- [Route Planner Risk Model Update (2026-03-28)](./route-planner-risk-model.md)
-- [Security Hardening Update (2026-03-31)](./security-hardening-2026-03-31.md)
-- [Register Form Layout Fix (2026-03-31)](./register-form-layout-fix.md)
-- [Auth Endpoint Default Fix (2026-03-31)](./auth-endpoint-default-fix.md)
-- [Forgot Password Layout Fix (2026-03-31)](./forgot-password-layout-fix.md)
-- [Profile Update Auth Fix (2026-03-31)](./profile-update-auth-fix.md)
-- [Local Admin Credentials Update (2026-04-13)](./local-admin-credentials-update-2026-04-13.md)
-- [Risk Map Filtering Update (2026-04-14)](./risk-map-filtering-update-2026-04-14.md)
-- [Location Detail Panel Integration (2026-04-14)](./location-detail-panel-integration-2026-04-14.md)
-- [Hazard History Retention Update (2026-04-14)](./hazard-history-retention-2026-04-14.md)
-- [Risk Category Visibility Update (2026-04-14)](./risk-category-visibility-update-2026-04-14.md)
-- [Risk Map Other-Category Color Update (2026-04-14)](./risk-map-other-category-colors-2026-04-14.md)
-- [Community Map Risk Category Alignment (2026-04-14)](./community-map-risk-category-alignment-2026-04-14.md)
-- [Admin Dashboard Risk Map Alignment (2026-04-14)](./admin-dashboard-risk-map-alignment-2026-04-14.md)
-- [Home Risk Preview Category Alignment (2026-04-16)](./home-risk-preview-category-alignment-2026-04-16.md)
-- [Home Risk Preview Popup Detail Alignment (2026-04-16)](./home-risk-preview-popup-detail-alignment-2026-04-16.md)
-- [Frontend SWR Local Cache for Hazards and Community Reports (2026-04-16)](./frontend-swr-local-cache-2026-04-16.md)
-- [Public Route Planner + Community Access Update (2026-04-16)](./public-route-planner-community-access-2026-04-16.md)
+- [`fullstack/`](./fullstack/README.md): End-to-end features touching frontend + backend
+- [`frontend/`](./frontend/README.md): UI, interaction, client-side data, layout, map UX
+- [`backend/`](./backend/README.md): API, persistence, data pipeline, backend services
+- [`security/`](./security/README.md): Auth, security hardening, access policy
+- [`ops/`](./ops/README.md): Maintenance, repo operations, environment records
+
+## Canonical Entry Points
+
+- Fullstack feature docs: [docs/fullstack/README.md](./fullstack/README.md)
+- Frontend docs: [docs/frontend/README.md](./frontend/README.md)
+- Backend docs: [docs/backend/README.md](./backend/README.md)
+- Security docs: [docs/security/README.md](./security/README.md)
+- Ops docs: [docs/ops/README.md](./ops/README.md)
+- Reorganization notes and old/new path map: [docs/docs-reorganization-2026-04-16.md](./docs-reorganization-2026-04-16.md)
+
+## Timeline (All Domains)
+
+### 2026-04-16
+- [fullstack/public-route-planner-community-access-2026-04-16.md](./fullstack/public-route-planner-community-access-2026-04-16.md)
+- [frontend/frontend-swr-local-cache-2026-04-16.md](./frontend/frontend-swr-local-cache-2026-04-16.md)
+- [frontend/home-risk-preview-category-alignment-2026-04-16.md](./frontend/home-risk-preview-category-alignment-2026-04-16.md)
+- [frontend/home-risk-preview-popup-detail-alignment-2026-04-16.md](./frontend/home-risk-preview-popup-detail-alignment-2026-04-16.md)
+
+### 2026-04-14
+- [fullstack/location-detail-panel-integration-2026-04-14.md](./fullstack/location-detail-panel-integration-2026-04-14.md)
+- [fullstack/risk-category-visibility-update-2026-04-14.md](./fullstack/risk-category-visibility-update-2026-04-14.md)
+- [frontend/risk-map-filtering-update-2026-04-14.md](./frontend/risk-map-filtering-update-2026-04-14.md)
+- [frontend/risk-map-other-category-colors-2026-04-14.md](./frontend/risk-map-other-category-colors-2026-04-14.md)
+- [frontend/community-map-risk-category-alignment-2026-04-14.md](./frontend/community-map-risk-category-alignment-2026-04-14.md)
+- [frontend/admin-dashboard-risk-map-alignment-2026-04-14.md](./frontend/admin-dashboard-risk-map-alignment-2026-04-14.md)
+- [backend/hazard-history-retention-2026-04-14.md](./backend/hazard-history-retention-2026-04-14.md)
+- [ops/system-maintenance-information-2026-04-14.md](./ops/system-maintenance-information-2026-04-14.md)
+
+### 2026-04-13
+- [security/local-admin-credentials-update-2026-04-13.md](./security/local-admin-credentials-update-2026-04-13.md)
+
+### 2026-03-31
+- [security/security-hardening-2026-03-31.md](./security/security-hardening-2026-03-31.md)
+- [frontend/auth-endpoint-default-fix.md](./frontend/auth-endpoint-default-fix.md)
+- [frontend/register-form-layout-fix.md](./frontend/register-form-layout-fix.md)
+- [frontend/forgot-password-layout-fix.md](./frontend/forgot-password-layout-fix.md)
+- [frontend/profile-update-auth-fix.md](./frontend/profile-update-auth-fix.md)
+- [frontend/profile-update-error-handling-2026-03-31.md](./frontend/profile-update-error-handling-2026-03-31.md)
+- [frontend/victoria-map-boundary-enforcement-2026-03-31.md](./frontend/victoria-map-boundary-enforcement-2026-03-31.md)
+
+### 2026-03-28
+- [fullstack/community-report-feature.md](./fullstack/community-report-feature.md)
+- [fullstack/admin-dashboard-feature.md](./fullstack/admin-dashboard-feature.md)
+- [fullstack/route-planner-risk-model.md](./fullstack/route-planner-risk-model.md)
+- [fullstack/profile-editing-feature.md](./fullstack/profile-editing-feature.md)
+- [frontend/homepage-live-data.md](./frontend/homepage-live-data.md)
+- [frontend/mobile-first-adaptation.md](./frontend/mobile-first-adaptation.md)
+- [frontend/branding-update.md](./frontend/branding-update.md)
+
+## Reorganization Notes
+
+- This structure is intentionally domain-first (not date-first).
+- Filenames are preserved to keep history traceability.
+- If you add a new doc, place it in the closest domain folder and update that folder README.
