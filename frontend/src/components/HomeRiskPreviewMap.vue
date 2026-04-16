@@ -18,6 +18,7 @@ const props = defineProps({
 
 const mapElement = ref(null)
 const severityOrder = { extreme: 4, high: 3, moderate: 2, low: 1 }
+const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
 const layerMeta = {
   fire: { label: 'Bushfire', color: '#D84727' },
   flood: { label: 'Flood', color: '#2165B5' },
@@ -39,6 +40,20 @@ function escapeHtml(value = '') {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
+}
+
+function cleanPopupDescription(value = '') {
+  return String(value)
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/?strong>/gi, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
+function formatUpdatedTime(value) {
+  const ts = Date.parse(value || '')
+  if (Number.isNaN(ts)) return 'Time unknown'
+  return new Date(ts).toLocaleString()
 }
 
 function markerRadius(severity) {
@@ -94,6 +109,12 @@ function resolveHazardVisual(hazard) {
   }
 }
 
+function resolveCategory(hazard) {
+  const raw = String(hazard?.riskCategory || '').trim()
+  if (!raw) return 'Unspecified'
+  return formatCategoryLabel(raw)
+}
+
 function drawHazards() {
   if (!markersLayer) return
   markersLayer.clearLayers()
@@ -131,10 +152,15 @@ function drawHazards() {
     })
 
     marker.bindPopup(
-      `<div style="min-width:180px">
-        <div style="font-weight:700;margin-bottom:4px">${escapeHtml(hazard.title)}</div>
-        <div style="font-size:11px;color:#5d6b66">${escapeHtml(meta.label)} · ${escapeHtml(hazard.severity)}</div>
-        <div style="font-size:11px;color:#5d6b66">Category: ${escapeHtml(formatCategoryLabel(hazard?.riskCategory || ''))}</div>
+      `<div style="min-width: 200px;">
+        <div style="font-weight: 800; margin-bottom: 6px;">${escapeHtml(hazard.title)}</div>
+        <div style="font-size: 12px; margin-bottom: 8px;">${escapeHtml(cleanPopupDescription(hazard.description))}</div>
+        <div style="font-size: 11px; color: #5f6b66;">
+          ${escapeHtml(meta.label)} · ${escapeHtml(severityLabel[hazard.severity] || 'Unknown')}<br />
+          Category: ${escapeHtml(resolveCategory(hazard))}<br />
+          Updated: ${escapeHtml(formatUpdatedTime(hazard.updatedAt))}<br />
+          Source: ${escapeHtml(hazard.source)}
+        </div>
       </div>`
     )
     marker.addTo(markersLayer)
