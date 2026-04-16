@@ -3,7 +3,7 @@ import { planSaferRoute } from '../modules/routes/services/routePlannerService.j
 export async function postPlanRoute(req, res) {
   try {
     const payload = await planSaferRoute({
-      userId: req.auth.userId,
+      userId: req.auth?.userId,
       start: req.body?.start,
       end: req.body?.end
     });

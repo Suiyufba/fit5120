@@ -3,7 +3,6 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useAuthState } from '../services/authStore'
 import { planSafeRoute } from '../services/routeApi'
 import { setLatestRoutePlan } from '../services/routePlanStore'
 import { fetchRealtimeHazards } from '../services/hazardApi'
@@ -17,7 +16,6 @@ import {
 } from '../utils/victoriaMap'
 
 const router = useRouter()
-const { state: authState } = useAuthState()
 const mapElement = ref(null)
 const loading = ref(false)
 const error = ref('')
@@ -225,7 +223,6 @@ async function handlePlanRoute() {
     const payload = await planSafeRoute({
       start: startPoint.value,
       end: endPoint.value,
-      token: authState.token,
       signal: inflightController.signal,
     })
 

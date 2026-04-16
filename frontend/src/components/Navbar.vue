@@ -50,8 +50,7 @@ function goAccount() {
     router.push('/profile')
     return
   }
-
-  router.push('/login')
+  return
 }
 
 </script>

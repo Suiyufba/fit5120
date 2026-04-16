@@ -47,7 +47,7 @@ export async function planSafeRoute({ start, end, token, signal }) {
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
-      Authorization: `Bearer ${token || ''}`,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({ start, end }),
     signal,

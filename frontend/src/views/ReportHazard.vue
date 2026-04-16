@@ -3,10 +3,8 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import SiteFooter from '../components/SiteFooter.vue'
 import { submitCommunityReport } from '../services/communityReportApi'
-import { useAuthState } from '../services/authStore'
 
 const router = useRouter()
-const { state: authState } = useAuthState()
 
 const form = reactive({
   title: '',
@@ -31,7 +29,6 @@ async function handleSubmit() {
 
   try {
     await submitCommunityReport({
-      token: authState.token,
       title: form.title,
       description: form.description,
       locationName: form.locationName,

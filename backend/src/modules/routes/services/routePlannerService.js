@@ -69,8 +69,8 @@ export async function planSaferRoute({ userId, start, end }) {
   const normalizedStart = assertCoordinate(start, 'start');
   const normalizedEnd = assertCoordinate(end, 'end');
 
-  const user = await getProfileByUserId(userId);
-  if (!user) throw new Error('User not found');
+  const user = userId ? await getProfileByUserId(userId) : null;
+  const userLevel = user?.experienceLevel || 'newcomer';
 
   const candidates = await buildCandidateRoutes(normalizedStart, normalizedEnd);
   if (!candidates.length) {
@@ -85,7 +85,7 @@ export async function planSaferRoute({ userId, start, end }) {
       return scoreRouteCandidate({
         route,
         hazards,
-        userLevel: user.experienceLevel,
+        userLevel,
         fastestRoute,
         geographyProfile,
       });
@@ -104,7 +104,7 @@ export async function planSaferRoute({ userId, start, end }) {
   }));
 
   return {
-    userLevel: user.experienceLevel,
+    userLevel,
     recommendedRoute: {
       id: recommendedRoute.id,
       geometry: recommendedRoute.geometry,

@@ -21,20 +21,17 @@ const router = createRouter({
     {
       path: '/route-planner',
       name: 'route-planner',
-      component: () => import('../views/RoutePlanner.vue'),
-      meta: { requiresAuth: true }
+      component: () => import('../views/RoutePlanner.vue')
     },
     {
       path: '/route-detail',
       name: 'route-detail',
-      component: () => import('../views/RouteDetail.vue'),
-      meta: { requiresAuth: true }
+      component: () => import('../views/RouteDetail.vue')
     },
     {
       path: '/community-reports',
       name: 'community-reports',
-      component: () => import('../views/CommunityReports.vue'),
-      meta: { requiresAuth: true }
+      component: () => import('../views/CommunityReports.vue')
     },
     {
       path: '/knowledge-hub',
@@ -44,8 +41,7 @@ const router = createRouter({
     {
       path: '/report-hazard',
       name: 'report-hazard',
-      component: () => import('../views/ReportHazard.vue'),
-      meta: { requiresAuth: true }
+      component: () => import('../views/ReportHazard.vue')
     },
     {
       path: '/location/:id?',

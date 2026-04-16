@@ -20,3 +20,4 @@ Store UML diagrams, architecture documents, and final report assets for FIT5120.
 - [Risk Map Other-Category Color Update (2026-04-14)](./risk-map-other-category-colors-2026-04-14.md)
 - [Community Map Risk Category Alignment (2026-04-14)](./community-map-risk-category-alignment-2026-04-14.md)
 - [Admin Dashboard Risk Map Alignment (2026-04-14)](./admin-dashboard-risk-map-alignment-2026-04-14.md)
+- [Public Route Planner + Community Access Update (2026-04-16)](./public-route-planner-community-access-2026-04-16.md)

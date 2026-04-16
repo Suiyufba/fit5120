@@ -5,12 +5,10 @@ import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { restoreLatestRoutePlan, setLatestRoutePlan } from '../services/routePlanStore'
 import { fetchRealtimeHazards } from '../services/hazardApi'
-import { useAuthState } from '../services/authStore'
 import { planSafeRoute } from '../services/routeApi'
 
 const router = useRouter()
 const route = useRoute()
-const { state: authState } = useAuthState()
 const mapElement = ref(null)
 const plan = ref(null)
 const planningFromShare = ref(false)
@@ -232,10 +230,6 @@ function toggleSheet() {
 async function hydrateFromSharedLink() {
   const shared = parseSharedPoint()
   if (!shared) return
-  if (!authState.token) {
-    shareError.value = 'Sign in to open shared route details.'
-    return
-  }
 
   planningFromShare.value = true
   shareError.value = ''
@@ -243,7 +237,6 @@ async function hydrateFromSharedLink() {
     const payload = await planSafeRoute({
       start: shared.start,
       end: shared.end,
-      token: authState.token,
     })
     const nextPlan = {
       ...payload,
@@ -284,7 +277,7 @@ onMounted(() => {
 })
 
 watch(
-  () => [authState.token, route.fullPath],
+  () => route.fullPath,
   () => {
     if (plan.value?.recommendedRoute) return
     hydrateFromSharedLink()
