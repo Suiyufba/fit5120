@@ -29,12 +29,26 @@ const topPreviewHazards = computed(() => {
 })
 
 const previewTypeSummary = computed(() => {
-  const summary = { fire: 0, flood: 0, storm: 0, heat: 0, other: 0 }
+  const summary = { fire: 0, flood: 0, storm: 0, heat: 0, trail: 0, other: 0 }
   previewHazards.value.forEach((hazard) => {
     if (summary[hazard.type] !== undefined) summary[hazard.type] += 1
     else summary.other += 1
   })
   return summary
+})
+
+const previewOtherCategorySummary = computed(() => {
+  const groups = {}
+  previewHazards.value
+    .filter((hazard) => hazard.type === 'other')
+    .forEach((hazard) => {
+      const key = String(hazard.riskCategory || 'Unspecified').trim() || 'Unspecified'
+      groups[key] = (groups[key] || 0) + 1
+    })
+
+  return Object.entries(groups)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
 })
 
 const communityReportsLoading = ref(false)
@@ -166,7 +180,7 @@ async function loadHomePreview() {
   previewLoading.value = true
   try {
     const payload = await fetchRealtimeHazards({
-      layers: ['fire', 'flood', 'storm', 'heat', 'other'],
+      layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
     })
     previewHazards.value = payload.hazards
     previewUpdatedAt.value = payload.fetchedAt || new Date()
@@ -259,7 +273,9 @@ onUnmounted(() => {
                 >
                   <div class="min-w-0">
                     <p class="text-[12px] font-semibold text-slate-800 truncate">{{ hazard.title }}</p>
-                    <p class="text-[10px] text-slate-500 uppercase tracking-wide">{{ hazard.type }} · {{ hazard.source }}</p>
+                    <p class="text-[10px] text-slate-500 uppercase tracking-wide">
+                      {{ hazard.type === 'other' ? (hazard.riskCategory || 'other') : hazard.type }} · {{ hazard.source }}
+                    </p>
                   </div>
                   <span
                     class="text-[10px] font-bold px-2 py-1 rounded-full uppercase whitespace-nowrap"
@@ -284,6 +300,19 @@ onUnmounted(() => {
             </span>
             <span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap">
               <span class="w-2 h-2 rounded-full bg-amber-500"></span> Heat {{ previewTypeSummary.heat }}
+            </span>
+            <span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap">
+              <span class="w-2 h-2 rounded-full bg-stone-500"></span> Trail {{ previewTypeSummary.trail }}
+            </span>
+            <span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap">
+              <span class="w-2 h-2 rounded-full bg-emerald-600"></span> Other {{ previewTypeSummary.other }}
+            </span>
+            <span
+              v-for="[category, count] in previewOtherCategorySummary"
+              :key="category"
+              class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-[#edf4ef] rounded-full whitespace-nowrap text-[#31544a]"
+            >
+              {{ category }} {{ count }}
             </span>
           </div>
         </div>

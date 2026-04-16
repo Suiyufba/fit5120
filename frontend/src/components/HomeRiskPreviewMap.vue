@@ -19,12 +19,14 @@ const props = defineProps({
 const mapElement = ref(null)
 const severityOrder = { extreme: 4, high: 3, moderate: 2, low: 1 }
 const layerMeta = {
-  fire: { label: 'Fire', color: '#D84727' },
+  fire: { label: 'Bushfire', color: '#D84727' },
   flood: { label: 'Flood', color: '#2165B5' },
   storm: { label: 'Storm', color: '#5A4B81' },
   heat: { label: 'Heat', color: '#D08817' },
+  trail: { label: 'Trail', color: '#6B5C4F' },
   other: { label: 'Other', color: '#2E7D6B' },
 }
+const otherCategoryPalette = ['#2E7D6B', '#9A3412', '#0369A1', '#7C3AED', '#B45309', '#BE185D', '#0F766E', '#475569']
 
 let mapInstance
 let markersLayer
@@ -46,6 +48,52 @@ function markerRadius(severity) {
   return 6
 }
 
+function zoneOpacitiesBySeverity(severity) {
+  if (severity === 'extreme') return { l1: 0.28, l2: 0.18, l3: 0.1 }
+  if (severity === 'high') return { l1: 0.23, l2: 0.14, l3: 0.08 }
+  if (severity === 'moderate') return { l1: 0.18, l2: 0.11, l3: 0.06 }
+  return { l1: 0.14, l2: 0.09, l3: 0.05 }
+}
+
+function normalizeCategoryKey(value) {
+  const raw = String(value || '').trim().toLowerCase()
+  if (!raw) return 'unspecified'
+  return raw.replace(/[._-]+/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function formatCategoryLabel(value) {
+  const normalized = normalizeCategoryKey(value)
+  if (normalized === 'unspecified') return 'Unspecified'
+  return normalized
+    .split(' ')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
+function hashCode(value) {
+  let hash = 0
+  for (let index = 0; index < value.length; index += 1) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(index)
+    hash |= 0
+  }
+  return Math.abs(hash)
+}
+
+function colorForOtherCategory(categoryKey) {
+  const bucket = hashCode(normalizeCategoryKey(categoryKey)) % otherCategoryPalette.length
+  return otherCategoryPalette[bucket]
+}
+
+function resolveHazardVisual(hazard) {
+  if (hazard?.type !== 'other') return layerMeta[hazard?.type] || layerMeta.other
+
+  const category = formatCategoryLabel(hazard?.riskCategory || '')
+  return {
+    label: category,
+    color: colorForOtherCategory(category),
+  }
+}
+
 function drawHazards() {
   if (!markersLayer) return
   markersLayer.clearLayers()
@@ -55,7 +103,25 @@ function drawHazards() {
     .sort((a, b) => (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0))
 
   points.forEach((hazard) => {
-    const meta = layerMeta[hazard.type] || layerMeta.other
+    const meta = resolveHazardVisual(hazard)
+    const opacity = zoneOpacitiesBySeverity(hazard.severity)
+
+    ;[
+      { radius: 5000, fillOpacity: opacity.l3, weight: 1 },
+      { radius: 3000, fillOpacity: opacity.l2, weight: 1 },
+      { radius: 1000, fillOpacity: opacity.l1, weight: 2 },
+    ].forEach((zone) => {
+      L.circle(hazard.coordinates, {
+        radius: zone.radius,
+        color: meta.color,
+        fillColor: meta.color,
+        fillOpacity: zone.fillOpacity,
+        opacity: 0.45,
+        weight: zone.weight,
+        interactive: false,
+      }).addTo(markersLayer)
+    })
+
     const marker = L.circleMarker(hazard.coordinates, {
       radius: markerRadius(hazard.severity),
       color: meta.color,
@@ -68,6 +134,7 @@ function drawHazards() {
       `<div style="min-width:180px">
         <div style="font-weight:700;margin-bottom:4px">${escapeHtml(hazard.title)}</div>
         <div style="font-size:11px;color:#5d6b66">${escapeHtml(meta.label)} · ${escapeHtml(hazard.severity)}</div>
+        <div style="font-size:11px;color:#5d6b66">Category: ${escapeHtml(formatCategoryLabel(hazard?.riskCategory || ''))}</div>
       </div>`
     )
     marker.addTo(markersLayer)
