@@ -22,4 +22,5 @@ Store UML diagrams, architecture documents, and final report assets for FIT5120.
 - [Admin Dashboard Risk Map Alignment (2026-04-14)](./admin-dashboard-risk-map-alignment-2026-04-14.md)
 - [Home Risk Preview Category Alignment (2026-04-16)](./home-risk-preview-category-alignment-2026-04-16.md)
 - [Home Risk Preview Popup Detail Alignment (2026-04-16)](./home-risk-preview-popup-detail-alignment-2026-04-16.md)
+- [Frontend SWR Local Cache for Hazards and Community Reports (2026-04-16)](./frontend-swr-local-cache-2026-04-16.md)
 - [Public Route Planner + Community Access Update (2026-04-16)](./public-route-planner-community-access-2026-04-16.md)

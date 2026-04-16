@@ -1,7 +1,10 @@
+import { readJsonCache, writeJsonCache } from './localCache'
+
 const DEFAULT_BASE_URL =
   import.meta.env.VITE_HAZARD_API_BASE_URL || 'https://backend-production-f55c.up.railway.app/api'
 const REALTIME_HAZARD_PATH = '/hazards/realtime'
 const DISPLAY_SOURCE_FALLBACK = 'Victorian Safety Snapshot'
+const HAZARD_CACHE_PREFIX = 'hikeshield_cache_hazards:'
 
 function normalizeSource(rawSource) {
   const source = (rawSource || '').toString().trim()
@@ -94,7 +97,30 @@ export function getHazardApiConfig() {
   }
 }
 
-export async function fetchRealtimeHazards({ bbox, layers, signal } = {}) {
+function buildRealtimeHazardCacheKey({ bbox, layers } = {}) {
+  const normalizedBbox = Array.isArray(bbox) && bbox.length === 4 ? bbox.map((value) => Number(value).toFixed(4)).join(',') : 'all'
+  const normalizedLayers = Array.isArray(layers) && layers.length ? [...layers].sort().join(',') : 'all'
+  return `${HAZARD_CACHE_PREFIX}bbox=${normalizedBbox}|layers=${normalizedLayers}`
+}
+
+function serializeHazardPayload(payload) {
+  return {
+    hazards: Array.isArray(payload?.hazards) ? payload.hazards : [],
+    fetchedAt: payload?.fetchedAt instanceof Date ? payload.fetchedAt.toISOString() : null,
+    isStale: Boolean(payload?.isStale),
+  }
+}
+
+function deserializeHazardPayload(rawPayload) {
+  if (!rawPayload || !Array.isArray(rawPayload.hazards)) return null
+  return {
+    hazards: normalizePayload({ hazards: rawPayload.hazards }),
+    fetchedAt: normalizeFetchedAt(rawPayload.fetchedAt),
+    isStale: Boolean(rawPayload.isStale),
+  }
+}
+
+async function requestRealtimeHazards({ bbox, layers, signal } = {}) {
   const params = new URLSearchParams()
   if (bbox?.length === 4) params.set('bbox', bbox.join(','))
   if (layers?.length) params.set('layers', layers.join(','))
@@ -118,4 +144,27 @@ export async function fetchRealtimeHazards({ bbox, layers, signal } = {}) {
     fetchedAt: normalizeFetchedAt(payload?.fetchedAt),
     isStale: Boolean(payload?.isStale),
   }
+}
+
+export async function fetchRealtimeHazards({ bbox, layers, signal, preferCache = false, onUpdate } = {}) {
+  const cacheKey = buildRealtimeHazardCacheKey({ bbox, layers })
+  const cached = preferCache ? readJsonCache(cacheKey) : null
+  const cachedPayload = deserializeHazardPayload(cached?.data)
+
+  const fetchAndRefresh = async () => {
+    const freshPayload = await requestRealtimeHazards({ bbox, layers, signal })
+    writeJsonCache(cacheKey, serializeHazardPayload(freshPayload))
+    if (typeof onUpdate === 'function') onUpdate({ ...freshPayload, cachedAt: new Date() })
+    return freshPayload
+  }
+
+  if (cachedPayload) {
+    void fetchAndRefresh().catch((error) => {
+      if (error?.name === 'AbortError') return
+      console.error('Realtime hazards background refresh failed:', error)
+    })
+    return { ...cachedPayload, cachedAt: cached.cachedAt, isFromCache: true }
+  }
+
+  return fetchAndRefresh()
 }

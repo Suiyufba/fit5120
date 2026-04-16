@@ -276,10 +276,15 @@ async function loadHazards() {
       bbox: getMapBboxWithinVictoria(mapInstance),
       layers: activeLayers.value,
       signal: inflightController.signal,
+      preferCache: true,
+      onUpdate: (freshPayload) => {
+        hazards.value = freshPayload.hazards
+        lastUpdatedAt.value = freshPayload.fetchedAt || freshPayload.cachedAt || new Date()
+      },
     })
 
     hazards.value = nextPayload.hazards
-    lastUpdatedAt.value = nextPayload.fetchedAt || new Date()
+    lastUpdatedAt.value = nextPayload.fetchedAt || nextPayload.cachedAt || new Date()
   } catch (error) {
     if (error?.name === 'AbortError') return
     console.error('Failed to load realtime hazards:', error)

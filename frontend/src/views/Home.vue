@@ -93,6 +93,23 @@ function getCommunityStatus(report) {
   return `Reported by ${reporter}`
 }
 
+function mapCommunityAlerts(reports = []) {
+  return reports
+    .slice()
+    .sort((a, b) => b.reportedAt.getTime() - a.reportedAt.getTime())
+    .slice(0, 3)
+    .map((report) => ({
+      id: report.id,
+      title: report.title,
+      severity: report.severity,
+      location: report.locationName,
+      timeAgo: formatTimeAgo(report.reportedAt),
+      details: report.description,
+      status: getCommunityStatus(report),
+      replies: Number(report.likes || 0),
+    }))
+}
+
 function getKnowledgeAccent(topic) {
   const normalized = String(topic || '').toLowerCase()
   if (normalized.includes('weather')) {
@@ -139,20 +156,14 @@ async function loadCommunityAlerts() {
   communityReportsError.value = ''
 
   try {
-    const payload = await fetchCommunityReports({ limit: 3 })
-    communityAlerts.value = payload.reports
-      .sort((a, b) => b.reportedAt.getTime() - a.reportedAt.getTime())
-      .slice(0, 3)
-      .map((report) => ({
-        id: report.id,
-        title: report.title,
-        severity: report.severity,
-        location: report.locationName,
-        timeAgo: formatTimeAgo(report.reportedAt),
-        details: report.description,
-        status: getCommunityStatus(report),
-        replies: Number(report.likes || 0),
-      }))
+    const payload = await fetchCommunityReports({
+      limit: 3,
+      preferCache: true,
+      onUpdate: (freshPayload) => {
+        communityAlerts.value = mapCommunityAlerts(freshPayload.reports)
+      },
+    })
+    communityAlerts.value = mapCommunityAlerts(payload.reports)
   } catch (error) {
     communityAlerts.value = []
     communityReportsError.value = error?.message || 'Failed to load recent alerts'
@@ -181,9 +192,14 @@ async function loadHomePreview() {
   try {
     const payload = await fetchRealtimeHazards({
       layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
+      preferCache: true,
+      onUpdate: (freshPayload) => {
+        previewHazards.value = freshPayload.hazards
+        previewUpdatedAt.value = freshPayload.fetchedAt || freshPayload.cachedAt || new Date()
+      },
     })
     previewHazards.value = payload.hazards
-    previewUpdatedAt.value = payload.fetchedAt || new Date()
+    previewUpdatedAt.value = payload.fetchedAt || payload.cachedAt || new Date()
   } catch (_error) {
     previewHazards.value = []
   } finally {

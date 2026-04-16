@@ -263,6 +263,10 @@ async function loadHazards() {
       bbox: getMapBboxWithinVictoria(mapInstance),
       layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
       signal: inflightHazardController.signal,
+      preferCache: true,
+      onUpdate: (freshPayload) => {
+        hazards.value = freshPayload.hazards
+      },
     })
     hazards.value = payload.hazards
   } catch (nextError) {
@@ -281,10 +285,16 @@ async function loadReports() {
     const payload = await fetchCommunityReports({
       limit: 100,
       signal: inflightReportController.signal,
+      preferCache: true,
+      onUpdate: (freshPayload) => {
+        reports.value = freshPayload.reports
+        storageMode.value = freshPayload.storage
+        fetchedAt.value = freshPayload.fetchedAt || freshPayload.cachedAt || new Date()
+      },
     })
     reports.value = payload.reports
     storageMode.value = payload.storage
-    fetchedAt.value = payload.fetchedAt
+    fetchedAt.value = payload.fetchedAt || payload.cachedAt || new Date()
   } catch (nextError) {
     if (nextError?.name === 'AbortError') return
     error.value = nextError?.message || 'Failed to fetch community reports'

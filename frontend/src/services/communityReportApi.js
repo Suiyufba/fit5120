@@ -1,5 +1,8 @@
+import { readJsonCache, removeJsonCacheByPrefix, writeJsonCache } from './localCache'
+
 const ENV_BASE_URL = (import.meta.env.VITE_HAZARD_API_BASE_URL || '').trim()
 const LEGACY_BASE_URL = 'https://backend-production-f55c.up.railway.app/api'
+const COMMUNITY_REPORTS_CACHE_PREFIX = 'hikeshield_cache_community_reports:'
 
 function buildCandidateBaseUrls() {
   const candidates = [ENV_BASE_URL, LEGACY_BASE_URL, '/api']
@@ -71,7 +74,33 @@ function normalizeReport(raw = {}) {
   }
 }
 
-export async function fetchCommunityReports({ limit = 50, signal } = {}) {
+function buildCommunityReportsCacheKey({ limit = 50 } = {}) {
+  return `${COMMUNITY_REPORTS_CACHE_PREFIX}limit=${Number(limit) || 50}`
+}
+
+function serializeCommunityReportsPayload(payload) {
+  return {
+    reports: Array.isArray(payload?.reports)
+      ? payload.reports.map((report) => ({
+        ...report,
+        reportedAt: report?.reportedAt instanceof Date ? report.reportedAt.toISOString() : report?.reportedAt || null,
+      }))
+      : [],
+    storage: payload?.storage || 'unknown',
+    fetchedAt: payload?.fetchedAt instanceof Date ? payload.fetchedAt.toISOString() : null,
+  }
+}
+
+function deserializeCommunityReportsPayload(rawPayload) {
+  if (!rawPayload || !Array.isArray(rawPayload.reports)) return null
+  return {
+    reports: rawPayload.reports.map(normalizeReport),
+    storage: rawPayload.storage || 'unknown',
+    fetchedAt: rawPayload.fetchedAt ? new Date(rawPayload.fetchedAt) : new Date(),
+  }
+}
+
+async function requestCommunityReports({ limit = 50, signal } = {}) {
   const params = new URLSearchParams({ limit: String(limit) })
   const bases = buildCandidateBaseUrls()
   let lastError
@@ -107,6 +136,29 @@ export async function fetchCommunityReports({ limit = 50, signal } = {}) {
   }
 
   throw lastError || new Error('Community reports request failed')
+}
+
+export async function fetchCommunityReports({ limit = 50, signal, preferCache = false, onUpdate } = {}) {
+  const cacheKey = buildCommunityReportsCacheKey({ limit })
+  const cached = preferCache ? readJsonCache(cacheKey) : null
+  const cachedPayload = deserializeCommunityReportsPayload(cached?.data)
+
+  const fetchAndRefresh = async () => {
+    const freshPayload = await requestCommunityReports({ limit, signal })
+    writeJsonCache(cacheKey, serializeCommunityReportsPayload(freshPayload))
+    if (typeof onUpdate === 'function') onUpdate({ ...freshPayload, cachedAt: new Date() })
+    return freshPayload
+  }
+
+  if (cachedPayload) {
+    void fetchAndRefresh().catch((error) => {
+      if (error?.name === 'AbortError') return
+      console.error('Community reports background refresh failed:', error)
+    })
+    return { ...cachedPayload, cachedAt: cached.cachedAt, isFromCache: true }
+  }
+
+  return fetchAndRefresh()
 }
 
 export async function submitCommunityReport(input, { signal } = {}) {
@@ -147,6 +199,7 @@ export async function submitCommunityReport(input, { signal } = {}) {
         continue
       }
 
+      invalidateCommunityReportsCache()
       return {
         report: normalizeReport(payload?.report || {}),
         storage: payload?.storage || 'unknown',
@@ -158,4 +211,8 @@ export async function submitCommunityReport(input, { signal } = {}) {
   }
 
   throw lastError || new Error('Submit report failed')
+}
+
+export function invalidateCommunityReportsCache() {
+  removeJsonCacheByPrefix(COMMUNITY_REPORTS_CACHE_PREFIX)
 }

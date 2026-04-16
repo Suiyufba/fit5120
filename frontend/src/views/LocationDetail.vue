@@ -141,7 +141,27 @@ async function loadRelatedReports() {
   reportError.value = ''
 
   try {
-    const payload = await fetchCommunityReports({ limit: 100 })
+    const payload = await fetchCommunityReports({
+      limit: 100,
+      preferCache: true,
+      onUpdate: (freshPayload) => {
+        const nearbyFresh = freshPayload.reports
+          .map((report) => {
+            const distanceKm = haversineKm(
+              hazard.value.lat,
+              hazard.value.lng,
+              Number(report.latitude),
+              Number(report.longitude)
+            )
+            return { report, distanceKm }
+          })
+          .filter((item) => item.distanceKm <= 30)
+          .sort((a, b) => a.distanceKm - b.distanceKm)
+          .slice(0, 6)
+          .map((item) => mapReport(item.report, item.distanceKm))
+        relatedReports.value = nearbyFresh
+      },
+    })
     const nearby = payload.reports
       .map((report) => {
         const distanceKm = haversineKm(

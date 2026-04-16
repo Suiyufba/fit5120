@@ -161,6 +161,11 @@ async function loadHazards() {
       bbox: getMapBboxWithinVictoria(mapInstance),
       layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
       signal: hazardInflightController.signal,
+      preferCache: true,
+      onUpdate: (freshPayload) => {
+        hazards.value = freshPayload.hazards
+        drawHazards()
+      },
     })
     hazards.value = payload.hazards
     drawHazards()
