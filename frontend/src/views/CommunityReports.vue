@@ -94,6 +94,23 @@ function severityLabel(value) {
   return 'Low'
 }
 
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function cleanPopupDescription(value = '') {
+  return String(value)
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/?strong>/gi, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
 function formatRelativeTime(date) {
   const ts = date instanceof Date ? date.getTime() : Date.parse(date || '')
   if (!Number.isFinite(ts)) return 'Unknown'
@@ -102,6 +119,12 @@ function formatRelativeTime(date) {
   if (secs < 3600) return `${Math.floor(secs / 60)}m ago`
   if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`
   return `${Math.floor(secs / 86400)}d ago`
+}
+
+function formatUpdatedTime(value) {
+  const ts = Date.parse(value || '')
+  if (Number.isNaN(ts)) return 'Time unknown'
+  return new Date(ts).toLocaleString()
 }
 
 function normalizeCategoryKey(value) {
@@ -213,7 +236,18 @@ function drawHazards() {
 
     hazardMarker
       .bindPopup(
-        `<strong>${hazard.title}</strong><br/>${meta.label} · ${severityLabel(hazard.severity)}<br/>Category: ${resolveHazardCategory(hazard)}`
+        `
+        <div style="min-width: 200px;">
+          <div style="font-weight: 800; margin-bottom: 6px;">${escapeHtml(hazard.title)}</div>
+          <div style="font-size: 12px; margin-bottom: 8px;">${escapeHtml(cleanPopupDescription(hazard.description))}</div>
+          <div style="font-size: 11px; color: #5f6b66;">
+            ${escapeHtml(meta.label)} · ${escapeHtml(severityLabel(hazard.severity) || 'Unknown')}<br />
+            Category: ${escapeHtml(resolveHazardCategory(hazard))}<br />
+            Updated: ${escapeHtml(formatUpdatedTime(hazard.updatedAt))}<br />
+            Source: ${escapeHtml(hazard.source)}
+          </div>
+        </div>
+      `
       )
       .addTo(hazardLayer)
 
