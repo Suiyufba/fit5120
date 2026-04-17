@@ -677,11 +677,9 @@ onUnmounted(() => {
       <template v-if="recommended">
         <p class="detail-kicker">Route Safety Detail</p>
         <h1>Recommended Route</h1>
-        <p class="detail-note detail-note--view">3D terrain mode is enabled. You can see elevation and ground relief along the route.</p>
         <button class="terrain-toggle-btn" @click="toggleTerrainMode">
           {{ isTerrain3D ? 'Switch To 2D View' : 'Switch To 3D Terrain View' }}
         </button>
-        <button class="terrain-btn" @click="activateTerrainView">Recenter 3D Terrain View</button>
         <p v-if="planningFromShare" class="detail-note">Loading shared route...</p>
         <p v-if="shareMessage" class="detail-note detail-note--ok">{{ shareMessage }}</p>
         <p v-if="shareError" class="detail-note detail-note--error">{{ shareError }}</p>
@@ -912,15 +910,6 @@ h1 {
   font-weight: 700;
 }
 
-.terrain-btn {
-  border: 1px solid #aacdbf;
-  border-radius: 0.65rem;
-  background: #f2fbf7;
-  color: #1f5a48;
-  padding: 0.58rem 0.66rem;
-  font-weight: 700;
-}
-
 .terrain-toggle-btn {
   border: 1px solid #7db8a0;
   border-radius: 0.65rem;
@@ -937,12 +926,6 @@ h1 {
   font-size: 0.82rem;
   color: #32564a;
   background: #f6fbf8;
-}
-
-.detail-note--view {
-  border-color: #b8d8cb;
-  background: #edf8f2;
-  color: #234b3f;
 }
 
 .detail-note--ok {
