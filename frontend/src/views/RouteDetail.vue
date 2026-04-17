@@ -19,10 +19,13 @@ const isSheetExpanded = ref(false)
 
 const routeSourceId = 'recommended-route-source'
 const routeLayerId = 'recommended-route-line'
+const routeCasingLayerId = 'recommended-route-line-casing'
 const hazardZoneSourceId = 'hazard-zone-source'
 const hazardZoneLayerId = 'hazard-zone-layer'
 const hazardPointSourceId = 'hazard-point-source'
 const hazardPointLayerId = 'hazard-point-layer'
+const terrainSourceId = 'mapbox-dem'
+const terrainHillshadeLayerId = 'terrain-hillshade-layer'
 
 let mapInstance
 let mapReady = false
@@ -45,6 +48,7 @@ const layerMeta = {
 }
 
 const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
+const THREE_D_CAMERA = { pitch: 74, bearing: 36 }
 
 const recommended = computed(() => plan.value?.recommendedRoute || null)
 const prepTips = computed(() => recommended.value?.suggestedPrep || [])
@@ -137,6 +141,22 @@ function toFeatureCollection(features) {
     type: 'FeatureCollection',
     features,
   }
+}
+
+function focusRouteIn3D(routeCoordinates, animated = true) {
+  if (!mapInstance || !routeCoordinates.length) return
+
+  const bounds = routeCoordinates.reduce(
+    (acc, coordinate) => acc.extend(coordinate),
+    new mapboxgl.LngLatBounds(routeCoordinates[0], routeCoordinates[0]),
+  )
+
+  mapInstance.fitBounds(bounds, {
+    padding: { top: 80, right: 90, bottom: 100, left: 90 },
+    duration: animated ? 950 : 0,
+    pitch: isThreeDReady() ? THREE_D_CAMERA.pitch : 0,
+    bearing: isThreeDReady() ? THREE_D_CAMERA.bearing : 0,
+  })
 }
 
 function buildHazardZoneFeatures() {
@@ -233,6 +253,20 @@ function applyRouteGeometry() {
       data: routeData,
     })
     mapInstance.addLayer({
+      id: routeCasingLayerId,
+      type: 'line',
+      source: routeSourceId,
+      layout: {
+        'line-cap': 'round',
+        'line-join': 'round',
+      },
+      paint: {
+        'line-color': '#FFFFFF',
+        'line-width': 10,
+        'line-opacity': 0.75,
+      },
+    })
+    mapInstance.addLayer({
       id: routeLayerId,
       type: 'line',
       source: routeSourceId,
@@ -268,25 +302,15 @@ function applyRouteGeometry() {
       .setPopup(new mapboxgl.Popup({ offset: 14 }).setText('Destination'))
       .addTo(mapInstance)
 
-    const bounds = routeCoordinates.reduce(
-      (acc, coordinate) => acc.extend(coordinate),
-      new mapboxgl.LngLatBounds(routeCoordinates[0], routeCoordinates[0]),
-    )
-
-    mapInstance.fitBounds(bounds, {
-      padding: { top: 80, right: 90, bottom: 100, left: 90 },
-      duration: 900,
-      pitch: isThreeDReady() ? 63 : 0,
-      bearing: isThreeDReady() ? 28 : 0,
-    })
+    focusRouteIn3D(routeCoordinates, true)
 
     if (isThreeDReady()) {
       window.setTimeout(() => {
         if (!mapInstance) return
         mapInstance.easeTo({
-          pitch: 66,
-          bearing: 32,
-          duration: 900,
+          pitch: THREE_D_CAMERA.pitch,
+          bearing: THREE_D_CAMERA.bearing,
+          duration: 850,
           essential: true,
         })
       }, 980)
@@ -463,6 +487,12 @@ function toggleSheet() {
   isSheetExpanded.value = !isSheetExpanded.value
 }
 
+function activateTerrainView() {
+  const routeCoordinates = routeGeometryToLngLat(recommended.value?.geometry || [])
+  if (!routeCoordinates.length) return
+  focusRouteIn3D(routeCoordinates, true)
+}
+
 async function hydrateFromSharedLink() {
   const shared = parseSharedPoint()
   if (!shared) return
@@ -506,6 +536,7 @@ function initMap() {
     pitch: 0,
     bearing: 0,
     antialias: true,
+    maxPitch: 85,
   })
 
   mapInstance.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'bottom-right')
@@ -513,14 +544,28 @@ function initMap() {
   mapInstance.on('load', () => {
     mapReady = true
 
-    if (!mapInstance.getSource('mapbox-dem')) {
-      mapInstance.addSource('mapbox-dem', {
+    if (!mapInstance.getSource(terrainSourceId)) {
+      mapInstance.addSource(terrainSourceId, {
         type: 'raster-dem',
         url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
         tileSize: 512,
         maxzoom: 14,
       })
-      mapInstance.setTerrain({ source: 'mapbox-dem', exaggeration: 1.18 })
+      mapInstance.setTerrain({ source: terrainSourceId, exaggeration: 1.9 })
+    }
+
+    if (!mapInstance.getLayer(terrainHillshadeLayerId)) {
+      mapInstance.addLayer({
+        id: terrainHillshadeLayerId,
+        type: 'hillshade',
+        source: terrainSourceId,
+        paint: {
+          'hillshade-exaggeration': 0.8,
+          'hillshade-shadow-color': '#5f5a4c',
+          'hillshade-highlight-color': '#efe6cd',
+          'hillshade-accent-color': '#9c9277',
+        },
+      })
     }
 
     mapInstance.setFog({
@@ -601,7 +646,8 @@ onUnmounted(() => {
       <template v-if="recommended">
         <p class="detail-kicker">Route Safety Detail</p>
         <h1>Recommended Route</h1>
-        <p class="detail-note detail-note--view">3D view is enabled after selecting both points and entering Route Details.</p>
+        <p class="detail-note detail-note--view">3D terrain mode is enabled. You can see elevation and ground relief along the route.</p>
+        <button class="terrain-btn" @click="activateTerrainView">Recenter 3D Terrain View</button>
         <p v-if="planningFromShare" class="detail-note">Loading shared route...</p>
         <p v-if="shareMessage" class="detail-note detail-note--ok">{{ shareMessage }}</p>
         <p v-if="shareError" class="detail-note detail-note--error">{{ shareError }}</p>
@@ -829,6 +875,15 @@ h1 {
   background: #2e7d6b;
   color: #fff;
   padding: 0.66rem;
+  font-weight: 700;
+}
+
+.terrain-btn {
+  border: 1px solid #aacdbf;
+  border-radius: 0.65rem;
+  background: #f2fbf7;
+  color: #1f5a48;
+  padding: 0.58rem 0.66rem;
   font-weight: 700;
 }
 
