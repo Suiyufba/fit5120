@@ -71,6 +71,7 @@ export const config = {
   hikingBaseSpeedKmh: Number.parseFloat(process.env.HIKING_BASE_SPEED_KMH || '4.5') || 4.5,
   openTopoDataApiUrl: process.env.OPENTOPO_DATA_API_URL || 'https://api.opentopodata.org/',
   openTopoDataDataset: process.env.OPENTOPO_DATA_DATASET || 'aster30m',
+  openMeteoElevationApiUrl: process.env.OPEN_METEO_ELEVATION_API_URL || 'https://api.open-meteo.com/v1/elevation',
   overpassApiUrl: process.env.OVERPASS_API_URL || 'https://overpass-api.de/api/interpreter',
   vicEmergencyFeedUrl: process.env.VIC_EMERGENCY_FEED_URL || '',
   vicEmergencyApiKey: process.env.VIC_EMERGENCY_API_KEY || '',

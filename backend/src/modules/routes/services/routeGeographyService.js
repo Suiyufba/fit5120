@@ -107,33 +107,7 @@ function isMeaningfulGeographyProfile(profile = {}) {
   ].some((value) => value > 0);
 }
 
-async function fetchElevationProfile(sampledGeometry) {
-  const chunks = [];
-  for (let index = 0; index < sampledGeometry.length; index += 40) {
-    chunks.push(sampledGeometry.slice(index, index + 40));
-  }
-
-  const points = [];
-  for (const chunk of chunks) {
-    const url = new URL(`/v1/${config.openTopoDataDataset}`, config.openTopoDataApiUrl);
-    url.searchParams.set(
-      'locations',
-      chunk.map(([lat, lng]) => `${lat},${lng}`).join('|')
-    );
-
-    const payload = await fetchJson(url.toString(), {
-      timeoutMs: Math.max(config.requestTimeoutMs, 15000),
-    });
-    const results = Array.isArray(payload?.results) ? payload.results : [];
-    results.forEach((item, index) => {
-      points.push({
-        lat: chunk[index]?.[0],
-        lng: chunk[index]?.[1],
-        elevation: Number(item?.elevation),
-      });
-    });
-  }
-
+function buildElevationProfileFromPoints(points = []) {
   const cleanPoints = points.filter((item) =>
     Number.isFinite(item.lat) && Number.isFinite(item.lng) && Number.isFinite(item.elevation)
   );
@@ -181,6 +155,98 @@ async function fetchElevationProfile(sampledGeometry) {
     avgSlopePct: Number((slopeCount ? slopeSum / slopeCount : 0).toFixed(1)),
     points: cleanPoints,
   };
+}
+
+async function fetchElevationPointsFromOpenTopoData(sampledGeometry) {
+  const chunks = [];
+  for (let index = 0; index < sampledGeometry.length; index += 40) {
+    chunks.push(sampledGeometry.slice(index, index + 40));
+  }
+
+  const points = [];
+  for (const chunk of chunks) {
+    const url = new URL(`/v1/${config.openTopoDataDataset}`, config.openTopoDataApiUrl);
+    url.searchParams.set(
+      'locations',
+      chunk.map(([lat, lng]) => `${lat},${lng}`).join('|')
+    );
+
+    const payload = await fetchJson(url.toString(), {
+      timeoutMs: Math.max(config.requestTimeoutMs, 15000),
+    });
+    const results = Array.isArray(payload?.results) ? payload.results : [];
+    results.forEach((item, index) => {
+      points.push({
+        lat: chunk[index]?.[0],
+        lng: chunk[index]?.[1],
+        elevation: Number(item?.elevation),
+      });
+    });
+  }
+
+  return points;
+}
+
+async function fetchElevationPointsFromOpenMeteo(sampledGeometry) {
+  const chunks = [];
+  for (let index = 0; index < sampledGeometry.length; index += 80) {
+    chunks.push(sampledGeometry.slice(index, index + 80));
+  }
+
+  const points = [];
+  for (const chunk of chunks) {
+    const url = new URL(config.openMeteoElevationApiUrl);
+    url.searchParams.set('latitude', chunk.map(([lat]) => String(lat)).join(','));
+    url.searchParams.set('longitude', chunk.map(([, lng]) => String(lng)).join(','));
+
+    const payload = await fetchJson(url.toString(), {
+      timeoutMs: Math.max(config.requestTimeoutMs, 15000),
+    });
+    const elevations = Array.isArray(payload?.elevation) ? payload.elevation : [];
+    elevations.forEach((elevation, index) => {
+      points.push({
+        lat: chunk[index]?.[0],
+        lng: chunk[index]?.[1],
+        elevation: Number(elevation),
+      });
+    });
+  }
+
+  return points;
+}
+
+async function fetchElevationProfile(sampledGeometry, routeHash = '') {
+  try {
+    const points = await fetchElevationPointsFromOpenTopoData(sampledGeometry);
+    const profile = buildElevationProfileFromPoints(points);
+    if (profile.points.length) return profile;
+    console.warn('[routeGeography] elevation profile empty from OpenTopoData', { routeHash });
+  } catch (error) {
+    console.warn('[routeGeography] elevation profile fetch failed (OpenTopoData)', {
+      routeHash,
+      message: String(error?.message || error || 'unknown error'),
+    });
+  }
+
+  try {
+    const points = await fetchElevationPointsFromOpenMeteo(sampledGeometry);
+    const profile = buildElevationProfileFromPoints(points);
+    if (profile.points.length) {
+      console.warn('[routeGeography] using fallback elevation provider (Open-Meteo)', {
+        routeHash,
+        points: profile.points.length,
+      });
+      return profile;
+    }
+    console.warn('[routeGeography] elevation profile empty from Open-Meteo fallback', { routeHash });
+  } catch (error) {
+    console.warn('[routeGeography] elevation profile fetch failed (Open-Meteo fallback)', {
+      routeHash,
+      message: String(error?.message || error || 'unknown error'),
+    });
+  }
+
+  return buildElevationProfileFromPoints([]);
 }
 
 function pointForElement(element) {
@@ -300,13 +366,7 @@ export async function getRouteGeographyProfileForRoute(route) {
 
   const sampledGeometry = sampleGeometry(geometry, 80);
   const [elevation, constraints] = await Promise.all([
-    fetchElevationProfile(sampledGeometry).catch((error) => {
-      console.warn('[routeGeography] elevation profile fetch failed', {
-        routeHash,
-        message: String(error?.message || error || 'unknown error'),
-      });
-      return null;
-    }),
+    fetchElevationProfile(sampledGeometry, routeHash).catch(() => null),
     fetchTerrainConstraints(geometry).catch((error) => {
       console.warn('[routeGeography] terrain constraints fetch failed', {
         routeHash,
