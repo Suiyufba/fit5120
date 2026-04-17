@@ -503,7 +503,7 @@ onUnmounted(() => {
         </div>
         <div class="summary-grid">
           <article><span>Distance</span><strong>{{ summary.distance }}</strong></article>
-          <article><span>大约需要多久</span><strong>{{ summary.duration }}</strong></article>
+          <article><span>How Long It Takes</span><strong>{{ summary.duration }}</strong></article>
           <article><span>Difficulty</span><strong>{{ summary.slotLabel }}</strong></article>
           <article><span>Risk</span><strong>{{ summary.risk }}</strong></article>
         </div>
