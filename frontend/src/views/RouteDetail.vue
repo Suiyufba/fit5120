@@ -331,7 +331,7 @@ onUnmounted(() => {
 
         <div class="metric-grid">
           <article><span>Distance</span><strong>{{ recommended.distanceKm.toFixed(1) }} km</strong></article>
-          <article><span>Duration</span><strong>{{ formatDuration(recommended.durationMin) }}</strong></article>
+          <article><span>大约需要多久</span><strong>{{ formatDuration(recommended.durationMin) }}</strong></article>
           <article><span>Difficulty</span><strong>{{ recommended.difficulty }}</strong></article>
           <article><span>Risk</span><strong>{{ recommended.riskLevel }} ({{ recommended.riskScore.toFixed(1) }})</strong></article>
         </div>
