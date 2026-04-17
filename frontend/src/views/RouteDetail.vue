@@ -725,11 +725,6 @@ onUnmounted(() => {
             Descent {{ Math.round(geography.totalDescentM || 0) }} m ·
             Max slope {{ Math.round(geography.maxSlopePct || 0) }}%
           </article>
-          <article class="tip-item">
-            Rivers {{ geography.riverCrossingCount || 0 }} ·
-            Cliffs {{ geography.cliffExposureCount || 0 }} ·
-            Closures {{ geography.closureCount || 0 }}
-          </article>
         </section>
 
         <section class="risk-block">
