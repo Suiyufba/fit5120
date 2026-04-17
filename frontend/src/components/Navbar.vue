@@ -78,7 +78,9 @@ function goAccount() {
       </div>
 
       <div class="flex items-center gap-2 md:gap-4">
+        <!-- Temporarily hide Sign In entry from navbar for unauthenticated users -->
         <button
+          v-if="isAuthenticated"
           class="inline-flex items-center gap-2 px-2.5 py-2 md:px-3 rounded-full border border-[#d8e4da] bg-white/80 hover:bg-white transition-all active:scale-95 max-w-[58vw] md:max-w-none"
           @click="goAccount"
         >
