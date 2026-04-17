@@ -268,7 +268,7 @@ const summary = computed(() => {
   return {
     distance: `${route.distanceKm.toFixed(1)} km`,
     duration: formatDuration(route.durationMin),
-    difficulty: route.difficulty,
+    difficulty: route.slotDifficulty || route.difficulty,
     risk: `${route.riskLevel} (${route.riskScore.toFixed(1)})`,
     goNoGo: route.goNoGo,
     goNoGoLabel: formatGoNoGoLabel(route.goNoGo),
@@ -730,7 +730,7 @@ onUnmounted(() => {
             <p class="route-option-card__meta">
               {{ option.distanceKm.toFixed(1) }} km · {{ formatDuration(option.durationMin) }}
             </p>
-            <p class="route-option-card__meta">Difficulty: {{ option.difficulty }}</p>
+            <p class="route-option-card__meta">Difficulty: {{ option.slotDifficulty || option.difficulty }}</p>
             <p class="route-option-card__risk">{{ option.riskLevel }} ({{ option.riskScore.toFixed(1) }})</p>
           </button>
         </div>
