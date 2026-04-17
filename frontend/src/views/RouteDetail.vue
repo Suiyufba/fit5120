@@ -36,6 +36,14 @@ const layerMeta = {
 const recommended = computed(() => plan.value?.recommendedRoute || null)
 const prepTips = computed(() => recommended.value?.suggestedPrep || [])
 const geography = computed(() => recommended.value?.geographyProfile || null)
+const recommendedGoNoGoLabel = computed(() => {
+  const value = recommended.value?.goNoGo || ''
+  return value === 'No-Go' ? 'Dangerous' : value
+})
+const recommendedIsDangerous = computed(() => {
+  const value = recommended.value?.goNoGo
+  return value === 'No-Go' || value === 'Dangerous'
+})
 
 function formatDuration(durationMin) {
   const mins = Math.max(Number(durationMin) || 0, 0)
@@ -328,8 +336,8 @@ onUnmounted(() => {
           <article><span>Risk</span><strong>{{ recommended.riskLevel }} ({{ recommended.riskScore.toFixed(1) }})</strong></article>
         </div>
 
-        <div class="status-tag" :class="{ 'status-tag--danger': recommended.goNoGo === 'No-Go' }">
-          {{ recommended.goNoGo }}
+        <div class="status-tag" :class="{ 'status-tag--danger': recommendedIsDangerous }">
+          {{ recommendedGoNoGoLabel }}
         </div>
         <p class="detail-explain">{{ recommended.explanation }}</p>
         <p class="zone-summary">
@@ -479,8 +487,10 @@ h1 {
 }
 
 .status-tag--danger {
-  background: #ffe5e0;
-  color: #8a2b20;
+  background: #ffe3e3;
+  color: #a20f0f;
+  border: 1px solid #ff8a8a;
+  box-shadow: 0 0 0 2px rgba(214, 31, 31, 0.16);
 }
 
 .detail-explain {

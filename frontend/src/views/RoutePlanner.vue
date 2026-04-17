@@ -85,6 +85,14 @@ function formatDuration(durationMin) {
 
 const canPlan = computed(() => Boolean(startPoint.value && endPoint.value && !loading.value))
 
+function isDangerousGoNoGo(value) {
+  return value === 'No-Go' || value === 'Dangerous'
+}
+
+function formatGoNoGoLabel(value) {
+  return value === 'No-Go' ? 'Dangerous' : value
+}
+
 const summary = computed(() => {
   if (!planResult.value?.recommendedRoute) return null
   const route = planResult.value.recommendedRoute
@@ -94,6 +102,8 @@ const summary = computed(() => {
     difficulty: route.difficulty,
     risk: `${route.riskLevel} (${route.riskScore.toFixed(1)})`,
     goNoGo: route.goNoGo,
+    goNoGoLabel: formatGoNoGoLabel(route.goNoGo),
+    isDangerous: isDangerousGoNoGo(route.goNoGo),
     explanation: route.explanation,
     zoneSummary: route.zoneSummary || { level1Count: 0, level2Count: 0, level3Count: 0 }
   }
@@ -419,8 +429,8 @@ onUnmounted(() => {
           <article><span>Risk</span><strong>{{ summary.risk }}</strong></article>
         </div>
 
-        <div class="go-tag" :class="{ 'go-tag--danger': summary.goNoGo === 'No-Go' }">
-          {{ summary.goNoGo }}
+        <div class="go-tag" :class="{ 'go-tag--danger': summary.isDangerous }">
+          {{ summary.goNoGoLabel }}
         </div>
         <p class="zone-inline">
           Route crosses zones: L1 {{ summary.zoneSummary.level1Count }} ·
@@ -653,8 +663,10 @@ h1 {
 }
 
 .go-tag--danger {
-  background: #ffe4df;
-  color: #8b2a1f;
+  background: #ffe3e3;
+  color: #a20f0f;
+  border: 1px solid #ff8a8a;
+  box-shadow: 0 0 0 2px rgba(214, 31, 31, 0.16);
 }
 
 .summary-explain {
