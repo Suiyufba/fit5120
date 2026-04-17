@@ -20,6 +20,7 @@ const layerMeta = {
   storm: { label: 'Storm', color: '#5A4B81' },
   heat: { label: 'Heat', color: '#D08817' },
   trail: { label: 'Trail', color: '#6B5C4F' },
+  other: { label: 'Other', color: '#2E7D6B' },
 }
 
 const mapElement = ref(null)
@@ -74,7 +75,12 @@ function formatUpdatedTime(value) {
 }
 
 function resolveHazardVisual(hazard) {
-  return layerMeta[hazard?.type] || layerMeta.trail
+  return layerMeta[hazard?.type] || layerMeta.other
+}
+
+function resolveCategoryLabel(hazard, meta) {
+  if (hazard?.type === 'other') return 'Other'
+  return hazard?.riskCategory || meta?.label || 'Unspecified'
 }
 
 function getMarkerRadius(severity) {
@@ -135,7 +141,7 @@ function renderMarkers() {
         <div style="font-size: 12px; margin-bottom: 8px;">${escapeHtml(cleanPopupDescription(hazard.description))}</div>
         <div style="font-size: 11px; color: #5f6b66;">
           ${escapeHtml(meta.label)} · ${escapeHtml(severityLabel[hazard.severity] || 'Unknown')}<br />
-          Category: ${escapeHtml(hazard.riskCategory || meta.label || 'Unspecified')}<br />
+          Category: ${escapeHtml(resolveCategoryLabel(hazard, meta))}<br />
           Updated: ${escapeHtml(formatUpdatedTime(hazard.updatedAt))}<br />
           Source: ${escapeHtml(hazard.source)}
         </div>
@@ -155,7 +161,7 @@ async function loadHazards() {
   try {
     const nextPayload = await fetchRealtimeHazards({
       bbox: getMapBboxWithinVictoria(mapInstance),
-      layers: ['fire', 'flood', 'storm', 'heat', 'trail'],
+      layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
       signal: inflightController.signal,
       preferCache: true,
       onUpdate: (freshPayload) => {
@@ -191,7 +197,7 @@ function openLocationDetail(hazard) {
       title: hazard.title,
       type: hazard.type,
       severity: hazard.severity,
-      category: hazard.riskCategory || '',
+      category: hazard.type === 'other' ? 'Other' : (hazard.riskCategory || ''),
       source: hazard.source,
       updatedAt: hazard.updatedAt || '',
       lat: String(hazard.coordinates?.[0] ?? ''),
@@ -297,7 +303,7 @@ watch(filteredHazards, () => {
           >
             <span class="risk-map-feed-severity">{{ severityLabel[hazard.severity] || 'Low' }}</span>
             <strong>{{ hazard.title }}</strong>
-            <small>{{ hazard.riskCategory || layerMeta[hazard.type]?.label || 'Unspecified' }} · {{ hazard.source }}</small>
+            <small>{{ hazard.type === 'other' ? 'Other' : (hazard.riskCategory || layerMeta[hazard.type]?.label || 'Unspecified') }} · {{ hazard.source }}</small>
           </button>
         </div>
       </div>

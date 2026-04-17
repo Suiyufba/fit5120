@@ -39,6 +39,31 @@ const layerMeta = {
   storm: { label: 'Storm', color: '#5A4B81' },
   heat: { label: 'Heat', color: '#D08817' },
   trail: { label: 'Trail', color: '#6B5C4F' },
+  other: { label: 'Other', color: '#2E7D6B' },
+}
+const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function cleanPopupDescription(value = '') {
+  return String(value)
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/?strong>/gi, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
+function formatUpdatedTime(value) {
+  const ts = Date.parse(value || '')
+  if (Number.isNaN(ts)) return 'Time unknown'
+  return new Date(ts).toLocaleString()
 }
 
 function formatDuration(durationMin) {
@@ -121,7 +146,7 @@ function drawHazards() {
 
   hazards.value.forEach((hazard) => {
     if (!Array.isArray(hazard.coordinates) || hazard.coordinates.length !== 2) return
-    const meta = layerMeta[hazard.type] || layerMeta.trail
+    const meta = layerMeta[hazard.type] || layerMeta.other
     const opacity = zoneOpacitiesBySeverity(hazard.severity)
 
     ;[
@@ -146,7 +171,22 @@ function drawHazards() {
       fillColor: meta.color,
       fillOpacity: 0.88,
       weight: 2,
-    }).bindPopup(`${hazard.title}<br/>${meta.label} · ${hazard.severity}`).addTo(hazardLayer)
+    })
+      .bindPopup(
+        `
+        <div style="min-width: 200px;">
+          <div style="font-weight: 800; margin-bottom: 6px;">${escapeHtml(hazard.title)}</div>
+          <div style="font-size: 12px; margin-bottom: 8px;">${escapeHtml(cleanPopupDescription(hazard.description))}</div>
+          <div style="font-size: 11px; color: #5f6b66;">
+            ${escapeHtml(meta.label)} · ${escapeHtml(severityLabel[hazard.severity] || 'Unknown')}<br />
+            Category: ${escapeHtml(hazard.type === 'other' ? 'Other' : (hazard.riskCategory || meta.label || 'Unspecified'))}<br />
+            Updated: ${escapeHtml(formatUpdatedTime(hazard.updatedAt))}<br />
+            Source: ${escapeHtml(hazard.source)}
+          </div>
+        </div>
+        `
+      )
+      .addTo(hazardLayer)
   })
 }
 
@@ -158,7 +198,7 @@ async function loadHazards() {
   try {
     const payload = await fetchRealtimeHazards({
       bbox: getMapBboxWithinVictoria(mapInstance),
-      layers: ['fire', 'flood', 'storm', 'heat', 'trail'],
+      layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
       signal: hazardInflightController.signal,
       preferCache: true,
       onUpdate: (freshPayload) => {

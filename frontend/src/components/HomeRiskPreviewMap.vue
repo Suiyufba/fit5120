@@ -25,6 +25,7 @@ const layerMeta = {
   storm: { label: 'Storm', color: '#5A4B81' },
   heat: { label: 'Heat', color: '#D08817' },
   trail: { label: 'Trail', color: '#6B5C4F' },
+  other: { label: 'Other', color: '#2E7D6B' },
 }
 
 let mapInstance
@@ -69,7 +70,7 @@ function zoneOpacitiesBySeverity(severity) {
 }
 
 function resolveHazardVisual(hazard) {
-  return layerMeta[hazard?.type] || layerMeta.trail
+  return layerMeta[hazard?.type] || layerMeta.other
 }
 
 function drawHazards() {
@@ -114,7 +115,7 @@ function drawHazards() {
         <div style="font-size: 12px; margin-bottom: 8px;">${escapeHtml(cleanPopupDescription(hazard.description))}</div>
         <div style="font-size: 11px; color: #5f6b66;">
           ${escapeHtml(meta.label)} · ${escapeHtml(severityLabel[hazard.severity] || 'Unknown')}<br />
-          Category: ${escapeHtml(hazard.riskCategory || meta.label || 'Unspecified')}<br />
+          Category: ${escapeHtml(hazard.type === 'other' ? 'Other' : (hazard.riskCategory || meta.label || 'Unspecified'))}<br />
           Updated: ${escapeHtml(formatUpdatedTime(hazard.updatedAt))}<br />
           Source: ${escapeHtml(hazard.source)}
         </div>

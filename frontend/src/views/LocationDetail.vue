@@ -16,6 +16,7 @@ const typeMeta = {
   storm: { label: 'Storm / Wind', color: '#5A4B81' },
   heat: { label: 'Heat', color: '#D08817' },
   trail: { label: 'Trail Hazard', color: '#6B5C4F' },
+  other: { label: 'Other', color: '#2E7D6B' },
 }
 
 const severityMeta = {
@@ -56,7 +57,7 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 const hazard = computed(() => {
   const id = asText(route.params.id, 'hazard')
   const title = asText(route.query.title, 'Selected Risk Area')
-  const type = asText(route.query.type, 'trail').toLowerCase()
+  const type = asText(route.query.type, 'other').toLowerCase()
   const severity = asText(route.query.severity, 'moderate').toLowerCase()
   const source = asText(route.query.source, 'Official risk feed')
   const category = asText(route.query.category, '')
@@ -68,7 +69,7 @@ const hazard = computed(() => {
   return {
     id,
     title,
-    type: typeMeta[type] ? type : 'trail',
+    type: typeMeta[type] ? type : 'other',
     severity: severityMeta[severity] ? severity : 'moderate',
     source,
     category,
@@ -79,12 +80,15 @@ const hazard = computed(() => {
   }
 })
 
-const riskTypeLabel = computed(() => typeMeta[hazard.value.type]?.label || typeMeta.trail.label)
+const riskTypeLabel = computed(() => typeMeta[hazard.value.type]?.label || typeMeta.other.label)
 const riskLevelLabel = computed(() => severityMeta[hazard.value.severity]?.label || severityMeta.moderate.label)
 const riskLevelTone = computed(() => severityMeta[hazard.value.severity]?.tone || severityMeta.moderate.tone)
-const riskColor = computed(() => typeMeta[hazard.value.type]?.color || typeMeta.trail.color)
+const riskColor = computed(() => typeMeta[hazard.value.type]?.color || typeMeta.other.color)
 const locationName = computed(() => hazard.value.title)
-const riskCategoryLabel = computed(() => hazard.value.category || riskTypeLabel.value)
+const riskCategoryLabel = computed(() => {
+  if (hazard.value.type === 'other') return 'Other'
+  return hazard.value.category || riskTypeLabel.value
+})
 
 const affectedTimeWindow = computed(() => {
   if (!hazard.value.updatedAt) return 'Current cycle (time window unavailable)'

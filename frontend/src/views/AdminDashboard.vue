@@ -83,6 +83,7 @@ const riskMeta = {
   storm: { color: '#5A4B81', label: 'Storm' },
   heat: { color: '#D08817', label: 'Heat' },
   trail: { color: '#6B5C4F', label: 'Trail' },
+  other: { color: '#2E7D6B', label: 'Other' },
 }
 const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
 
@@ -105,7 +106,7 @@ const mapEntities = computed(() => {
     id: report.id,
     title: report.title,
     description: report.description,
-    type: report.hazardType || report.type || 'trail',
+    type: report.hazardType || report.type || 'other',
     riskCategory: report.riskCategory || report.category || report.incidentType || report.hazardType || '',
     severity: report.severity,
     coordinates: [report.latitude, report.longitude],
@@ -183,6 +184,7 @@ function formatCategoryLabel(value) {
 }
 
 function resolveCategory(entity) {
+  if (entity?.type === 'other') return 'Other'
   const raw = String(
     entity?.riskCategory || entity?.category || entity?.incidentType || entity?.hazardType || ''
   ).trim()
@@ -191,7 +193,7 @@ function resolveCategory(entity) {
 }
 
 function resolveHazardVisual(entity) {
-  return riskMeta[entity?.type] || riskMeta.trail
+  return riskMeta[entity?.type] || riskMeta.other
 }
 
 function tokenOrThrow() {
@@ -226,7 +228,7 @@ function applyEntityToForm(entity) {
   entityForm.sourceKind = entity.kind === 'risk' ? 'risk' : 'report'
   entityForm.title = entity.title || ''
   entityForm.description = entity.description || ''
-  entityForm.type = entity.type || 'trail'
+  entityForm.type = entity.type || 'other'
   entityForm.severity = entity.severity || 'low'
   entityForm.latitude = String(entity.coordinates?.[0] ?? '')
   entityForm.longitude = String(entity.coordinates?.[1] ?? '')
@@ -360,7 +362,7 @@ async function loadOfficialHazards() {
   try {
     const payload = await fetchRealtimeHazards({
       bbox: getMapBboxWithinVictoria(mapInstance),
-      layers: ['fire', 'flood', 'storm', 'heat', 'trail'],
+      layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
       signal: hazardInflightController.signal,
       preferCache: true,
       onUpdate: (freshPayload) => {
@@ -855,6 +857,7 @@ onUnmounted(() => {
               <option value="storm">Storm</option>
               <option value="heat">Heat</option>
               <option value="trail">Trail</option>
+              <option value="other">Other</option>
             </select>
             <select v-model="entityForm.severity">
               <option value="low">Low</option>
