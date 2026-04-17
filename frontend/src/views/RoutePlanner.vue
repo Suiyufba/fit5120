@@ -229,7 +229,7 @@ function buildRouteChoices(planPayload) {
       selected.push({
         ...match,
         slotDifficulty: slot,
-        optionLabel: `Route ${selected.length + 1}`,
+        optionLabel: slot,
       })
     })
 
@@ -243,13 +243,13 @@ function buildRouteChoices(planPayload) {
     const hit = pool.find((item) => item.difficulty === slot && !usedIds.has(item.id))
     if (!hit) return
     usedIds.add(hit.id)
-    selected.push({ ...hit, slotDifficulty: slot, optionLabel: `Route ${selected.length + 1}` })
+    selected.push({ ...hit, slotDifficulty: slot, optionLabel: slot })
   })
   pool.forEach((item) => {
     if (selected.length >= 3 || usedIds.has(item.id)) return
     const slot = routeDifficultySlots[selected.length] || item.difficulty || 'Moderate'
     usedIds.add(item.id)
-    selected.push({ ...item, slotDifficulty: slot, optionLabel: `Route ${selected.length + 1}` })
+    selected.push({ ...item, slotDifficulty: slot, optionLabel: slot })
   })
   return selected.slice(0, 3)
 }

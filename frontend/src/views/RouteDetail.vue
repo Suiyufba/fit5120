@@ -50,9 +50,73 @@ const layerMeta = {
 }
 
 const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
+const routeDifficultySlots = ['Easy', 'Moderate', 'Hard']
 const THREE_D_CAMERA = { pitch: 74, bearing: 36 }
 
-const recommended = computed(() => plan.value?.recommendedRoute || null)
+const selectedRouteId = ref('')
+
+function buildRouteChoices(planPayload) {
+  if (!planPayload) return []
+
+  const fromApi = Array.isArray(planPayload.routeOptions) ? planPayload.routeOptions.slice(0, 3) : []
+  if (fromApi.length) {
+    const selected = []
+    const usedIds = new Set()
+
+    routeDifficultySlots.forEach((slot) => {
+      const matchBySlot = fromApi.find((item) => item.targetDifficulty === slot && !usedIds.has(item.id))
+      const fallbackUnique = fromApi.find((item) => !usedIds.has(item.id))
+      const match = matchBySlot || fallbackUnique || null
+      if (!match) return
+      usedIds.add(match.id)
+      selected.push({ ...match, slotDifficulty: slot, optionLabel: slot })
+    })
+
+    return selected
+  }
+
+  const pool = [planPayload.recommendedRoute, ...(planPayload.alternatives || [])].filter(Boolean)
+  const selected = []
+  const usedIds = new Set()
+  routeDifficultySlots.forEach((slot) => {
+    const hit = pool.find((item) => item.difficulty === slot && !usedIds.has(item.id))
+    if (!hit) return
+    usedIds.add(hit.id)
+    selected.push({ ...hit, slotDifficulty: slot, optionLabel: slot })
+  })
+  pool.forEach((item) => {
+    if (selected.length >= 3 || usedIds.has(item.id)) return
+    const slot = routeDifficultySlots[selected.length] || item.difficulty || 'Moderate'
+    usedIds.add(item.id)
+    selected.push({ ...item, slotDifficulty: slot, optionLabel: slot })
+  })
+  return selected.slice(0, 3)
+}
+
+const routeChoices = computed(() => buildRouteChoices(plan.value))
+
+const recommended = computed(() => {
+  const choices = routeChoices.value
+  if (choices.length) {
+    const current = choices.find((item) => item.id === selectedRouteId.value)
+    return current || choices[0]
+  }
+  return plan.value?.recommendedRoute || null
+})
+
+function selectRoute(routeId) {
+  if (!routeId || routeId === selectedRouteId.value) return
+  selectedRouteId.value = routeId
+  if (plan.value) {
+    const pick = routeChoices.value.find((item) => item.id === routeId)
+    if (pick) {
+      setLatestRoutePlan({
+        ...plan.value,
+        recommendedRoute: pick,
+      })
+    }
+  }
+}
 const prepTips = computed(() => recommended.value?.suggestedPrep || [])
 const geography = computed(() => recommended.value?.geographyProfile || null)
 const recommendedGoNoGoLabel = computed(() => {
@@ -639,9 +703,19 @@ function initMap() {
 
 onMounted(() => {
   plan.value = restoreLatestRoutePlan()
+  selectedRouteId.value = plan.value?.recommendedRoute?.id || routeChoices.value[0]?.id || ''
   initMap()
   hydrateFromSharedLink()
 })
+
+watch(
+  () => plan.value,
+  () => {
+    if (!selectedRouteId.value) {
+      selectedRouteId.value = plan.value?.recommendedRoute?.id || routeChoices.value[0]?.id || ''
+    }
+  },
+)
 
 watch(
   () => recommended.value?.id,
@@ -705,6 +779,26 @@ onUnmounted(() => {
         <p v-if="planningFromShare" class="detail-note">Loading shared route...</p>
         <p v-if="shareMessage" class="detail-note detail-note--ok">{{ shareMessage }}</p>
         <p v-if="shareError" class="detail-note detail-note--error">{{ shareError }}</p>
+
+        <section v-if="routeChoices.length > 1" class="route-picker">
+          <p class="route-picker__kicker">Choose One Route</p>
+          <div class="route-picker__options">
+            <button
+              v-for="option in routeChoices"
+              :key="option.id"
+              type="button"
+              class="route-picker__card"
+              :class="{ 'route-picker__card--active': recommended?.id === option.id }"
+              @click="selectRoute(option.id)"
+            >
+              <p class="route-picker__title">{{ option.optionLabel }}</p>
+              <p class="route-picker__meta">
+                {{ option.distanceKm.toFixed(1) }} km · {{ formatDuration(option.durationMin) }}
+              </p>
+              <p class="route-picker__risk">{{ option.riskLevel }} ({{ option.riskScore.toFixed(1) }})</p>
+            </button>
+          </div>
+        </section>
 
         <div class="metric-grid">
           <article><span>Distance</span><strong>{{ recommended.distanceKm.toFixed(1) }} km</strong></article>
@@ -824,6 +918,64 @@ h1 {
   font-size: 1.5rem;
   color: #1f3b33;
   font-weight: 800;
+}
+
+.route-picker {
+  border: 1px solid #d7e4dc;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  padding: 0.7rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.route-picker__kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.66rem;
+  color: #3c6558;
+  font-weight: 800;
+}
+
+.route-picker__options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.route-picker__card {
+  border: 1px solid #d8e6de;
+  border-radius: 0.6rem;
+  background: #f9fdfb;
+  color: #2f4f45;
+  text-align: left;
+  padding: 0.48rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.route-picker__card--active {
+  border-color: #2e7d6b;
+  background: #e9f8f2;
+  box-shadow: 0 0 0 2px rgba(46, 125, 107, 0.16);
+}
+
+.route-picker__title {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.route-picker__meta {
+  margin-top: 0.12rem;
+  font-size: 0.7rem;
+  color: #456359;
+}
+
+.route-picker__risk {
+  margin-top: 0.18rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #33564b;
 }
 
 .metric-grid {
@@ -973,6 +1125,10 @@ h1 {
   .map-init-error {
     right: 1rem;
     max-width: none;
+  }
+
+  .route-picker__options {
+    grid-template-columns: 1fr;
   }
 }
 </style>
