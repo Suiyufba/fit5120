@@ -22,11 +22,23 @@
   background: linear-gradient(135deg, #334f2b 0%, #4a6741 100%);
 }
 
+/*
+ * Hand-painted highlight behind a heading word — the "field guide" direction
+ * prefers an authored accent over gradient-filled text (a common AI tell).
+ * The stripe sits ~62%-92% of line height so descenders still read clearly.
+ */
 .gradient-text {
-  background: linear-gradient(135deg, #334f2b 0%, #4a6741 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #2f5648;
+  background-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 62%,
+    rgba(175, 208, 161, 0.55) 62%,
+    rgba(175, 208, 161, 0.55) 92%,
+    transparent 92%
+  );
+  background-repeat: no-repeat;
+  padding: 0 0.08em;
 }
 
 .glass-panel {
@@ -78,6 +90,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   background: #f5f8f4;
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #132b23;
+  font-feature-settings: "ss01", "cv11";
 }
 
 #app {

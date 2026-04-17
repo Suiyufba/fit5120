@@ -125,16 +125,18 @@ function goAccount() {
 }
 
 .brand-mark {
-  width: 2.05rem;
-  height: 2.05rem;
-  border-radius: 0.7rem;
-  box-shadow: 0 8px 18px rgba(32, 70, 56, 0.18);
+  width: 2.25rem;
+  height: 2.25rem;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(32, 70, 56, 0.22));
 }
 
 .brand-wordmark {
-  font-size: 1.45rem;
-  font-weight: 900;
-  letter-spacing: -0.02em;
+  font-family: "Fraunces", "Georgia", serif;
+  font-size: 1.55rem;
+  font-weight: 700;
+  font-variation-settings: "opsz" 48, "SOFT" 50;
+  letter-spacing: -0.015em;
   color: #2f5648;
   line-height: 1;
 }
@@ -145,13 +147,12 @@ function goAccount() {
   }
 
   .brand-mark {
-    width: 1.8rem;
-    height: 1.8rem;
-    border-radius: 0.58rem;
+    width: 1.95rem;
+    height: 1.95rem;
   }
 
   .brand-wordmark {
-    font-size: 1.08rem;
+    font-size: 1.18rem;
   }
 }
 

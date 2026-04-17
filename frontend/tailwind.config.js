@@ -57,9 +57,10 @@ export default {
         "secondary-fixed-dim": "#d7c3b3"
       },
       fontFamily: {
+        "display": ["Fraunces", "Georgia", "serif"],
         "headline": ["Manrope", "sans-serif"],
-        "body": ["Inter", "sans-serif"],
-        "label": ["Inter", "sans-serif"]
+        "body": ["\"IBM Plex Sans\"", "system-ui", "-apple-system", "sans-serif"],
+        "label": ["\"IBM Plex Sans\"", "system-ui", "-apple-system", "sans-serif"]
       },
       borderRadius: {
         "DEFAULT": "0.25rem",

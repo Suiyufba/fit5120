@@ -211,8 +211,10 @@ onUnmounted(() => {
     <section class="relative px-4 md:px-8 pt-10 md:pt-24 overflow-hidden">
       <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-8 md:gap-12 items-center">
         <div class="w-full md:w-1/2 z-10">
-          <span class="text-xs font-label uppercase tracking-[0.2em] text-primary mb-4 block">Official Victorian Safety Guide</span>
-          <h1 class="text-4xl sm:text-5xl md:text-7xl font-headline font-extrabold text-on-surface leading-tight mb-6 md:mb-8">
+          <span class="text-xs font-label uppercase tracking-[0.22em] text-primary mb-5 block">
+            <span class="inline-block w-6 h-px align-middle bg-primary/60 mr-2"></span>Official Victorian Safety Guide
+          </span>
+          <h1 class="font-display text-[2.65rem] sm:text-6xl md:text-[5.25rem] font-semibold text-on-surface leading-[1.03] tracking-[-0.015em] mb-6 md:mb-8 text-balance">
             Hike with <span class="gradient-text">Confidence</span> in Victoria.
           </h1>
           <div class="flex flex-col sm:flex-row flex-wrap gap-3 md:gap-4">
@@ -311,35 +313,47 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="md:col-span-4 grid grid-cols-2 md:grid-cols-1 gap-4">
-          <div class="bg-surface-container-low p-6 rounded-[2rem] flex flex-col justify-between hover:bg-surface-container transition-colors">
-            <span class="material-symbols-outlined text-4xl text-error mb-4" style="font-variation-settings: 'FILL' 1">local_fire_department</span>
-            <div>
-              <p class="font-headline font-bold text-lg">Bushfire</p>
-              <span class="inline-block mt-1 px-2 py-0.5 bg-error/10 text-error text-[10px] font-bold rounded uppercase tracking-wider">High Risk</span>
+        <div class="md:col-span-4 flex flex-col gap-4">
+          <!-- Dominant hazard tile: Bushfire is the defining risk for Victorian summer hikes -->
+          <article class="relative p-6 rounded-[1.75rem] bg-[#fff4ed] border border-[#f1cdb8] overflow-hidden">
+            <div class="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-error/10 blur-2xl pointer-events-none"></div>
+            <div class="relative flex items-start justify-between gap-3 mb-4">
+              <span class="material-symbols-outlined text-[2.75rem] text-error leading-none" style="font-variation-settings: 'FILL' 1">local_fire_department</span>
+              <span class="text-[10px] font-bold px-2.5 py-1 bg-error text-white rounded-full uppercase tracking-[0.12em]">High Risk</span>
             </div>
-          </div>
-          <div class="bg-surface-container-low p-6 rounded-[2rem] flex flex-col justify-between hover:bg-surface-container transition-colors">
-            <span class="material-symbols-outlined text-4xl text-blue-500 mb-4" style="font-variation-settings: 'FILL' 1">rainy</span>
-            <div>
-              <p class="font-headline font-bold text-lg">Heavy Rain</p>
-              <span class="inline-block mt-1 px-2 py-0.5 bg-blue-100 text-blue-600 text-[10px] font-bold rounded uppercase tracking-wider">Moderate</span>
-            </div>
-          </div>
-          <div class="bg-surface-container-low p-6 rounded-[2rem] flex flex-col justify-between hover:bg-surface-container transition-colors">
-            <span class="material-symbols-outlined text-4xl text-yellow-600 mb-4" style="font-variation-settings: 'FILL' 1">thermostat</span>
-            <div>
-              <p class="font-headline font-bold text-lg">Heat</p>
-              <span class="inline-block mt-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded uppercase tracking-wider">Moderate</span>
-            </div>
-          </div>
-          <div class="bg-surface-container-low p-6 rounded-[2rem] flex flex-col justify-between hover:bg-surface-container transition-colors">
-            <span class="material-symbols-outlined text-4xl text-cyan-600 mb-4" style="font-variation-settings: 'FILL' 1">ac_unit</span>
-            <div>
-              <p class="font-headline font-bold text-lg">Cold Weather</p>
-              <span class="inline-block mt-1 px-2 py-0.5 bg-cyan-100 text-cyan-700 text-[10px] font-bold rounded uppercase tracking-wider">Low Risk</span>
-            </div>
-          </div>
+            <p class="font-display text-2xl font-semibold text-[#5a1f12] leading-tight mb-1">Bushfire</p>
+            <p class="text-[12.5px] text-[#7e3b2a] leading-relaxed">
+              Fire Danger Ratings dominate trail access from Oct–Apr. Check VicEmergency before you head out.
+            </p>
+          </article>
+
+          <!-- Quieter row of secondary hazards — no repeated card template -->
+          <ul class="divide-y divide-[#dce7dd] border border-[#dce7dd] rounded-[1.5rem] bg-white overflow-hidden">
+            <li class="flex items-center gap-4 px-5 py-4">
+              <span class="material-symbols-outlined text-[1.75rem] text-blue-500 shrink-0" style="font-variation-settings: 'FILL' 1">rainy</span>
+              <div class="min-w-0 flex-1">
+                <p class="font-headline font-semibold text-[15px] text-on-surface">Heavy Rain</p>
+                <p class="text-[11px] text-slate-500">Creek crossings, slippery rock</p>
+              </div>
+              <span class="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full uppercase tracking-wider">Moderate</span>
+            </li>
+            <li class="flex items-center gap-4 px-5 py-4">
+              <span class="material-symbols-outlined text-[1.75rem] text-yellow-600 shrink-0" style="font-variation-settings: 'FILL' 1">thermostat</span>
+              <div class="min-w-0 flex-1">
+                <p class="font-headline font-semibold text-[15px] text-on-surface">Heat</p>
+                <p class="text-[11px] text-slate-500">Exposed ridges, hydrate early</p>
+              </div>
+              <span class="text-[10px] font-bold px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full uppercase tracking-wider">Moderate</span>
+            </li>
+            <li class="flex items-center gap-4 px-5 py-4">
+              <span class="material-symbols-outlined text-[1.75rem] text-slate-500 shrink-0" style="font-variation-settings: 'FILL' 1">ac_unit</span>
+              <div class="min-w-0 flex-1">
+                <p class="font-headline font-semibold text-[15px] text-on-surface">Cold Weather</p>
+                <p class="text-[11px] text-slate-500">Alpine wind chill, rapid storms</p>
+              </div>
+              <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full uppercase tracking-wider">Low</span>
+            </li>
+          </ul>
         </div>
       </div>
     </section>
