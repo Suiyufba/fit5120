@@ -81,6 +81,32 @@ function isTrailWay(tags = {}) {
   return ['path', 'track', 'footway', 'bridleway', 'steps'].includes(String(tags.highway || '').toLowerCase());
 }
 
+function isMeaningfulGeographyProfile(profile = {}) {
+  const hasElevationSignal = [
+    Number(profile.totalAscentM || 0),
+    Number(profile.totalDescentM || 0),
+    Number(profile.maxSlopePct || 0),
+    Number(profile.avgSlopePct || 0),
+  ].some((value) => value > 0);
+  if (hasElevationSignal) return true;
+
+  const terrainType = String(profile.terrainType || '').toLowerCase();
+  const surfaceType = String(profile.surfaceType || '').toLowerCase();
+  const trailCondition = String(profile.trailCondition || '').toLowerCase();
+  const hasTerrainSignal = (
+    (terrainType && terrainType !== 'mixed')
+    || (surfaceType && surfaceType !== 'unknown')
+    || (trailCondition && trailCondition !== 'unknown')
+  );
+  if (hasTerrainSignal) return true;
+
+  return [
+    Number(profile.riverCrossingCount || 0),
+    Number(profile.cliffExposureCount || 0),
+    Number(profile.closureCount || 0),
+  ].some((value) => value > 0);
+}
+
 async function fetchElevationProfile(sampledGeometry) {
   const chunks = [];
   for (let index = 0; index < sampledGeometry.length; index += 40) {
@@ -270,12 +296,24 @@ export async function getRouteGeographyProfileForRoute(route) {
 
   const routeHash = hashGeometry(geometry);
   const cached = await getRouteGeographyProfile(routeHash);
-  if (cached) return cached;
+  if (cached && isMeaningfulGeographyProfile(cached)) return cached;
 
   const sampledGeometry = sampleGeometry(geometry, 80);
   const [elevation, constraints] = await Promise.all([
-    fetchElevationProfile(sampledGeometry).catch(() => null),
-    fetchTerrainConstraints(geometry).catch(() => null),
+    fetchElevationProfile(sampledGeometry).catch((error) => {
+      console.warn('[routeGeography] elevation profile fetch failed', {
+        routeHash,
+        message: String(error?.message || error || 'unknown error'),
+      });
+      return null;
+    }),
+    fetchTerrainConstraints(geometry).catch((error) => {
+      console.warn('[routeGeography] terrain constraints fetch failed', {
+        routeHash,
+        message: String(error?.message || error || 'unknown error'),
+      });
+      return null;
+    }),
   ]);
 
   const profile = {

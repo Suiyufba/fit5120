@@ -1,6 +1,6 @@
 import { getPgPool } from '../../../infrastructure/db/postgresClient.js';
 
-const ROUTE_GEOGRAPHY_PROFILE_VERSION = 3;
+const ROUTE_GEOGRAPHY_PROFILE_VERSION = 4;
 
 const CREATE_TABLE_SQL = `
 CREATE TABLE IF NOT EXISTS route_geography_profiles (
