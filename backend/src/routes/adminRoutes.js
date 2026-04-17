@@ -22,7 +22,7 @@ import {
 
 const adminRoutes = Router();
 
-adminRoutes.use(requireAuth, requireAdmin);
+adminRoutes.use('/admin', requireAuth, requireAdmin);
 
 adminRoutes.get('/admin/overview', getAdminOverview);
 
