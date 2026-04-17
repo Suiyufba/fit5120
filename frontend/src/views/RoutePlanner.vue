@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { fetchRoutePlanHistory, planSafeRoute } from '../services/routeApi'
+import { reverseLocation, searchLocations } from '../services/locationApi'
 import { setLatestRoutePlan } from '../services/routePlanStore'
 import { useAuthState } from '../services/authStore'
 import { fetchRealtimeHazards } from '../services/hazardApi'
@@ -29,6 +30,12 @@ const hazards = ref([])
 const isSheetExpanded = ref(false)
 const selectedRouteId = ref('')
 const historyItems = ref([])
+const startInput = ref('')
+const endInput = ref('')
+const startSuggestions = ref([])
+const endSuggestions = ref([])
+const startLabel = ref('')
+const endLabel = ref('')
 
 let mapInstance
 let markerLayer
@@ -38,6 +45,9 @@ let inflightController
 let hazardInflightController
 let hazardRefreshTimer
 let historyInflightController
+let startSearchController
+let endSearchController
+let reverseLookupController
 
 const layerMeta = {
   fire: { label: 'Bushfire', color: '#D84727' },
@@ -88,6 +98,98 @@ function formatDuration(durationMin) {
   const days = Math.floor(totalHours / 24)
   const hours = Math.round(totalHours % 24)
   return hours ? `${days} d ${hours} h` : `${days} d`
+}
+
+function formatCoordinateText(point) {
+  if (!point) return ''
+  return `${point.lat}, ${point.lng}`
+}
+
+function formatPointLabel(label, point) {
+  if (!point) return ''
+  const coordinate = formatCoordinateText(point)
+  if (!label) return coordinate
+  return `${label} (${coordinate})`
+}
+
+function applyPointSelection(type, location) {
+  if (!location) return
+  const point = {
+    lat: Number(Number(location.lat).toFixed(6)),
+    lng: Number(Number(location.lng).toFixed(6)),
+  }
+  if (type === 'start') {
+    startPoint.value = point
+    startLabel.value = location.displayName || ''
+    startInput.value = startLabel.value
+    startSuggestions.value = []
+  } else {
+    endPoint.value = point
+    endLabel.value = location.displayName || ''
+    endInput.value = endLabel.value
+    endSuggestions.value = []
+  }
+
+  planResult.value = null
+  selectedRouteId.value = ''
+  renderMarkers()
+  drawRoutes()
+  if (mapInstance) {
+    mapInstance.flyTo([point.lat, point.lng], Math.max(mapInstance.getZoom(), 11), { duration: 0.45 })
+  }
+}
+
+async function searchLocationOptions(type, query) {
+  const text = String(query || '').trim()
+  if (type === 'start') {
+    startInput.value = query
+    if (startSearchController) startSearchController.abort()
+  } else {
+    endInput.value = query
+    if (endSearchController) endSearchController.abort()
+  }
+
+  if (text.length < 2) {
+    if (type === 'start') startSuggestions.value = []
+    else endSuggestions.value = []
+    return
+  }
+
+  const controller = new AbortController()
+  if (type === 'start') startSearchController = controller
+  else endSearchController = controller
+
+  try {
+    const results = await searchLocations(text, {
+      signal: controller.signal,
+      limit: 6,
+    })
+    if (type === 'start') startSuggestions.value = results
+    else endSuggestions.value = results
+  } catch (error) {
+    if (error?.name === 'AbortError') return
+    if (type === 'start') startSuggestions.value = []
+    else endSuggestions.value = []
+  }
+}
+
+async function reverseLookupPointName(point) {
+  if (!point) return null
+  if (reverseLookupController) reverseLookupController.abort()
+  reverseLookupController = new AbortController()
+  try {
+    return await reverseLocation(point.lat, point.lng, {
+      signal: reverseLookupController.signal,
+    })
+  } catch (error) {
+    return null
+  }
+}
+
+async function applyPointFromMap(type, point) {
+  const fallback = { lat: point.lat, lng: point.lng, displayName: '' }
+  const reverse = await reverseLookupPointName(point)
+  applyPointSelection(type, reverse || fallback)
 }
 
 const canPlan = computed(() => Boolean(startPoint.value && endPoint.value && !loading.value))
@@ -309,6 +411,12 @@ function drawRoutes() {
 function resetSelection() {
   startPoint.value = null
   endPoint.value = null
+  startLabel.value = ''
+  endLabel.value = ''
+  startInput.value = ''
+  endInput.value = ''
+  startSuggestions.value = []
+  endSuggestions.value = []
   error.value = ''
   planResult.value = null
   selectedRouteId.value = ''
@@ -321,6 +429,12 @@ function applyHistoryPlan(item) {
   if (!item?.planPayload) return
   startPoint.value = item.start || null
   endPoint.value = item.end || null
+  startLabel.value = ''
+  endLabel.value = ''
+  startInput.value = startPoint.value ? formatCoordinateText(startPoint.value) : ''
+  endInput.value = endPoint.value ? formatCoordinateText(endPoint.value) : ''
+  startSuggestions.value = []
+  endSuggestions.value = []
   planResult.value = item.planPayload
   const choices = buildRouteChoices(item.planPayload)
   selectedRouteId.value = item.planPayload?.recommendedRoute?.id || choices[0]?.id || ''
@@ -437,7 +551,7 @@ onMounted(() => {
   mapInstance.on('moveend', loadHazards)
   loadHistory()
 
-  mapInstance.on('click', (event) => {
+  mapInstance.on('click', async (event) => {
     if (!isLatLngInVictoria(event.latlng)) {
       error.value = 'Start and destination points must be selected within Victoria.'
       return
@@ -451,29 +565,31 @@ onMounted(() => {
     error.value = ''
 
     if (!startPoint.value) {
-      startPoint.value = point
-      renderMarkers()
+      await applyPointFromMap('start', point)
       return
     }
 
     if (!endPoint.value) {
-      endPoint.value = point
-      renderMarkers()
+      await applyPointFromMap('end', point)
       return
     }
 
     startPoint.value = endPoint.value
-    endPoint.value = point
+    startLabel.value = endLabel.value
+    startInput.value = startLabel.value || formatCoordinateText(startPoint.value)
+    startSuggestions.value = []
+    await applyPointFromMap('end', point)
     planResult.value = null
     error.value = ''
-    renderMarkers()
-    drawRoutes()
   })
 })
 
 onUnmounted(() => {
   if (inflightController) inflightController.abort()
   if (historyInflightController) historyInflightController.abort()
+  if (startSearchController) startSearchController.abort()
+  if (endSearchController) endSearchController.abort()
+  if (reverseLookupController) reverseLookupController.abort()
   if (hazardInflightController) hazardInflightController.abort()
   if (hazardRefreshTimer) window.clearInterval(hazardRefreshTimer)
   if (mapInstance) {
@@ -503,11 +619,47 @@ onUnmounted(() => {
       <div class="planner-points">
         <div class="point-card">
           <p>Start</p>
-          <strong>{{ startPoint ? `${startPoint.lat}, ${startPoint.lng}` : 'Click map to set start point' }}</strong>
+          <input
+            class="point-input"
+            type="text"
+            placeholder="Type a start location"
+            :value="startInput"
+            @input="searchLocationOptions('start', $event.target.value)"
+          />
+          <div v-if="startSuggestions.length" class="point-suggestions">
+            <button
+              v-for="item in startSuggestions"
+              :key="`start-${item.lat}-${item.lng}`"
+              type="button"
+              class="point-suggestion"
+              @click="applyPointSelection('start', item)"
+            >
+              {{ item.displayName }}
+            </button>
+          </div>
+          <strong>{{ startPoint ? formatPointLabel(startLabel, startPoint) : 'Click map or search to set start point' }}</strong>
         </div>
         <div class="point-card">
           <p>Destination</p>
-          <strong>{{ endPoint ? `${endPoint.lat}, ${endPoint.lng}` : 'Click map to set destination' }}</strong>
+          <input
+            class="point-input"
+            type="text"
+            placeholder="Type a destination"
+            :value="endInput"
+            @input="searchLocationOptions('end', $event.target.value)"
+          />
+          <div v-if="endSuggestions.length" class="point-suggestions">
+            <button
+              v-for="item in endSuggestions"
+              :key="`end-${item.lat}-${item.lng}`"
+              type="button"
+              class="point-suggestion"
+              @click="applyPointSelection('end', item)"
+            >
+              {{ item.displayName }}
+            </button>
+          </div>
+          <strong>{{ endPoint ? formatPointLabel(endLabel, endPoint) : 'Click map or search to set destination' }}</strong>
         </div>
       </div>
 
@@ -662,6 +814,9 @@ h1 {
   border-radius: 0.7rem;
   padding: 0.7rem;
   background: #fcfffd;
+  display: grid;
+  gap: 0.38rem;
+  position: relative;
 }
 
 .point-card p {
@@ -674,10 +829,42 @@ h1 {
 
 .point-card strong {
   display: block;
-  margin-top: 0.3rem;
   color: #213e37;
   font-size: 0.86rem;
   word-break: break-word;
+}
+
+.point-input {
+  border: 1px solid #cfded6;
+  border-radius: 0.52rem;
+  padding: 0.42rem 0.5rem;
+  background: #ffffff;
+  color: #23443a;
+  font-size: 0.82rem;
+}
+
+.point-input:focus {
+  outline: none;
+  border-color: #2e7d6b;
+  box-shadow: 0 0 0 2px rgba(46, 125, 107, 0.12);
+}
+
+.point-suggestions {
+  display: grid;
+  gap: 0.25rem;
+  max-height: 140px;
+  overflow: auto;
+  padding-right: 0.1rem;
+}
+
+.point-suggestion {
+  border: 1px solid #d7e5dd;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #32574b;
+  text-align: left;
+  font-size: 0.76rem;
+  padding: 0.36rem 0.45rem;
 }
 
 .planner-actions {

@@ -15,6 +15,7 @@ UI/UX, map behavior, rendering, form/layout fixes, and client-side data handling
 - [route-duration-label-english-fix-2026-04-17.md](./route-duration-label-english-fix-2026-04-17.md)
 - [route-recommendation-copy-simplification-2026-04-17.md](./route-recommendation-copy-simplification-2026-04-17.md)
 - [route-plan-history-panel-2026-04-17.md](./route-plan-history-panel-2026-04-17.md)
+- [route-planner-location-search-input-2026-04-17.md](./route-planner-location-search-input-2026-04-17.md)
 - [risk-map-filtering-update-2026-04-14.md](./risk-map-filtering-update-2026-04-14.md)
 - [risk-map-other-category-colors-2026-04-14.md](./risk-map-other-category-colors-2026-04-14.md)
 - [community-map-risk-category-alignment-2026-04-14.md](./community-map-risk-category-alignment-2026-04-14.md)
