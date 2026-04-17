@@ -511,11 +511,6 @@ onUnmounted(() => {
         <div class="go-tag" :class="{ 'go-tag--danger': summary.isDangerous }">
           {{ summary.goNoGoLabel }}
         </div>
-        <p class="zone-inline">
-          Route crosses zones: L1 {{ summary.zoneSummary.level1Count }} ·
-          L2 {{ summary.zoneSummary.level2Count }} ·
-          L3 {{ summary.zoneSummary.level3Count }}
-        </p>
         <p class="summary-explain">{{ summary.explanation }}</p>
         <button class="primary-btn" @click="goToDetails">View Route Details</button>
       </section>

@@ -300,58 +300,50 @@ function goNoGoDecision({ userLevel, riskScore, impacts, geographyProfile }) {
 
 function buildExplanation({ chosenRoute, fastestRoute, topHazards, goNoGo, geographyProfile }) {
   if (Number(geographyProfile?.closureCount || 0) > 0) {
-    return 'This route intersects mapped trail or access closures. Treat it as unavailable until the closure is cleared or an alternate line is chosen.';
+    return 'Part of this route is currently closed. Please choose another route for now.';
   }
 
   if ((chosenRoute.durationMin || 0) >= 720 || (chosenRoute.distanceKm || 0) >= 60) {
-    return `This route is unusually long for a hiking plan (${chosenRoute.distanceKm.toFixed(1)} km, about ${Math.round(chosenRoute.durationMin / 60)} hours). Shorten the route or split it into staged sections before departure.`;
+    return `This route is very long (${chosenRoute.distanceKm.toFixed(1)} km, about ${Math.round(chosenRoute.durationMin / 60)} hours). Consider a shorter route or split this trip into multiple days.`;
   }
 
   if ((geographyProfile?.riverCrossingCount || 0) > 0 || (geographyProfile?.cliffExposureCount || 0) > 0) {
     const parts = [];
     if ((geographyProfile?.riverCrossingCount || 0) > 0) parts.push(`${geographyProfile.riverCrossingCount} river/ford crossing areas`);
     if ((geographyProfile?.cliffExposureCount || 0) > 0) parts.push(`${geographyProfile.cliffExposureCount} cliff-exposure sections`);
-    return `This route needs extra caution because the terrain profile includes ${parts.join(' and ')} close to the path.`;
+    return `This route needs extra care because it includes ${parts.join(' and ')}.`;
   }
 
   if (!topHazards.length) {
     return goNoGo === 'Go'
-      ? 'No high-impact hazards were detected close to the selected path. Conditions are comparatively stable.'
-      : 'Risk remains elevated for your current profile despite limited nearby hazard overlap.';
+      ? 'No major hazards were found near this route right now.'
+      : 'Risk is still high for this route right now.';
   }
 
   const first = topHazards[0];
-  const level = zoneLevelByDistance(first.distanceKm);
-  const reason = `${first.hazard.type} risk enters ${zoneLabel(level)} (${first.distanceKm.toFixed(1)} km from path)`;
+  const reason = `${first.hazard.type} risk is about ${first.distanceKm.toFixed(1)} km from this route`;
   const detourMinutes = Math.max(0, Math.round(chosenRoute.durationMin - fastestRoute.durationMin));
   if (detourMinutes > 0) {
-    return `This route is recommended because it reduces exposure where ${reason}. It adds about ${detourMinutes} minutes for safer conditions.`;
+    return `This route is safer because ${reason}. It adds about ${detourMinutes} minutes.`;
   }
-  return `This route is recommended because ${reason} and overall risk is lower for your profile.`;
+  return `This route is recommended because ${reason}, and the overall risk is lower.`;
 }
 
-function levelNoun(userLevel) {
-  if (userLevel === 'advanced') return 'advanced hiker';
-  if (userLevel === 'intermediate') return 'intermediate hiker';
-  return 'newcomer hiker';
-}
-
-function riskAdviceByType({ type, severity, distanceKm, userLevel }) {
-  const level = zoneLevelByDistance(distanceKm);
-  const prefix = `${severity} ${type} risk in ${zoneLabel(level)} (~${distanceKm.toFixed(1)} km from route)`;
+function riskAdviceByType({ type, severity, distanceKm }) {
+  const prefix = `${severity} ${type} risk is about ${distanceKm.toFixed(1)} km from this route`;
   if (type === 'fire') {
-    return `${prefix}. As a ${levelNoun(userLevel)}, keep a hard turnaround trigger if alert level increases.`;
+    return `${prefix}. If alerts rise, turn back early.`;
   }
   if (type === 'flood') {
-    return `${prefix}. Avoid creek crossings after rainfall peaks and keep alternate exit points.`;
+    return `${prefix}. Avoid creek crossings and keep an exit option.`;
   }
   if (type === 'storm') {
-    return `${prefix}. Delay exposed ridge sections and monitor lightning/wind updates before departure.`;
+    return `${prefix}. Avoid exposed ridges and watch weather updates.`;
   }
   if (type === 'heat') {
-    return `${prefix}. Shift to earlier start times and increase hydration/rest frequency.`;
+    return `${prefix}. Start early and drink more water.`;
   }
-  return `${prefix}. Keep route flexibility and check nearby official incident updates.`;
+  return `${prefix}. Stay flexible and check official updates.`;
 }
 
 function buildSuggestedPrep({ route, userLevel, keyRisks, riskScore, goNoGo, geographyProfile }) {
@@ -449,8 +441,7 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute, g
     advice: riskAdviceByType({
       type: item.hazard.type,
       severity: item.hazard.severity,
-      distanceKm: item.distanceKm,
-      userLevel
+      distanceKm: item.distanceKm
     })
   }));
 

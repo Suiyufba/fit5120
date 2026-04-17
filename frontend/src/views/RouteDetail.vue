@@ -340,12 +340,6 @@ onUnmounted(() => {
           {{ recommendedGoNoGoLabel }}
         </div>
         <p class="detail-explain">{{ recommended.explanation }}</p>
-        <p class="zone-summary">
-          Coverage zones crossed:
-          L1 {{ recommended.zoneSummary?.level1Count || 0 }} ·
-          L2 {{ recommended.zoneSummary?.level2Count || 0 }} ·
-          L3 {{ recommended.zoneSummary?.level3Count || 0 }}
-        </p>
 
         <section v-if="geography" class="risk-block">
           <h2>Geography Profile</h2>
@@ -370,7 +364,7 @@ onUnmounted(() => {
           <h2>Key Risk Sections</h2>
           <article v-for="risk in recommended.keyRisks" :key="risk.id" class="risk-item">
             <strong>{{ risk.title }}</strong>
-            <p>{{ risk.type }} · {{ risk.severity }} · {{ risk.zoneLabel }} · {{ risk.distanceKm }} km away</p>
+            <p>{{ risk.type }} · {{ risk.severity }} · {{ risk.distanceKm }} km away</p>
             <p class="risk-advice">{{ risk.advice }}</p>
             <small>Source: {{ risk.source }}</small>
           </article>
