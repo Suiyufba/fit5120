@@ -45,9 +45,7 @@ const hazardMeta = {
   storm: { label: 'Storm', color: '#5A4B81', icon: 'rainy' },
   heat: { label: 'Heat', color: '#D08817', icon: 'thermostat' },
   trail: { label: 'Trail', color: '#6B5C4F', icon: 'warning' },
-  other: { label: 'Other', color: '#2E7D6B', icon: 'campaign' },
 }
-const otherCategoryPalette = ['#2E7D6B', '#9A3412', '#0369A1', '#7C3AED', '#B45309', '#BE185D', '#0F766E', '#475569']
 
 const severityRank = { extreme: 4, high: 3, moderate: 2, low: 1 }
 
@@ -142,31 +140,12 @@ function formatCategoryLabel(value) {
     .join(' ')
 }
 
-function hashCode(value) {
-  let hash = 0
-  for (let index = 0; index < value.length; index += 1) {
-    hash = ((hash << 5) - hash) + value.charCodeAt(index)
-    hash |= 0
-  }
-  return Math.abs(hash)
-}
-
-function colorForOtherCategory(categoryKey) {
-  const bucket = hashCode(normalizeCategoryKey(categoryKey)) % otherCategoryPalette.length
-  return otherCategoryPalette[bucket]
-}
-
 function resolveHazardCategory(hazard) {
   return formatCategoryLabel(hazard?.riskCategory || hazard?.category || '')
 }
 
 function resolveHazardVisual(hazard) {
-  if (hazard?.type !== 'other') return hazardMeta[hazard?.type] || hazardMeta.other
-  const category = resolveHazardCategory(hazard)
-  return {
-    label: category,
-    color: colorForOtherCategory(category),
-  }
+  return hazardMeta[hazard?.type] || hazardMeta.trail
 }
 
 function getMarkerRadius(severity) {
@@ -263,7 +242,7 @@ function drawReports() {
 
   sortedReports.value.forEach((report) => {
     if (!Number.isFinite(report.latitude) || !Number.isFinite(report.longitude)) return
-    const meta = hazardMeta[report.hazardType] || hazardMeta.other
+    const meta = hazardMeta[report.hazardType] || hazardMeta.trail
 
     const reportMarker = L.marker([report.latitude, report.longitude], {
       icon: L.divIcon({
@@ -295,7 +274,7 @@ async function loadHazards() {
   try {
     const payload = await fetchRealtimeHazards({
       bbox: getMapBboxWithinVictoria(mapInstance),
-      layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
+      layers: ['fire', 'flood', 'storm', 'heat', 'trail'],
       signal: inflightHazardController.signal,
       preferCache: true,
       onUpdate: (freshPayload) => {
@@ -518,7 +497,6 @@ onUnmounted(() => {
             <option value="flood">Flood</option>
             <option value="storm">Storm / Mud</option>
             <option value="trail">Trail Obstacle</option>
-            <option value="other">Other</option>
           </select>
           <select v-model="form.severity" class="field-input">
             <option value="low">Low</option>
@@ -572,7 +550,6 @@ onUnmounted(() => {
           <span class="legend-item"><i style="background:#2165B5"></i>Flood</span>
           <span class="legend-item"><i style="background:#5A4B81"></i>Storm</span>
           <span class="legend-item"><i style="background:#D08817"></i>Heat</span>
-          <span class="legend-item"><i style="background:#2E7D6B"></i>Other</span>
         </div>
       </div>
     </section>

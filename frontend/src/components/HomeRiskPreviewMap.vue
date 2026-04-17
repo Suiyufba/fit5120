@@ -25,9 +25,7 @@ const layerMeta = {
   storm: { label: 'Storm', color: '#5A4B81' },
   heat: { label: 'Heat', color: '#D08817' },
   trail: { label: 'Trail', color: '#6B5C4F' },
-  other: { label: 'Other', color: '#2E7D6B' },
 }
-const otherCategoryPalette = ['#2E7D6B', '#9A3412', '#0369A1', '#7C3AED', '#B45309', '#BE185D', '#0F766E', '#475569']
 
 let mapInstance
 let markersLayer
@@ -70,49 +68,8 @@ function zoneOpacitiesBySeverity(severity) {
   return { l1: 0.14, l2: 0.09, l3: 0.05 }
 }
 
-function normalizeCategoryKey(value) {
-  const raw = String(value || '').trim().toLowerCase()
-  if (!raw) return 'unspecified'
-  return raw.replace(/[._-]+/g, ' ').replace(/\s+/g, ' ').trim()
-}
-
-function formatCategoryLabel(value) {
-  const normalized = normalizeCategoryKey(value)
-  if (normalized === 'unspecified') return 'Unspecified'
-  return normalized
-    .split(' ')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
-}
-
-function hashCode(value) {
-  let hash = 0
-  for (let index = 0; index < value.length; index += 1) {
-    hash = ((hash << 5) - hash) + value.charCodeAt(index)
-    hash |= 0
-  }
-  return Math.abs(hash)
-}
-
-function colorForOtherCategory(categoryKey) {
-  const bucket = hashCode(normalizeCategoryKey(categoryKey)) % otherCategoryPalette.length
-  return otherCategoryPalette[bucket]
-}
-
 function resolveHazardVisual(hazard) {
-  if (hazard?.type !== 'other') return layerMeta[hazard?.type] || layerMeta.other
-
-  const category = formatCategoryLabel(hazard?.riskCategory || '')
-  return {
-    label: category,
-    color: colorForOtherCategory(category),
-  }
-}
-
-function resolveCategory(hazard) {
-  const raw = String(hazard?.riskCategory || '').trim()
-  if (!raw) return 'Unspecified'
-  return formatCategoryLabel(raw)
+  return layerMeta[hazard?.type] || layerMeta.trail
 }
 
 function drawHazards() {
@@ -157,7 +114,7 @@ function drawHazards() {
         <div style="font-size: 12px; margin-bottom: 8px;">${escapeHtml(cleanPopupDescription(hazard.description))}</div>
         <div style="font-size: 11px; color: #5f6b66;">
           ${escapeHtml(meta.label)} · ${escapeHtml(severityLabel[hazard.severity] || 'Unknown')}<br />
-          Category: ${escapeHtml(resolveCategory(hazard))}<br />
+          Category: ${escapeHtml(hazard.riskCategory || meta.label || 'Unspecified')}<br />
           Updated: ${escapeHtml(formatUpdatedTime(hazard.updatedAt))}<br />
           Source: ${escapeHtml(hazard.source)}
         </div>

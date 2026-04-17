@@ -39,7 +39,6 @@ const layerMeta = {
   storm: { label: 'Storm', color: '#5A4B81' },
   heat: { label: 'Heat', color: '#D08817' },
   trail: { label: 'Trail', color: '#6B5C4F' },
-  other: { label: 'Other', color: '#2E7D6B' },
 }
 
 function formatDuration(durationMin) {
@@ -122,7 +121,7 @@ function drawHazards() {
 
   hazards.value.forEach((hazard) => {
     if (!Array.isArray(hazard.coordinates) || hazard.coordinates.length !== 2) return
-    const meta = layerMeta[hazard.type] || layerMeta.other
+    const meta = layerMeta[hazard.type] || layerMeta.trail
     const opacity = zoneOpacitiesBySeverity(hazard.severity)
 
     ;[
@@ -159,7 +158,7 @@ async function loadHazards() {
   try {
     const payload = await fetchRealtimeHazards({
       bbox: getMapBboxWithinVictoria(mapInstance),
-      layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
+      layers: ['fire', 'flood', 'storm', 'heat', 'trail'],
       signal: hazardInflightController.signal,
       preferCache: true,
       onUpdate: (freshPayload) => {

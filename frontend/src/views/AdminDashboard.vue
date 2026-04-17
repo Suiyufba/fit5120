@@ -83,19 +83,8 @@ const riskMeta = {
   storm: { color: '#5A4B81', label: 'Storm' },
   heat: { color: '#D08817', label: 'Heat' },
   trail: { color: '#6B5C4F', label: 'Trail' },
-  other: { color: '#2E7D6B', label: 'Other' },
 }
 const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
-const otherCategoryPalette = [
-  '#2E7D6B',
-  '#9A3412',
-  '#0369A1',
-  '#7C3AED',
-  '#B45309',
-  '#BE185D',
-  '#0F766E',
-  '#475569',
-]
 
 const isEditMode = computed(() => Boolean(selectedEntity.value.id))
 const isArticleEditMode = computed(() => Boolean(articleForm.id))
@@ -116,7 +105,7 @@ const mapEntities = computed(() => {
     id: report.id,
     title: report.title,
     description: report.description,
-    type: report.hazardType || report.type || 'other',
+    type: report.hazardType || report.type || 'trail',
     riskCategory: report.riskCategory || report.category || report.incidentType || report.hazardType || '',
     severity: report.severity,
     coordinates: [report.latitude, report.longitude],
@@ -130,9 +119,7 @@ const officialLegendItems = computed(() => {
   const bucket = new Map()
   officialHazards.value.forEach((hazard) => {
     const meta = resolveHazardVisual(hazard)
-    const key = hazard?.type === 'other'
-      ? `other:${normalizeCategoryKey(hazard?.riskCategory)}`
-      : `type:${hazard?.type || 'other'}`
+    const key = `type:${hazard?.type || 'trail'}`
     if (!bucket.has(key)) {
       bucket.set(key, {
         key,
@@ -195,21 +182,6 @@ function formatCategoryLabel(value) {
     .join(' ')
 }
 
-function hashCode(value) {
-  let hash = 0
-  for (let index = 0; index < value.length; index += 1) {
-    hash = ((hash << 5) - hash) + value.charCodeAt(index)
-    hash |= 0
-  }
-  return Math.abs(hash)
-}
-
-function colorForOtherCategory(categoryKey) {
-  const normalized = normalizeCategoryKey(categoryKey)
-  const bucket = hashCode(normalized) % otherCategoryPalette.length
-  return otherCategoryPalette[bucket]
-}
-
 function resolveCategory(entity) {
   const raw = String(
     entity?.riskCategory || entity?.category || entity?.incidentType || entity?.hazardType || ''
@@ -219,14 +191,7 @@ function resolveCategory(entity) {
 }
 
 function resolveHazardVisual(entity) {
-  if (entity?.type !== 'other') {
-    return riskMeta[entity?.type] || riskMeta.other
-  }
-
-  return {
-    label: resolveCategory(entity),
-    color: colorForOtherCategory(entity?.riskCategory || entity?.title || entity?.description || ''),
-  }
+  return riskMeta[entity?.type] || riskMeta.trail
 }
 
 function tokenOrThrow() {
@@ -261,7 +226,7 @@ function applyEntityToForm(entity) {
   entityForm.sourceKind = entity.kind === 'risk' ? 'risk' : 'report'
   entityForm.title = entity.title || ''
   entityForm.description = entity.description || ''
-  entityForm.type = entity.type || 'other'
+  entityForm.type = entity.type || 'trail'
   entityForm.severity = entity.severity || 'low'
   entityForm.latitude = String(entity.coordinates?.[0] ?? '')
   entityForm.longitude = String(entity.coordinates?.[1] ?? '')
@@ -395,7 +360,7 @@ async function loadOfficialHazards() {
   try {
     const payload = await fetchRealtimeHazards({
       bbox: getMapBboxWithinVictoria(mapInstance),
-      layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
+      layers: ['fire', 'flood', 'storm', 'heat', 'trail'],
       signal: hazardInflightController.signal,
       preferCache: true,
       onUpdate: (freshPayload) => {
@@ -890,7 +855,6 @@ onUnmounted(() => {
               <option value="storm">Storm</option>
               <option value="heat">Heat</option>
               <option value="trail">Trail</option>
-              <option value="other">Other</option>
             </select>
             <select v-model="entityForm.severity">
               <option value="low">Low</option>
