@@ -6,7 +6,6 @@ import 'leaflet/dist/leaflet.css'
 import { fetchRealtimeHazards } from '../services/hazardApi'
 import {
   applyVictoriaMapConstraints,
-  clampLatLngToVictoria,
   getMapBboxWithinVictoria,
   VICTORIA_BOUNDS,
   VICTORIA_VIEW,
@@ -36,9 +35,6 @@ const otherCategoryPalette = [
 
 const mapElement = ref(null)
 const selectedHazardId = ref('')
-const activeLayers = ref(['fire', 'flood', 'storm', 'heat', 'trail', 'other'])
-const selectedTimeWindow = ref('24h')
-const selectedRiskLevels = ref(['extreme', 'high', 'moderate', 'low'])
 const hazards = ref([])
 const loading = ref(false)
 const lastUpdatedAt = ref(null)
@@ -46,27 +42,9 @@ const isSheetExpanded = ref(false)
 
 const severityOrder = { extreme: 4, high: 3, moderate: 2, low: 1 }
 const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
-const timeWindowMeta = {
-  '6h': { label: 'Last 6 hours', hours: 6 },
-  '24h': { label: 'Last 24 hours', hours: 24 },
-  '72h': { label: 'Last 3 days', hours: 72 },
-  '168h': { label: 'Last 7 days', hours: 168 },
-  all: { label: 'All available', hours: null },
-}
 
 const filteredHazards = computed(() => {
-  const windowHours = timeWindowMeta[selectedTimeWindow.value]?.hours ?? null
-  const cutoffTs = Number.isFinite(windowHours) ? Date.now() - (windowHours * 60 * 60 * 1000) : null
-
   return hazards.value
-    .filter((hazard) => activeLayers.value.includes(hazard.type))
-    .filter((hazard) => selectedRiskLevels.value.includes(hazard.severity))
-    .filter((hazard) => {
-      if (cutoffTs === null) return true
-      const updatedTs = Date.parse(hazard.updatedAt || '')
-      if (Number.isNaN(updatedTs)) return false
-      return updatedTs >= cutoffTs
-    })
     .sort((a, b) => (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0))
 })
 
@@ -78,7 +56,6 @@ const mapStats = computed(() => {
   return stats
 })
 
-const selectedWindowLabel = computed(() => timeWindowMeta[selectedTimeWindow.value]?.label || 'All available')
 const otherCategoryMeta = computed(() => {
   const groups = new Map()
   filteredHazards.value
@@ -100,7 +77,6 @@ const otherCategoryMeta = computed(() => {
 
 let mapInstance
 let markersLayer
-let userLocationLayer
 let refreshTimer
 let inflightController
 
@@ -119,24 +95,6 @@ function cleanPopupDescription(value = '') {
     .replace(/<\/?strong>/gi, ' ')
     .replace(/\s{2,}/g, ' ')
     .trim()
-}
-
-function toggleLayer(layerId) {
-  if (activeLayers.value.includes(layerId)) {
-    activeLayers.value = activeLayers.value.filter((item) => item !== layerId)
-    return
-  }
-
-  activeLayers.value = [...activeLayers.value, layerId]
-}
-
-function toggleRiskLevel(level) {
-  if (selectedRiskLevels.value.includes(level)) {
-    selectedRiskLevels.value = selectedRiskLevels.value.filter((item) => item !== level)
-    return
-  }
-
-  selectedRiskLevels.value = [...selectedRiskLevels.value, level]
 }
 
 function formatUpdatedTime(value) {
@@ -274,7 +232,7 @@ async function loadHazards() {
   try {
     const nextPayload = await fetchRealtimeHazards({
       bbox: getMapBboxWithinVictoria(mapInstance),
-      layers: activeLayers.value,
+      layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
       signal: inflightController.signal,
       preferCache: true,
       onUpdate: (freshPayload) => {
@@ -324,62 +282,6 @@ function toggleSheet() {
   isSheetExpanded.value = !isSheetExpanded.value
 }
 
-function getCurrentPosition() {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error('Geolocation not supported'))
-      return
-    }
-
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      timeout: 10_000,
-      maximumAge: 300_000,
-    })
-  })
-}
-
-function renderUserLocation(lat, lng, accuracy) {
-  if (!mapInstance || !userLocationLayer) return
-  userLocationLayer.clearLayers()
-
-  const marker = L.circleMarker([lat, lng], {
-    radius: 7,
-    color: '#134E4A',
-    fillColor: '#14B8A6',
-    fillOpacity: 0.95,
-    weight: 2,
-  })
-
-  marker.bindPopup('Your current location')
-  marker.addTo(userLocationLayer)
-
-  if (Number.isFinite(accuracy) && accuracy > 0) {
-    L.circle([lat, lng], {
-      radius: Math.min(accuracy, 1500),
-      color: '#0F766E',
-      fillColor: '#5EEAD4',
-      fillOpacity: 0.14,
-      weight: 1,
-    }).addTo(userLocationLayer)
-  }
-}
-
-async function centerOnUserLocation() {
-  try {
-    const position = await getCurrentPosition()
-    const lat = position.coords.latitude
-    const lng = position.coords.longitude
-    const accuracy = position.coords.accuracy
-
-    const nextLatLng = clampLatLngToVictoria([lat, lng])
-    mapInstance?.setView(nextLatLng, 11, { animate: true })
-    renderUserLocation(nextLatLng.lat, nextLatLng.lng, accuracy)
-  } catch (error) {
-    console.info('User location unavailable, fallback to default view:', error?.message || error)
-  }
-}
-
 onMounted(async () => {
   mapInstance = L.map(mapElement.value, {
     zoomControl: false,
@@ -395,12 +297,10 @@ onMounted(async () => {
   }).addTo(mapInstance)
 
   markersLayer = L.layerGroup().addTo(mapInstance)
-  userLocationLayer = L.layerGroup().addTo(mapInstance)
-
-  await centerOnUserLocation()
 
   await loadHazards()
   refreshTimer = window.setInterval(loadHazards, REFRESH_EVERY_MS)
+  mapInstance.on('moveend', loadHazards)
 })
 
 onUnmounted(() => {
@@ -410,7 +310,6 @@ onUnmounted(() => {
     mapInstance.remove()
     mapInstance = null
   }
-  userLocationLayer = null
 })
 
 watch(filteredHazards, () => {
@@ -440,16 +339,14 @@ watch(filteredHazards, () => {
       <div class="risk-map-layers">
         <p class="risk-map-block-title">Hazard Layers</p>
         <div class="risk-map-layer-list">
-          <button
+          <div
             v-for="(meta, layerId) in layerMeta"
             :key="layerId"
-            class="risk-map-layer-btn"
-            :class="{ 'risk-map-layer-btn--active': activeLayers.includes(layerId) }"
-            @click="toggleLayer(layerId)"
+            class="risk-map-layer-btn risk-map-layer-btn--active"
           >
             <span class="risk-map-layer-dot" :style="{ background: meta.color }"></span>
             <span>{{ meta.label }}</span>
-          </button>
+          </div>
           <div
             v-for="item in otherCategoryMeta"
             :key="`other-${item.key}`"
@@ -462,41 +359,12 @@ watch(filteredHazards, () => {
         </div>
       </div>
 
-      <div class="risk-map-filters">
-        <p class="risk-map-block-title">Time & Risk Filters</p>
-        <label class="risk-map-filter-label" for="time-window-select">Date/Time</label>
-        <select id="time-window-select" v-model="selectedTimeWindow" class="risk-map-time-select">
-          <option value="6h">Last 6 hours</option>
-          <option value="24h">Last 24 hours</option>
-          <option value="72h">Last 3 days</option>
-          <option value="168h">Last 7 days</option>
-          <option value="all">All available</option>
-        </select>
-
-        <p class="risk-map-filter-label">Risk Level</p>
-        <div class="risk-map-risk-level-list">
-          <button
-            v-for="(label, level) in severityLabel"
-            :key="level"
-            class="risk-map-risk-level-btn"
-            :class="{ 'risk-map-risk-level-btn--active': selectedRiskLevels.includes(level) }"
-            @click="toggleRiskLevel(level)"
-          >
-            {{ label }}
-          </button>
-        </div>
-      </div>
-
       <div class="risk-map-summary">
         <p class="risk-map-block-title">Current Summary</p>
         <p class="risk-map-subline">
-          {{ filteredHazards.length }} events · Extreme {{ mapStats.extreme }} · High {{ mapStats.high }} · Moderate {{ mapStats.moderate }}
+          {{ filteredHazards.length }} events · Extreme {{ mapStats.extreme }} · High {{ mapStats.high }} · Moderate {{ mapStats.moderate }} · Low {{ mapStats.low }}
         </p>
-        <p class="risk-map-subline">Time window: {{ selectedWindowLabel }}</p>
-        <p class="risk-map-subline">
-          Active risk levels:
-          {{ selectedRiskLevels.length ? selectedRiskLevels.map((level) => severityLabel[level]).join(', ') : 'None selected' }}
-        </p>
+        <p class="risk-map-subline">Counting method: same as Plan Route map (same bbox and layer scope).</p>
         <p class="risk-map-subline">Coverage zones: L1 ≤1km · L2 1–3km · L3 3–5km</p>
         <p class="risk-map-subline">
           Last update: {{ lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString() : '—' }}
