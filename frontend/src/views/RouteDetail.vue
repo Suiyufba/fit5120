@@ -16,6 +16,7 @@ const shareMessage = ref('')
 const shareError = ref('')
 const mapInitError = ref('')
 const isSheetExpanded = ref(false)
+const isTerrain3D = ref(true)
 
 const routeSourceId = 'recommended-route-source'
 const routeLayerId = 'recommended-route-line'
@@ -157,6 +158,22 @@ function focusRouteIn3D(routeCoordinates, animated = true) {
     pitch: isThreeDReady() ? THREE_D_CAMERA.pitch : 0,
     bearing: isThreeDReady() ? THREE_D_CAMERA.bearing : 0,
   })
+}
+
+function syncTerrainModeFromCamera() {
+  if (!mapInstance) return
+  isTerrain3D.value = mapInstance.getPitch() > 20
+}
+
+function setCameraTo2D(animated = true) {
+  if (!mapInstance) return
+  mapInstance.easeTo({
+    pitch: 0,
+    bearing: 0,
+    duration: animated ? 650 : 0,
+    essential: true,
+  })
+  isTerrain3D.value = false
 }
 
 function buildHazardZoneFeatures() {
@@ -491,6 +508,16 @@ function activateTerrainView() {
   const routeCoordinates = routeGeometryToLngLat(recommended.value?.geometry || [])
   if (!routeCoordinates.length) return
   focusRouteIn3D(routeCoordinates, true)
+  isTerrain3D.value = true
+}
+
+function toggleTerrainMode() {
+  if (!mapInstance) return
+  if (isTerrain3D.value) {
+    setCameraTo2D(true)
+    return
+  }
+  activateTerrainView()
 }
 
 async function hydrateFromSharedLink() {
@@ -581,6 +608,8 @@ function initMap() {
 
     hazardRefreshTimer = window.setInterval(loadHazards, 60_000)
     mapInstance.on('moveend', loadHazards)
+    mapInstance.on('pitchend', syncTerrainModeFromCamera)
+    mapInstance.on('rotateend', syncTerrainModeFromCamera)
   })
 }
 
@@ -621,6 +650,8 @@ onUnmounted(() => {
     endMarker = null
   }
   if (mapInstance) {
+    mapInstance.off('pitchend', syncTerrainModeFromCamera)
+    mapInstance.off('rotateend', syncTerrainModeFromCamera)
     mapInstance.remove()
     mapInstance = null
   }
@@ -647,6 +678,9 @@ onUnmounted(() => {
         <p class="detail-kicker">Route Safety Detail</p>
         <h1>Recommended Route</h1>
         <p class="detail-note detail-note--view">3D terrain mode is enabled. You can see elevation and ground relief along the route.</p>
+        <button class="terrain-toggle-btn" @click="toggleTerrainMode">
+          {{ isTerrain3D ? 'Switch To 2D View' : 'Switch To 3D Terrain View' }}
+        </button>
         <button class="terrain-btn" @click="activateTerrainView">Recenter 3D Terrain View</button>
         <p v-if="planningFromShare" class="detail-note">Loading shared route...</p>
         <p v-if="shareMessage" class="detail-note detail-note--ok">{{ shareMessage }}</p>
@@ -885,6 +919,15 @@ h1 {
   color: #1f5a48;
   padding: 0.58rem 0.66rem;
   font-weight: 700;
+}
+
+.terrain-toggle-btn {
+  border: 1px solid #7db8a0;
+  border-radius: 0.65rem;
+  background: #2e7d6b;
+  color: #ffffff;
+  padding: 0.6rem 0.66rem;
+  font-weight: 800;
 }
 
 .detail-note {
