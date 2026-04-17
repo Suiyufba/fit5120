@@ -105,6 +105,16 @@ function formatPointLabel(label, point) {
   return label || 'Selected location'
 }
 
+function handlePointInputFocus(type) {
+  if (type === 'start') {
+    startInput.value = ''
+    startSuggestions.value = []
+    return
+  }
+  endInput.value = ''
+  endSuggestions.value = []
+}
+
 function applyPointSelection(type, location) {
   if (!location) return
   const point = {
@@ -424,8 +434,8 @@ function applyHistoryPlan(item) {
   endPoint.value = item.end || null
   startLabel.value = ''
   endLabel.value = ''
-  startInput.value = startPoint.value ? 'Saved location' : ''
-  endInput.value = endPoint.value ? 'Saved location' : ''
+  startInput.value = startPoint.value ? formatPointLabel(startLabel.value, startPoint.value) : ''
+  endInput.value = endPoint.value ? formatPointLabel(endLabel.value, endPoint.value) : ''
   startSuggestions.value = []
   endSuggestions.value = []
   planResult.value = item.planPayload
@@ -567,11 +577,11 @@ onMounted(() => {
       return
     }
 
-    startPoint.value = endPoint.value
-    startLabel.value = endLabel.value
-    startInput.value = startLabel.value || 'Selected location'
-    startSuggestions.value = []
-    await applyPointFromMap('end', point)
+  startPoint.value = endPoint.value
+  startLabel.value = endLabel.value
+  startInput.value = formatPointLabel(startLabel.value, startPoint.value)
+  startSuggestions.value = []
+  await applyPointFromMap('end', point)
     planResult.value = null
     error.value = ''
   })
@@ -617,6 +627,7 @@ onUnmounted(() => {
             type="text"
             placeholder="Type a start location"
             :value="startInput"
+            @focus="handlePointInputFocus('start')"
             @input="searchLocationOptions('start', $event.target.value)"
           />
           <div v-if="startSuggestions.length" class="point-suggestions">
@@ -630,7 +641,6 @@ onUnmounted(() => {
               {{ item.displayName }}
             </button>
           </div>
-          <strong>{{ startPoint ? formatPointLabel(startLabel, startPoint) : 'Click map or search to set start point' }}</strong>
         </div>
         <div class="point-card">
           <p>Destination</p>
@@ -639,6 +649,7 @@ onUnmounted(() => {
             type="text"
             placeholder="Type a destination"
             :value="endInput"
+            @focus="handlePointInputFocus('end')"
             @input="searchLocationOptions('end', $event.target.value)"
           />
           <div v-if="endSuggestions.length" class="point-suggestions">
@@ -652,7 +663,6 @@ onUnmounted(() => {
               {{ item.displayName }}
             </button>
           </div>
-          <strong>{{ endPoint ? formatPointLabel(endLabel, endPoint) : 'Click map or search to set destination' }}</strong>
         </div>
       </div>
 

@@ -15,14 +15,34 @@ function inVictoria({ lat, lng }) {
     && lng <= VICTORIA_BBOX.maxLng;
 }
 
-function normalizeResult(item) {
+function buildDisplayName(item = {}) {
+  const direct = String(item?.display_name || '').trim();
+  if (direct) return direct;
+
+  const address = item?.address || {};
+  const parts = [
+    address.road,
+    address.suburb || address.village || address.hamlet,
+    address.town || address.city || address.county,
+    address.state,
+  ]
+    .map((part) => String(part || '').trim())
+    .filter(Boolean);
+
+  if (parts.length) return parts.join(', ');
+  const named = String(item?.name || '').trim();
+  if (named) return named;
+  return '';
+}
+
+function normalizeSearchResult(item) {
   const lat = Number(item?.lat);
   const lng = Number(item?.lon);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
   if (!inVictoria({ lat, lng })) return null;
 
   return {
-    displayName: String(item?.display_name || '').trim() || 'Unnamed location',
+    displayName: buildDisplayName(item) || 'Unnamed location',
     lat,
     lng,
   };
@@ -54,7 +74,7 @@ export async function searchLocationsByText({ query, limit = 6 }) {
   const seen = new Set();
   const normalized = Array.isArray(payload)
     ? payload
-      .map(normalizeResult)
+      .map(normalizeSearchResult)
       .filter(Boolean)
       .filter((item) => {
         const key = `${item.lat.toFixed(6)},${item.lng.toFixed(6)}`;
@@ -77,20 +97,45 @@ export async function reverseLocation({ lat, lng }) {
     throw new Error('Point must be inside Victoria');
   }
 
-  const params = new URLSearchParams({
-    lat: String(parsedLat),
-    lon: String(parsedLng),
-    format: 'jsonv2',
-    zoom: '16',
-    addressdetails: '1',
-  });
-  const payload = await fetchJson(`${NOMINATIM_BASE_URL}/reverse?${params.toString()}`, {
-    headers: {
-      Accept: 'application/json',
-      'User-Agent': 'HikeShield/1.0 (location-reverse)',
-    },
-    timeoutMs: 8000,
-  });
+  const tryReverse = async (zoom) => {
+    const params = new URLSearchParams({
+      lat: String(parsedLat),
+      lon: String(parsedLng),
+      format: 'jsonv2',
+      zoom: String(zoom),
+      addressdetails: '1',
+      namedetails: '1',
+    });
+    return fetchJson(`${NOMINATIM_BASE_URL}/reverse?${params.toString()}`, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'HikeShield/1.0 (location-reverse)',
+      },
+      timeoutMs: 8000,
+    });
+  };
 
-  return normalizeResult(payload);
+  const zoomLevels = [16, 14, 12, 10];
+  for (const zoom of zoomLevels) {
+    try {
+      const payload = await tryReverse(zoom);
+      const displayName = buildDisplayName(payload);
+      if (!displayName) continue;
+      const normalizedLat = Number(payload?.lat);
+      const normalizedLng = Number(payload?.lon);
+      return {
+        displayName,
+        lat: Number.isFinite(normalizedLat) ? normalizedLat : parsedLat,
+        lng: Number.isFinite(normalizedLng) ? normalizedLng : parsedLng,
+      };
+    } catch (_error) {
+      // Try next zoom level.
+    }
+  }
+
+  return {
+    displayName: 'Dropped pin location',
+    lat: parsedLat,
+    lng: parsedLng,
+  };
 }
