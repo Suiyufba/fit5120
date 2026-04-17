@@ -229,7 +229,7 @@ function buildRouteChoices(planPayload) {
       selected.push({
         ...match,
         slotDifficulty: slot,
-        slotLabel: slot,
+        optionLabel: `Route ${selected.length + 1}`,
       })
     })
 
@@ -243,13 +243,13 @@ function buildRouteChoices(planPayload) {
     const hit = pool.find((item) => item.difficulty === slot && !usedIds.has(item.id))
     if (!hit) return
     usedIds.add(hit.id)
-    selected.push({ ...hit, slotDifficulty: slot, slotLabel: slot })
+    selected.push({ ...hit, slotDifficulty: slot, optionLabel: `Route ${selected.length + 1}` })
   })
   pool.forEach((item) => {
     if (selected.length >= 3 || usedIds.has(item.id)) return
     const slot = routeDifficultySlots[selected.length] || item.difficulty || 'Moderate'
     usedIds.add(item.id)
-    selected.push({ ...item, slotDifficulty: slot, slotLabel: slot })
+    selected.push({ ...item, slotDifficulty: slot, optionLabel: `Route ${selected.length + 1}` })
   })
   return selected.slice(0, 3)
 }
@@ -275,7 +275,6 @@ const summary = computed(() => {
     isDangerous: isDangerousGoNoGo(route.goNoGo),
     explanation: route.explanation,
     zoneSummary: route.zoneSummary || { level1Count: 0, level2Count: 0, level3Count: 0 },
-    slotLabel: route.slotLabel,
   }
 })
 
@@ -727,17 +726,18 @@ onUnmounted(() => {
             :class="{ 'route-option-card--active': selectedRoute?.id === option.id }"
             @click="selectRoute(option.id)"
           >
-            <p class="route-option-card__title">{{ option.slotLabel }}</p>
+            <p class="route-option-card__title">{{ option.optionLabel }}</p>
             <p class="route-option-card__meta">
               {{ option.distanceKm.toFixed(1) }} km · {{ formatDuration(option.durationMin) }}
             </p>
+            <p class="route-option-card__meta">Difficulty: {{ option.difficulty }}</p>
             <p class="route-option-card__risk">{{ option.riskLevel }} ({{ option.riskScore.toFixed(1) }})</p>
           </button>
         </div>
         <div class="summary-grid">
           <article><span>Distance</span><strong>{{ summary.distance }}</strong></article>
           <article><span>How Long It Takes</span><strong>{{ summary.duration }}</strong></article>
-          <article><span>Difficulty</span><strong>{{ summary.slotLabel }}</strong></article>
+          <article><span>Difficulty</span><strong>{{ summary.difficulty }}</strong></article>
           <article><span>Risk</span><strong>{{ summary.risk }}</strong></article>
         </div>
 
