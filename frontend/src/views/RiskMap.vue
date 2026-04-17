@@ -282,10 +282,8 @@ watch(filteredHazards, () => {
       <div class="risk-map-summary">
         <p class="risk-map-block-title">Current Summary</p>
         <p class="risk-map-subline">
-          {{ filteredHazards.length }} events · Extreme {{ mapStats.extreme }} · High {{ mapStats.high }} · Moderate {{ mapStats.moderate }} · Low {{ mapStats.low }}
+          {{ filteredHazards.length }} events /n Extreme {{ mapStats.extreme }} · High {{ mapStats.high }} · Moderate {{ mapStats.moderate }} · Low {{ mapStats.low }}
         </p>
-        <p class="risk-map-subline">Counting method: same as Plan Route map (same bbox and layer scope).</p>
-        <p class="risk-map-subline">Coverage zones: L1 ≤1km · L2 1–3km · L3 3–5km</p>
         <p class="risk-map-subline">
           Last update: {{ lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString() : '—' }}
         </p>
