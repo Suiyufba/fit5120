@@ -22,6 +22,7 @@ UI/UX, map behavior, rendering, form/layout fixes, and client-side data handling
 - [route-detail-mapbox-3d-view-2026-04-18.md](./route-detail-mapbox-3d-view-2026-04-18.md)
 - [route-detail-3d-terrain-relief-enhancement-2026-04-18.md](./route-detail-3d-terrain-relief-enhancement-2026-04-18.md)
 - [route-detail-2d-3d-toggle-fix-2026-04-18.md](./route-detail-2d-3d-toggle-fix-2026-04-18.md)
+- [route-detail-compass-only-2d-3d-toggle-2026-04-18.md](./route-detail-compass-only-2d-3d-toggle-2026-04-18.md)
 - [route-planner-summary-position-above-history-2026-04-17.md](./route-planner-summary-position-above-history-2026-04-17.md)
 - [risk-map-filtering-update-2026-04-14.md](./risk-map-filtering-update-2026-04-14.md)
 - [risk-map-other-category-colors-2026-04-14.md](./risk-map-other-category-colors-2026-04-14.md)

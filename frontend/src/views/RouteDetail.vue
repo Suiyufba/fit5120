@@ -35,6 +35,7 @@ let hazardRefreshTimer
 let startMarker
 let endMarker
 let activeHazardPopup
+let compassButtonElement = null
 
 const hazards = ref([])
 const mapboxToken = String(import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '').trim()
@@ -520,6 +521,28 @@ function toggleTerrainMode() {
   activateTerrainView()
 }
 
+function handleCompassToggle(event) {
+  event.preventDefault()
+  event.stopPropagation()
+  toggleTerrainMode()
+}
+
+function bindCompassToggleButton() {
+  if (!mapElement.value) return
+  const compass = mapElement.value.querySelector('.mapboxgl-ctrl-compass')
+  if (!compass) return
+  compassButtonElement = compass
+  compassButtonElement.setAttribute('title', 'Toggle 2D / 3D terrain view')
+  compassButtonElement.setAttribute('aria-label', 'Toggle 2D / 3D terrain view')
+  compassButtonElement.addEventListener('click', handleCompassToggle, true)
+}
+
+function unbindCompassToggleButton() {
+  if (!compassButtonElement) return
+  compassButtonElement.removeEventListener('click', handleCompassToggle, true)
+  compassButtonElement = null
+}
+
 async function hydrateFromSharedLink() {
   const shared = parseSharedPoint()
   if (!shared) return
@@ -605,6 +628,7 @@ function initMap() {
     applyRouteGeometry()
     applyHazardLayers()
     loadHazards()
+    bindCompassToggleButton()
 
     hazardRefreshTimer = window.setInterval(loadHazards, 60_000)
     mapInstance.on('moveend', loadHazards)
@@ -652,6 +676,7 @@ onUnmounted(() => {
   if (mapInstance) {
     mapInstance.off('pitchend', syncTerrainModeFromCamera)
     mapInstance.off('rotateend', syncTerrainModeFromCamera)
+    unbindCompassToggleButton()
     mapInstance.remove()
     mapInstance = null
   }
@@ -677,9 +702,6 @@ onUnmounted(() => {
       <template v-if="recommended">
         <p class="detail-kicker">Route Safety Detail</p>
         <h1>Recommended Route</h1>
-        <button class="terrain-toggle-btn" @click="toggleTerrainMode">
-          {{ isTerrain3D ? 'Switch To 2D View' : 'Switch To 3D Terrain View' }}
-        </button>
         <p v-if="planningFromShare" class="detail-note">Loading shared route...</p>
         <p v-if="shareMessage" class="detail-note detail-note--ok">{{ shareMessage }}</p>
         <p v-if="shareError" class="detail-note detail-note--error">{{ shareError }}</p>
@@ -908,15 +930,6 @@ h1 {
   color: #fff;
   padding: 0.66rem;
   font-weight: 700;
-}
-
-.terrain-toggle-btn {
-  border: 1px solid #7db8a0;
-  border-radius: 0.65rem;
-  background: #2e7d6b;
-  color: #ffffff;
-  padding: 0.6rem 0.66rem;
-  font-weight: 800;
 }
 
 .detail-note {
