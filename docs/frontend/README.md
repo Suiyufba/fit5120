@@ -18,6 +18,8 @@ UI/UX, map behavior, rendering, form/layout fixes, and client-side data handling
 - [route-planner-location-search-input-2026-04-17.md](./route-planner-location-search-input-2026-04-17.md)
 - [route-planner-place-name-input-fix-2026-04-17.md](./route-planner-place-name-input-fix-2026-04-17.md)
 - [route-history-clear-actions-2026-04-17.md](./route-history-clear-actions-2026-04-17.md)
+- [route-detail-hide-terrain-surface-trail-row-2026-04-17.md](./route-detail-hide-terrain-surface-trail-row-2026-04-17.md)
+- [route-planner-summary-position-above-history-2026-04-17.md](./route-planner-summary-position-above-history-2026-04-17.md)
 - [risk-map-filtering-update-2026-04-14.md](./risk-map-filtering-update-2026-04-14.md)
 - [risk-map-other-category-colors-2026-04-14.md](./risk-map-other-category-colors-2026-04-14.md)
 - [community-map-risk-category-alignment-2026-04-14.md](./community-map-risk-category-alignment-2026-04-14.md)

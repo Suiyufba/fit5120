@@ -716,6 +716,38 @@ onUnmounted(() => {
         <button class="ghost-btn" @click="resetSelection">Reset Points</button>
       </div>
 
+      <section v-if="summary" class="planner-summary">
+        <p class="summary-kicker">Choose One Route</p>
+        <div class="route-options">
+          <button
+            v-for="option in routeChoices"
+            :key="option.id"
+            type="button"
+            class="route-option-card"
+            :class="{ 'route-option-card--active': selectedRoute?.id === option.id }"
+            @click="selectRoute(option.id)"
+          >
+            <p class="route-option-card__title">{{ option.slotLabel }}</p>
+            <p class="route-option-card__meta">
+              {{ option.distanceKm.toFixed(1) }} km · {{ formatDuration(option.durationMin) }}
+            </p>
+            <p class="route-option-card__risk">{{ option.riskLevel }} ({{ option.riskScore.toFixed(1) }})</p>
+          </button>
+        </div>
+        <div class="summary-grid">
+          <article><span>Distance</span><strong>{{ summary.distance }}</strong></article>
+          <article><span>How Long It Takes</span><strong>{{ summary.duration }}</strong></article>
+          <article><span>Difficulty</span><strong>{{ summary.slotLabel }}</strong></article>
+          <article><span>Risk</span><strong>{{ summary.risk }}</strong></article>
+        </div>
+
+        <div class="go-tag" :class="{ 'go-tag--danger': summary.isDangerous }">
+          {{ summary.goNoGoLabel }}
+        </div>
+        <p class="summary-explain">{{ summary.explanation }}</p>
+        <button class="primary-btn" @click="goToDetails">View Route Details</button>
+      </section>
+
       <section class="history-panel">
         <div class="history-panel__head">
           <p>Your Route History</p>
@@ -774,38 +806,6 @@ onUnmounted(() => {
       </div>
 
       <p v-if="error" class="planner-error">{{ error }}</p>
-
-      <section v-if="summary" class="planner-summary">
-        <p class="summary-kicker">Choose One Route</p>
-        <div class="route-options">
-          <button
-            v-for="option in routeChoices"
-            :key="option.id"
-            type="button"
-            class="route-option-card"
-            :class="{ 'route-option-card--active': selectedRoute?.id === option.id }"
-            @click="selectRoute(option.id)"
-          >
-            <p class="route-option-card__title">{{ option.slotLabel }}</p>
-            <p class="route-option-card__meta">
-              {{ option.distanceKm.toFixed(1) }} km · {{ formatDuration(option.durationMin) }}
-            </p>
-            <p class="route-option-card__risk">{{ option.riskLevel }} ({{ option.riskScore.toFixed(1) }})</p>
-          </button>
-        </div>
-        <div class="summary-grid">
-          <article><span>Distance</span><strong>{{ summary.distance }}</strong></article>
-          <article><span>How Long It Takes</span><strong>{{ summary.duration }}</strong></article>
-          <article><span>Difficulty</span><strong>{{ summary.slotLabel }}</strong></article>
-          <article><span>Risk</span><strong>{{ summary.risk }}</strong></article>
-        </div>
-
-        <div class="go-tag" :class="{ 'go-tag--danger': summary.isDangerous }">
-          {{ summary.goNoGoLabel }}
-        </div>
-        <p class="summary-explain">{{ summary.explanation }}</p>
-        <button class="primary-btn" @click="goToDetails">View Route Details</button>
-      </section>
       </div>
     </aside>
 

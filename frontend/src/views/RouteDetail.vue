@@ -349,11 +349,6 @@ onUnmounted(() => {
             Max slope {{ Math.round(geography.maxSlopePct || 0) }}%
           </article>
           <article class="tip-item">
-            Terrain {{ geography.terrainType || 'mixed' }} ·
-            Surface {{ geography.surfaceType || 'unknown' }} ·
-            Trail {{ geography.trailCondition || 'unknown' }}
-          </article>
-          <article class="tip-item">
             Rivers {{ geography.riverCrossingCount || 0 }} ·
             Cliffs {{ geography.cliffExposureCount || 0 }} ·
             Closures {{ geography.closureCount || 0 }}
