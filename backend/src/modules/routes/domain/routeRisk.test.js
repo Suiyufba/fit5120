@@ -205,6 +205,48 @@ test('no-go routes do not keep a low risk label', () => {
   assert.ok(scored.riskScore >= 65);
 });
 
+test('difficulty label reflects geography: short steep route can still be Hard', () => {
+  const shortRoute = {
+    ...baseRoute,
+    distanceKm: 6,
+    durationMin: 180,
+  };
+
+  const flat = scoreRouteCandidate({
+    route: shortRoute,
+    hazards: [],
+    userLevel: 'intermediate',
+    fastestRoute: shortRoute,
+    geographyProfile: {
+      totalAscentM: 40,
+      totalDescentM: 40,
+      maxSlopePct: 3,
+      avgSlopePct: 1,
+      surfaceType: 'compacted',
+      trailCondition: 'good',
+    },
+  });
+
+  const steep = scoreRouteCandidate({
+    route: shortRoute,
+    hazards: [],
+    userLevel: 'intermediate',
+    fastestRoute: shortRoute,
+    geographyProfile: {
+      totalAscentM: 900,
+      totalDescentM: 850,
+      maxSlopePct: 28,
+      avgSlopePct: 16,
+      surfaceType: 'rock',
+      trailCondition: 'bad',
+    },
+  });
+
+  assert.equal(flat.difficulty, 'Easy');
+  assert.ok(['Moderate', 'Hard'].includes(steep.difficulty));
+  assert.notEqual(flat.difficulty, steep.difficulty);
+});
+
 test('geography profile raises risk when route has steep slopes and closures', () => {
   const flat = scoreRouteCandidate({
     route: baseRoute,

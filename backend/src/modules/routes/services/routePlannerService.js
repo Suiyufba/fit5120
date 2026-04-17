@@ -4,7 +4,11 @@ import { fetchOsrmRoutes } from '../adapters/osrmAdapter.js';
 import { listCommunityReports } from '../../communityReports/repositories/communityReportRepository.js';
 import { listManualHazards } from '../../hazards/repositories/manualHazardRepository.js';
 import { buildDetourWaypointCandidates, scoreRouteCandidate } from '../domain/routeRisk.js';
+import { estimateHikingDurationMin } from '../domain/routeTiming.js';
 import { getRouteGeographyProfileForRoute } from './routeGeographyService.js';
+import { config } from '../../../config/index.js';
+
+const MAX_CANDIDATES = 6;
 
 function assertCoordinate(point, fieldName) {
   const lat = Number(point?.lat);
@@ -37,6 +41,32 @@ async function loadLatestHazards() {
   return [...official, ...manual, ...reports];
 }
 
+function geometrySignature(geometry = []) {
+  if (!Array.isArray(geometry) || geometry.length < 2) return '';
+  const first = geometry[0];
+  const last = geometry[geometry.length - 1];
+  const midIndex = Math.floor(geometry.length / 2);
+  const quarterIndex = Math.floor(geometry.length / 4);
+  const threeQuarterIndex = Math.floor((geometry.length * 3) / 4);
+  return [first, geometry[quarterIndex], geometry[midIndex], geometry[threeQuarterIndex], last]
+    .map((point) => (Array.isArray(point) ? point.map((v) => Number(v).toFixed(3)).join(',') : ''))
+    .join('|');
+}
+
+function dedupeRoutes(routes) {
+  const seen = new Set();
+  const unique = [];
+  routes.forEach((route) => {
+    const signature = geometrySignature(route.geometry);
+    const key = `${signature}:${route.distanceKm}:${route.durationMin}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(route);
+    }
+  });
+  return unique;
+}
+
 async function buildCandidateRoutes(start, end) {
   const baseRoutes = await fetchOsrmRoutes([start, end], { alternatives: true });
   const candidates = [...baseRoutes];
@@ -44,25 +74,38 @@ async function buildCandidateRoutes(start, end) {
   if (candidates.length < 3) {
     const detours = buildDetourWaypointCandidates(start, end);
     const detourRoutes = await Promise.all(
-      detours.map((waypoint) => fetchOsrmRoutes([start, waypoint, end], { alternatives: false }))
+      detours.map((waypoint) =>
+        fetchOsrmRoutes([start, waypoint, end], { alternatives: false }).catch(() => []),
+      ),
     );
     detourRoutes.flat().forEach((route) => candidates.push(route));
   }
 
-  const unique = [];
-  const seen = new Set();
-  candidates.forEach((route) => {
-    const key = `${route.distanceKm}-${route.durationMin}-${route.geometry?.length || 0}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      unique.push(route);
-    }
-  });
+  return dedupeRoutes(candidates)
+    .slice(0, MAX_CANDIDATES)
+    .map((route, index) => ({
+      ...route,
+      id: `route-${index + 1}`,
+    }));
+}
 
-  return unique.slice(0, 4).map((route, index) => ({
+function refitDurationWithGeography(route, geographyProfile, userLevel) {
+  const refitted = estimateHikingDurationMin({
+    distanceKm: route.distanceKm,
+    geographyProfile,
+    userLevel,
+    fallbackSpeedKmh: config.hikingBaseSpeedKmh,
+    floorMin: route.rawDurationMin || 0,
+  });
+  const finalDuration = Math.max(
+    Number(route.rawDurationMin || 0),
+    Number(refitted || 0),
+  );
+  return {
     ...route,
-    id: `route-${index + 1}`
-  }));
+    durationMin: Number(Number(finalDuration).toFixed(1)),
+    refittedDurationMin: refitted,
+  };
 }
 
 function toRoutePayload(route) {
@@ -110,6 +153,23 @@ function pickDifficultyRouteOptions(scoredRoutes) {
   }));
 }
 
+function burdenRatio(route, fastestRoute) {
+  const fastestDistance = Math.max(fastestRoute?.distanceKm || 1, 0.1);
+  const fastestDuration = Math.max(fastestRoute?.durationMin || 1, 0.1);
+  const extraDistance = Math.max(0, (route.distanceKm || 0) - fastestDistance) / fastestDistance;
+  const extraDuration = Math.max(0, (route.durationMin || 0) - fastestDuration) / fastestDuration;
+  return 0.5 * extraDistance + 0.5 * extraDuration;
+}
+
+function compositeSelectionScore(route, fastestRoute) {
+  // Prefer routes with low risk AND that don't balloon the trip compared to
+  // the fastest OSRM option. A 0-20 point tax per 100% extra burden keeps the
+  // tie-breaker mild — hazard avoidance still dominates.
+  const ratio = burdenRatio(route, fastestRoute);
+  const burdenPenalty = Math.min(20, ratio * 20);
+  return Number(route.riskScore || 0) + burdenPenalty;
+}
+
 export async function planSaferRoute({ userId, start, end }) {
   const normalizedStart = assertCoordinate(start, 'start');
   const normalizedEnd = assertCoordinate(end, 'end');
@@ -123,30 +183,57 @@ export async function planSaferRoute({ userId, start, end }) {
   }
 
   const hazards = await loadLatestHazards();
-  const fastestRoute = [...candidates].sort((a, b) => a.durationMin - b.durationMin)[0];
-  const scored = await Promise.all(
+
+  const candidatesWithGeography = await Promise.all(
     candidates.map(async (route) => {
       const geographyProfile = await getRouteGeographyProfileForRoute(route);
-      return scoreRouteCandidate({
-        route,
-        hazards,
-        userLevel,
-        fastestRoute,
-        geographyProfile,
-      });
-    })
+      const refitted = refitDurationWithGeography(route, geographyProfile, userLevel);
+      return { route: refitted, geographyProfile };
+    }),
   );
-  scored.sort((a, b) => a.riskScore - b.riskScore);
 
-  const recommendedRoute = scored[0];
-  const alternatives = scored.slice(1).map((route) => toRoutePayload(route));
-  const routeOptions = pickDifficultyRouteOptions(scored);
+  const routesForFastest = candidatesWithGeography.map(({ route }) => route);
+  const fastestRoute = [...routesForFastest].sort((a, b) => a.durationMin - b.durationMin)[0];
+
+  const scored = candidatesWithGeography.map(({ route, geographyProfile }) =>
+    scoreRouteCandidate({
+      route,
+      hazards,
+      userLevel,
+      fastestRoute,
+      geographyProfile,
+    }),
+  );
+
+  // Primary: pick the route with the best combined risk + burden profile. This
+  // avoids the situation where the "safest" route is a 4-hour detour that
+  // barely reduces risk vs. the fastest route.
+  const sortedForRecommendation = [...scored]
+    .map((route) => ({ route, compositeScore: compositeSelectionScore(route, fastestRoute) }))
+    .sort((a, b) => {
+      if (a.route.goNoGo !== b.route.goNoGo) {
+        return a.route.goNoGo === 'Go' ? -1 : 1;
+      }
+      if (a.compositeScore !== b.compositeScore) {
+        return a.compositeScore - b.compositeScore;
+      }
+      return a.route.riskScore - b.route.riskScore;
+    })
+    .map(({ route }) => route);
+
+  const recommendedRoute = sortedForRecommendation[0];
+  const alternatives = sortedForRecommendation.slice(1).map((route) => toRoutePayload(route));
+
+  // Difficulty-slot picker uses pure risk order so the 3 options reflect the
+  // safest-first ranking, not the composite tie-breaker above.
+  const scoredByRisk = [...scored].sort((a, b) => a.riskScore - b.riskScore);
+  const routeOptions = pickDifficultyRouteOptions(scoredByRisk);
 
   return {
     userLevel,
     recommendedRoute: toRoutePayload(recommendedRoute),
     alternatives,
     routeOptions,
-    scoringBreakdown: recommendedRoute.scoringBreakdown
+    scoringBreakdown: recommendedRoute.scoringBreakdown,
   };
 }

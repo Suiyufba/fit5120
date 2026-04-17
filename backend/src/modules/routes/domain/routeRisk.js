@@ -274,9 +274,26 @@ function noGoFloorScoreByReason(reasons = {}) {
   return 0;
 }
 
-function difficultyLabel(score) {
-  if (score >= 78) return 'Hard';
-  if (score >= 42) return 'Moderate';
+function difficultyLabel(burdenScore, geographyProfile = null) {
+  // Burden score is already 0-100 based on distance/duration/detour.
+  // Geography contributes an additive fatigue index 0-100 based on elevation
+  // and terrain roughness; this lets a short but steep route still be "Hard".
+  const ascentScore = clamp((Number(geographyProfile?.totalAscentM || 0) / 900) * 100);
+  const slopeScore = clamp((Number(geographyProfile?.maxSlopePct || 0) / 28) * 100);
+  const terrainScore = terrainPenalty(
+    geographyProfile?.surfaceType,
+    geographyProfile?.trailCondition,
+  ) * (100 / 30);
+  const fatigueIndex = clamp(
+    (0.5 * ascentScore)
+    + (0.35 * slopeScore)
+    + (0.15 * terrainScore),
+  );
+
+  const composite = clamp((0.6 * (Number(burdenScore) || 0)) + (0.4 * fatigueIndex));
+
+  if (composite >= 72) return 'Hard';
+  if (composite >= 38) return 'Moderate';
   return 'Easy';
 }
 
@@ -479,7 +496,7 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute, g
 
   return {
     ...route,
-    difficulty: difficultyLabel(routeDifficultyScore),
+    difficulty: difficultyLabel(routeDifficultyScore, geographyProfile),
     riskScore: Number(adjustedWeightedTotal.toFixed(1)),
     riskLevel,
     goNoGo,
@@ -523,18 +540,26 @@ export function buildDetourWaypointCandidates(start, end) {
   const perpLng = dLat / length;
 
   const lineDistanceKm = haversineKm([start.lat, start.lng], [end.lat, end.lng]);
-  const offsetKm = clamp(lineDistanceKm * 0.25, 5, 25);
-  const latDeg = offsetKm / 111.32;
-  const lngDeg = offsetKm / (111.32 * Math.cos(toRad(mid[0])) || 1);
-
-  return [
-    {
-      lat: mid[0] + (perpLat * latDeg),
-      lng: mid[1] + (perpLng * lngDeg)
-    },
-    {
-      lat: mid[0] - (perpLat * latDeg),
-      lng: mid[1] - (perpLng * lngDeg)
-    }
+  const offsetMagnitudesKm = [
+    clamp(lineDistanceKm * 0.15, 2, 12),
+    clamp(lineDistanceKm * 0.32, 6, 28),
   ];
+
+  const cosLatFallback = Math.cos(toRad(mid[0])) || 1;
+  const candidates = [];
+
+  offsetMagnitudesKm.forEach((offsetKm) => {
+    const latDeg = offsetKm / 111.32;
+    const lngDeg = offsetKm / (111.32 * cosLatFallback);
+    candidates.push({
+      lat: mid[0] + (perpLat * latDeg),
+      lng: mid[1] + (perpLng * lngDeg),
+    });
+    candidates.push({
+      lat: mid[0] - (perpLat * latDeg),
+      lng: mid[1] - (perpLng * lngDeg),
+    });
+  });
+
+  return candidates;
 }

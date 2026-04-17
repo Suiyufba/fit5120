@@ -1,15 +1,6 @@
 import { config } from '../../../config/index.js';
 import { fetchJson } from '../../../shared/http/fetchJson.js';
-
-function estimateHikingDurationMin(distanceKm) {
-  const normalizedDistance = Math.max(Number(distanceKm) || 0, 0);
-  if (normalizedDistance === 0) return 0;
-
-  const baseSpeed = Math.max(config.hikingBaseSpeedKmh || 4.5, 2.5);
-  const movingMinutes = (normalizedDistance / baseSpeed) * 60;
-  const plannedBreakMinutes = Math.floor(normalizedDistance / 10) * 12;
-  return Number((movingMinutes + plannedBreakMinutes).toFixed(1));
-}
+import { estimateHikingDurationMin } from '../domain/routeTiming.js';
 
 function toRouteShape(route, index) {
   const coordinates = route?.geometry?.coordinates || [];
@@ -19,15 +10,21 @@ function toRouteShape(route, index) {
 
   const distanceKm = Number(((route?.distance || 0) / 1000).toFixed(2));
   const rawDurationMin = Number(((route?.duration || 0) / 60).toFixed(1));
-  const hikingDurationMin = estimateHikingDurationMin(distanceKm);
+  // Provisional hiking estimate (no geography yet). The planner re-fits this
+  // after the elevation profile is fetched.
+  const provisionalDurationMin = estimateHikingDurationMin({
+    distanceKm,
+    fallbackSpeedKmh: config.hikingBaseSpeedKmh,
+    floorMin: rawDurationMin,
+  });
 
   return {
     id: `route-${index + 1}`,
     geometry,
     distanceKm,
-    durationMin: Number(Math.max(rawDurationMin, hikingDurationMin).toFixed(1)),
+    durationMin: Number(Math.max(rawDurationMin, provisionalDurationMin).toFixed(1)),
     rawDurationMin,
-    hikingDurationMin,
+    provisionalDurationMin,
     travelProfile: config.osrmRouteProfile,
   };
 }
