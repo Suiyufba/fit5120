@@ -569,6 +569,52 @@ function toggleSheet() {
   isSheetExpanded.value = !isSheetExpanded.value
 }
 
+function isMobileDevice() {
+  if (typeof navigator === 'undefined') return false
+  return /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent)
+}
+
+function openInGoogleMaps() {
+  shareError.value = ''
+  const points = inferStartEndFromPlan()
+  if (!points) {
+    shareError.value = 'No route data available to open in Google Maps.'
+    return
+  }
+
+  const { start, end } = points
+  const origin = `${start.lat},${start.lng}`
+  const destination = `${end.lat},${end.lng}`
+
+  const geometry = recommended.value?.geometry || []
+  const waypointParts = []
+  if (geometry.length > 2) {
+    const maxWaypoints = 5
+    const step = Math.floor((geometry.length - 2) / (maxWaypoints + 1))
+    for (let i = 1; i <= maxWaypoints && step > 0; i += 1) {
+      const point = geometry[i * step]
+      if (Array.isArray(point) && point.length === 2) {
+        waypointParts.push(`${point[0]},${point[1]}`)
+      }
+    }
+  }
+
+  let url
+  if (isMobileDevice()) {
+    url = `https://maps.google.com/maps?saddr=${origin}&daddr=${destination}&dirflg=w`
+    if (waypointParts.length) {
+      url += `&waypoints=${encodeURIComponent(waypointParts.join('|'))}`
+    }
+  } else {
+    url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=walking`
+    if (waypointParts.length) {
+      url += `&waypoints=${encodeURIComponent(waypointParts.join('|'))}`
+    }
+  }
+
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
 function activateTerrainView() {
   const routeCoordinates = routeGeometryToLngLat(recommended.value?.geometry || [])
   if (!routeCoordinates.length) return
@@ -843,6 +889,10 @@ onUnmounted(() => {
         <p v-if="shareError" class="detail-note detail-note--error">{{ shareError }}</p>
       </template>
 
+      <button class="gmaps-btn" :disabled="!recommended" @click="openInGoogleMaps">
+        <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+        Open in Google Maps
+      </button>
       <button class="share-btn" @click="shareRoute">Share Route</button>
       <button class="back-btn" @click="router.push('/route-planner')">Back to Planner</button>
       </div>
@@ -1070,13 +1120,39 @@ h1 {
 }
 
 .share-btn {
-  margin-top: auto;
   border: 0;
   border-radius: 0.65rem;
   background: #2e7d6b;
   color: #fff;
   padding: 0.66rem;
   font-weight: 700;
+}
+
+.gmaps-btn {
+  margin-top: auto;
+  border: 1px solid #c2d5cb;
+  border-radius: 0.65rem;
+  background: linear-gradient(135deg, #1a73e8 0%, #1967d2 100%);
+  color: #fff;
+  padding: 0.66rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  box-shadow: 0 6px 14px rgba(26, 115, 232, 0.22);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gmaps-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(26, 115, 232, 0.28);
+}
+
+.gmaps-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .detail-note {
