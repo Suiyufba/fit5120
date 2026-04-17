@@ -24,6 +24,11 @@ CREATE TABLE IF NOT EXISTS community_reports (
 const ALLOWED_TYPES = new Set(['fire', 'flood', 'storm', 'trail', 'other']);
 const ALLOWED_SEVERITY = new Set(['low', 'moderate', 'high', 'extreme']);
 
+// Community reports are short-lived trail intel. Anything older than 24 hours
+// is considered stale and must disappear from both the API and the database.
+export const COMMUNITY_REPORT_TTL_MS = 24 * 60 * 60 * 1000;
+const COMMUNITY_REPORT_TTL_SQL = "reported_at >= NOW() - INTERVAL '24 hours'";
+
 const memoryReports = [
   {
     id: randomUUID(),
@@ -195,9 +200,10 @@ export async function listCommunityReports(limit = 50) {
   const pool = getPgPool();
 
   if (!pool) {
+    const cutoff = Date.now() - COMMUNITY_REPORT_TTL_MS;
     return {
       reports: memoryReports
-        .slice()
+        .filter((item) => Date.parse(item.reportedAt) >= cutoff)
         .sort((a, b) => Date.parse(b.reportedAt) - Date.parse(a.reportedAt))
         .slice(0, size),
       storage: 'memory',
@@ -210,6 +216,7 @@ export async function listCommunityReports(limit = 50) {
            latitude, longitude, image_url, reporter_name, likes, views, reported_at
     FROM community_reports
     WHERE is_deleted = FALSE
+      AND ${COMMUNITY_REPORT_TTL_SQL}
     ORDER BY reported_at DESC
     LIMIT $1
     `,
@@ -220,6 +227,32 @@ export async function listCommunityReports(limit = 50) {
     reports: result.rows.map(mapRow),
     storage: 'database',
   };
+}
+
+/**
+ * Delete community reports older than the configured TTL (24 hours by
+ * default). Hard-deletes DB rows so storage doesn't grow unbounded, and
+ * trims the in-memory fallback list. Safe to call repeatedly.
+ */
+export async function purgeExpiredCommunityReports() {
+  const pool = getPgPool();
+
+  if (!pool) {
+    const cutoff = Date.now() - COMMUNITY_REPORT_TTL_MS;
+    const before = memoryReports.length;
+    for (let i = memoryReports.length - 1; i >= 0; i -= 1) {
+      const reportedAt = Date.parse(memoryReports[i].reportedAt);
+      if (!Number.isFinite(reportedAt) || reportedAt < cutoff) {
+        memoryReports.splice(i, 1);
+      }
+    }
+    return { removed: before - memoryReports.length, storage: 'memory' };
+  }
+
+  const result = await pool.query(
+    `DELETE FROM community_reports WHERE reported_at < NOW() - INTERVAL '24 hours'`
+  );
+  return { removed: result.rowCount || 0, storage: 'database' };
 }
 
 export async function createCommunityReport(payload) {

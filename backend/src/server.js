@@ -7,7 +7,10 @@ import { startScheduler } from './modules/hazards/services/hazardAggregator.js';
 import { initHazardSnapshotStore } from './infrastructure/db/hazardSnapshotRepository.js';
 import { initUserStore } from './modules/auth/repositories/userRepository.js';
 import { initKnowledgeArticleStore } from './modules/knowledge/repositories/articleRepository.js';
-import { initCommunityReportStore } from './modules/communityReports/repositories/communityReportRepository.js';
+import {
+  initCommunityReportStore,
+  purgeExpiredCommunityReports,
+} from './modules/communityReports/repositories/communityReportRepository.js';
 import { initManualHazardStore } from './modules/hazards/repositories/manualHazardRepository.js';
 import { initRouteGeographyStore } from './modules/routes/repositories/routeGeographyRepository.js';
 import { initRoutePlanHistoryStore } from './modules/routes/repositories/routePlanHistoryRepository.js';
@@ -127,8 +130,29 @@ async function boot() {
 
   app.listen(config.port, () => {
     startScheduler();
+    startCommunityReportPurger();
     console.log(`Hazard backend listening on :${config.port}`);
   });
+}
+
+// Run an immediate cleanup on startup and then keep reports fresh by purging
+// anything older than the 24-hour TTL every hour. Failures are logged but
+// don't crash the server — the next tick will retry.
+function startCommunityReportPurger() {
+  const ONE_HOUR_MS = 60 * 60 * 1000;
+  const runOnce = async () => {
+    try {
+      const { removed, storage } = await purgeExpiredCommunityReports();
+      if (removed > 0) {
+        console.log(`Purged ${removed} expired community report(s) from ${storage}.`);
+      }
+    } catch (error) {
+      console.error('Community report purge failed:', error?.message || error);
+    }
+  };
+
+  runOnce();
+  setInterval(runOnce, ONE_HOUR_MS).unref?.();
 }
 
 boot();
