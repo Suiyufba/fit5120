@@ -44,11 +44,6 @@ const layerMeta = {
 }
 const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
 const routeDifficultySlots = ['Easy', 'Moderate', 'Hard']
-const difficultyDisplayLabel = {
-  Easy: '简单',
-  Moderate: '中等',
-  Hard: '困难',
-}
 
 function escapeHtml(value = '') {
   return String(value)
@@ -105,15 +100,23 @@ function buildRouteChoices(planPayload) {
 
   const fromApi = Array.isArray(planPayload.routeOptions) ? planPayload.routeOptions.slice(0, 3) : []
   if (fromApi.length) {
-    return routeDifficultySlots.map((slot, index) => {
-      const match = fromApi.find((item) => item.targetDifficulty === slot) || fromApi[index] || null
-      if (!match) return null
-      return {
+    const selected = []
+    const usedIds = new Set()
+
+    routeDifficultySlots.forEach((slot) => {
+      const matchBySlot = fromApi.find((item) => item.targetDifficulty === slot && !usedIds.has(item.id))
+      const fallbackUnique = fromApi.find((item) => !usedIds.has(item.id))
+      const match = matchBySlot || fallbackUnique || null
+      if (!match) return
+      usedIds.add(match.id)
+      selected.push({
         ...match,
         slotDifficulty: slot,
-        slotLabel: difficultyDisplayLabel[slot] || slot,
-      }
-    }).filter(Boolean)
+        slotLabel: slot,
+      })
+    })
+
+    return selected
   }
 
   const pool = [planPayload.recommendedRoute, ...(planPayload.alternatives || [])].filter(Boolean)
@@ -123,13 +126,13 @@ function buildRouteChoices(planPayload) {
     const hit = pool.find((item) => item.difficulty === slot && !usedIds.has(item.id))
     if (!hit) return
     usedIds.add(hit.id)
-    selected.push({ ...hit, slotDifficulty: slot, slotLabel: difficultyDisplayLabel[slot] || slot })
+    selected.push({ ...hit, slotDifficulty: slot, slotLabel: slot })
   })
   pool.forEach((item) => {
     if (selected.length >= 3 || usedIds.has(item.id)) return
     const slot = routeDifficultySlots[selected.length] || item.difficulty || 'Moderate'
     usedIds.add(item.id)
-    selected.push({ ...item, slotDifficulty: slot, slotLabel: difficultyDisplayLabel[slot] || slot })
+    selected.push({ ...item, slotDifficulty: slot, slotLabel: slot })
   })
   return selected.slice(0, 3)
 }

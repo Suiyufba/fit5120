@@ -41,7 +41,7 @@ async function buildCandidateRoutes(start, end) {
   const baseRoutes = await fetchOsrmRoutes([start, end], { alternatives: true });
   const candidates = [...baseRoutes];
 
-  if (candidates.length < 2) {
+  if (candidates.length < 3) {
     const detours = buildDetourWaypointCandidates(start, end);
     const detourRoutes = await Promise.all(
       detours.map((waypoint) => fetchOsrmRoutes([start, waypoint, end], { alternatives: false }))
