@@ -256,7 +256,7 @@ onUnmounted(() => {
       <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
         <div class="md:col-span-8 bg-surface-container-low rounded-[2rem] p-4 flex flex-col gap-6 group border border-[#d7e5d8]">
           <div class="flex justify-between items-center px-4 pt-2">
-            <h2 class="font-headline font-bold text-2xl">Live Risk Map Preview</h2>
+            <h2 class="font-display text-[1.7rem] sm:text-[2rem] font-semibold tracking-[-0.012em]">Live Risk Map Preview</h2>
             <div class="flex items-center gap-3">
               <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                 {{ previewLoading ? 'Syncing…' : `Updated ${previewUpdatedAt ? previewUpdatedAt.toLocaleTimeString() : '--'}` }}
@@ -361,7 +361,7 @@ onUnmounted(() => {
     <!-- Community Alerts -->
     <section class="px-4 md:px-8 max-w-7xl mx-auto">
       <div class="flex items-baseline justify-between mb-8">
-        <h2 class="font-headline font-bold text-3xl">Recent Community Alerts</h2>
+        <h2 class="font-display text-[2rem] sm:text-[2.4rem] font-semibold tracking-[-0.012em]">Recent Community Alerts</h2>
         <button class="text-primary font-bold text-sm hover:underline" @click="router.push('/community-reports')">View all reports</button>
       </div>
       <div v-if="communityReportsLoading" class="rounded-2xl border border-[#dce7dd] bg-white px-6 py-5 text-sm text-slate-500">
@@ -417,7 +417,7 @@ onUnmounted(() => {
     <section class="bg-surface-container-low py-16 md:py-20 px-4 md:px-8">
       <div class="max-w-7xl mx-auto">
         <div class="mb-12 text-center md:text-left">
-          <h2 class="font-headline font-bold text-3xl mb-4">Knowledge Hub</h2>
+          <h2 class="font-display text-[2rem] sm:text-[2.4rem] font-semibold tracking-[-0.012em] mb-4">Knowledge Hub</h2>
           <p class="text-on-surface-variant max-w-xl">Live articles from your database, surfaced on the homepage instead of placeholder content.</p>
         </div>
         <div v-if="knowledgeLoading" class="rounded-[2rem] border border-[#dce7dd] bg-white px-6 py-5 text-sm text-slate-500">

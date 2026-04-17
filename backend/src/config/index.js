@@ -33,19 +33,6 @@ if (!isTestEnv && (!corsOrigins.length || corsOrigins.includes('*'))) {
   throw new Error('CORS_ORIGIN must explicitly list trusted origin(s), wildcard is not allowed');
 }
 
-const adminEmailRaw = isTestEnv
-  ? String(process.env.ADMIN_EMAILS || 'admin@example.com')
-  : requireEnv('ADMIN_EMAILS');
-const adminEmails = parseCsv(adminEmailRaw).map((value) => value.toLowerCase());
-if (!isTestEnv && !adminEmails.length) {
-  throw new Error('ADMIN_EMAILS must include at least one trusted admin email');
-}
-
-const localAdminEnabled = (process.env.LOCAL_ADMIN_ENABLED || 'true').toLowerCase() === 'true';
-const localAdminEmail = String(process.env.LOCAL_ADMIN_EMAIL || 'admin@123.com').trim().toLowerCase();
-const localAdminPassword = String(process.env.LOCAL_ADMIN_PASSWORD || 'abcde!123456');
-const localAdminUserId = String(process.env.LOCAL_ADMIN_USER_ID || 'local-admin').trim() || 'local-admin';
-
 export const config = {
   port: toInt(process.env.PORT, 8080),
   fetchIntervalMs: toInt(process.env.FETCH_INTERVAL_MS, 7200000),
@@ -75,9 +62,4 @@ export const config = {
   overpassApiUrl: process.env.OVERPASS_API_URL || 'https://overpass-api.de/api/interpreter',
   vicEmergencyFeedUrl: process.env.VIC_EMERGENCY_FEED_URL || '',
   vicEmergencyApiKey: process.env.VIC_EMERGENCY_API_KEY || '',
-  adminEmails,
-  localAdminEnabled,
-  localAdminEmail,
-  localAdminPassword,
-  localAdminUserId,
 };

@@ -93,6 +93,76 @@ body {
   font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   color: #132b23;
   font-feature-settings: "ss01", "cv11";
+  line-height: 1.55;
+}
+
+/*
+ * Editorial headline defaults — Fraunces serif for every page's <h1>/<h2>,
+ * with tighter tracking, shorter line-height, and a warmer ink color so any
+ * view that drops in a plain <h1> inherits the "field guide" direction.
+ * Page-scoped styles that explicitly set size/weight still win.
+ */
+h1, h2, h3 {
+  font-family: "Fraunces", "Georgia", serif;
+  color: #1a3d33;
+  letter-spacing: -0.012em;
+  line-height: 1.12;
+  font-variation-settings: "opsz" 48, "SOFT" 50;
+  text-wrap: balance;
+}
+
+h1 {
+  font-weight: 600;
+}
+
+h2 {
+  font-weight: 600;
+}
+
+h3 {
+  font-weight: 500;
+}
+
+/*
+ * Editorial kicker — uppercase eyebrow label with a short rule line, used in
+ * the hero and section headers to replace generic small-caps text.
+ */
+.u-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #3a5f52;
+}
+.u-kicker::before {
+  content: "";
+  display: inline-block;
+  width: 1.5rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+/*
+ * Hand-painted highlight behind a word — a reusable authored accent that
+ * replaces gradient-filled text (a common AI tell).
+ */
+.u-highlight {
+  color: #2f5648;
+  background-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 62%,
+    rgba(175, 208, 161, 0.55) 62%,
+    rgba(175, 208, 161, 0.55) 92%,
+    transparent 92%
+  );
+  background-repeat: no-repeat;
+  padding: 0 0.08em;
 }
 
 #app {

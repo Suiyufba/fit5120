@@ -56,7 +56,7 @@ async function handleSubmit() {
   <div>
     <main class="max-w-3xl mx-auto px-4 sm:px-6 py-10 md:py-20">
       <header class="mb-10 text-center md:text-left">
-        <h1 class="font-headline text-4xl sm:text-5xl font-extrabold tracking-tight text-primary mb-4">Submit Community Hazard Report</h1>
+        <h1 class="font-display text-5xl sm:text-6xl font-semibold tracking-[-0.015em] text-[#1a3d33] mb-4 text-balance">Submit a Community Hazard Report</h1>
         <p class="text-on-surface-variant text-base sm:text-lg max-w-xl">
           Your report is saved to the live community database and shown on the Community Reports page.
         </p>

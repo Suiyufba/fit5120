@@ -16,12 +16,6 @@ const RESET_MAX_ATTEMPTS = 3;
 const RESET_LOCK_WINDOW_MS = 60 * 60 * 1000;
 const passwordResetAttemptStore = new Map();
 
-function isAdminEmail(email) {
-  const normalized = normalizeEmail(email);
-  return config.adminEmails.includes(normalized)
-    || (config.localAdminEnabled && normalized === config.localAdminEmail);
-}
-
 function sanitizeUser(user) {
   if (!user) return null;
   return {
@@ -33,27 +27,7 @@ function sanitizeUser(user) {
     experienceLevel: user.experienceLevel,
     assessmentScore: user.assessmentScore,
     createdAt: user.createdAt,
-    isAdmin: isAdminEmail(user.email),
   };
-}
-
-function buildLocalAdminUser() {
-  return {
-    id: config.localAdminUserId,
-    email: config.localAdminEmail,
-    age: null,
-    region: 'Victoria',
-    securityQuestion: 'Local admin shortcut',
-    experienceLevel: 'advanced',
-    assessmentScore: 100,
-    createdAt: new Date().toISOString(),
-  };
-}
-
-function isLocalAdminCredential(email, password) {
-  return config.localAdminEnabled
-    && normalizeEmail(email) === config.localAdminEmail
-    && String(password || '') === config.localAdminPassword;
 }
 
 function signToken(userId) {
@@ -201,14 +175,6 @@ export async function loginUser({ email, password }) {
     throw new Error('Email and password are required');
   }
 
-  if (isLocalAdminCredential(normalizedEmail, password)) {
-    const token = signToken(config.localAdminUserId);
-    return {
-      token,
-      user: sanitizeUser(buildLocalAdminUser()),
-    };
-  }
-
   const user = await findUserByEmail(normalizedEmail);
   if (!user) {
     throw new Error('Invalid email or password');
@@ -273,10 +239,6 @@ export function verifyAuthToken(token) {
 }
 
 export async function getProfileByUserId(userId) {
-  if (config.localAdminEnabled && String(userId) === config.localAdminUserId) {
-    return sanitizeUser(buildLocalAdminUser());
-  }
-
   const user = await findUserById(userId);
   return sanitizeUser(user);
 }
@@ -288,19 +250,6 @@ export async function getProfileByUserId(userId) {
  */
 export async function getRouteContextByUserId(userId) {
   if (!userId) return null;
-  if (config.localAdminEnabled && String(userId) === config.localAdminUserId) {
-    const user = buildLocalAdminUser();
-    return {
-      id: user.id,
-      email: user.email,
-      age: user.age,
-      region: user.region,
-      experienceLevel: user.experienceLevel,
-      assessmentScore: user.assessmentScore,
-      assessmentAnswers: {},
-    };
-  }
-
   const user = await findUserById(userId);
   if (!user) return null;
   return {

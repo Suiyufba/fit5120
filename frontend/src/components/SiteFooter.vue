@@ -2,7 +2,7 @@
   <footer class="bg-slate-50 w-full py-10 px-4 md:px-8 border-t border-slate-200">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
       <div class="space-y-4">
-        <div class="font-headline font-bold text-slate-900 text-xl italic">
+        <div class="font-display text-slate-900 text-[1.45rem] font-bold tracking-[-0.015em]" style="font-variation-settings: 'opsz' 48, 'SOFT' 50;">
           HikeShield Victoria
         </div>
         <p class="text-slate-500 font-body text-sm max-w-xs leading-relaxed">
