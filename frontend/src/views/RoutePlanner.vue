@@ -3,8 +3,9 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { planSafeRoute } from '../services/routeApi'
+import { fetchRoutePlanHistory, planSafeRoute } from '../services/routeApi'
 import { setLatestRoutePlan } from '../services/routePlanStore'
+import { useAuthState } from '../services/authStore'
 import { fetchRealtimeHazards } from '../services/hazardApi'
 import {
   applyVictoriaMapConstraints,
@@ -16,8 +17,10 @@ import {
 } from '../utils/victoriaMap'
 
 const router = useRouter()
+const { state: authState } = useAuthState()
 const mapElement = ref(null)
 const loading = ref(false)
+const loadingHistory = ref(false)
 const error = ref('')
 const startPoint = ref(null)
 const endPoint = ref(null)
@@ -25,6 +28,7 @@ const planResult = ref(null)
 const hazards = ref([])
 const isSheetExpanded = ref(false)
 const selectedRouteId = ref('')
+const historyItems = ref([])
 
 let mapInstance
 let markerLayer
@@ -33,6 +37,7 @@ let hazardLayer
 let inflightController
 let hazardInflightController
 let hazardRefreshTimer
+let historyInflightController
 
 const layerMeta = {
   fire: { label: 'Bushfire', color: '#D84727' },
@@ -312,6 +317,43 @@ function resetSelection() {
   drawRoutes()
 }
 
+function applyHistoryPlan(item) {
+  if (!item?.planPayload) return
+  startPoint.value = item.start || null
+  endPoint.value = item.end || null
+  planResult.value = item.planPayload
+  const choices = buildRouteChoices(item.planPayload)
+  selectedRouteId.value = item.planPayload?.recommendedRoute?.id || choices[0]?.id || ''
+  setLatestRoutePlan({
+    ...item.planPayload,
+    recommendedRoute: choices.find((route) => route.id === selectedRouteId.value) || choices[0] || item.planPayload.recommendedRoute,
+    start: startPoint.value,
+    end: endPoint.value,
+  })
+  renderMarkers()
+  drawRoutes()
+}
+
+async function loadHistory() {
+  if (historyInflightController) historyInflightController.abort()
+  historyInflightController = new AbortController()
+  loadingHistory.value = true
+  try {
+    const payload = await fetchRoutePlanHistory({
+      token: authState.token || '',
+      limit: 15,
+      signal: historyInflightController.signal,
+    })
+    historyItems.value = payload.history
+  } catch (nextError) {
+    if (nextError?.name !== 'AbortError') {
+      console.warn('Failed to load route plan history:', nextError.message)
+    }
+  } finally {
+    loadingHistory.value = false
+  }
+}
+
 async function handlePlanRoute() {
   if (!canPlan.value) return
   if (inflightController) inflightController.abort()
@@ -324,6 +366,7 @@ async function handlePlanRoute() {
     const payload = await planSafeRoute({
       start: startPoint.value,
       end: endPoint.value,
+      token: authState.token || '',
       signal: inflightController.signal,
     })
 
@@ -340,6 +383,7 @@ async function handlePlanRoute() {
 
     isSheetExpanded.value = true
     drawRoutes()
+    await loadHistory()
   } catch (nextError) {
     if (nextError?.name === 'AbortError') return
     error.value = nextError.message || 'Failed to generate a safe route'
@@ -391,6 +435,7 @@ onMounted(() => {
   loadHazards()
   hazardRefreshTimer = window.setInterval(loadHazards, 60_000)
   mapInstance.on('moveend', loadHazards)
+  loadHistory()
 
   mapInstance.on('click', (event) => {
     if (!isLatLngInVictoria(event.latlng)) {
@@ -428,6 +473,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (inflightController) inflightController.abort()
+  if (historyInflightController) historyInflightController.abort()
   if (hazardInflightController) hazardInflightController.abort()
   if (hazardRefreshTimer) window.clearInterval(hazardRefreshTimer)
   if (mapInstance) {
@@ -471,6 +517,37 @@ onUnmounted(() => {
         </button>
         <button class="ghost-btn" @click="resetSelection">Reset Points</button>
       </div>
+
+      <section class="history-panel">
+        <div class="history-panel__head">
+          <p>Your Route History</p>
+          <button class="history-refresh-btn" :disabled="loadingHistory" @click="loadHistory">
+            {{ loadingHistory ? 'Loading...' : 'Refresh' }}
+          </button>
+        </div>
+        <p v-if="!historyItems.length && !loadingHistory" class="history-empty">
+          No route history yet. Plan a route to save your first record.
+        </p>
+        <div v-else class="history-list">
+          <button
+            v-for="item in historyItems"
+            :key="item.id"
+            type="button"
+            class="history-item"
+            @click="applyHistoryPlan(item)"
+          >
+            <strong>
+              {{ item.planPayload?.recommendedRoute?.distanceKm?.toFixed?.(1) || '0.0' }} km ·
+              {{ formatDuration(item.planPayload?.recommendedRoute?.durationMin || 0) }}
+            </strong>
+            <span>
+              {{ item.planPayload?.recommendedRoute?.riskLevel || 'Low' }}
+              ({{ Number(item.planPayload?.recommendedRoute?.riskScore || 0).toFixed(1) }})
+            </span>
+            <small>{{ new Date(item.createdAt).toLocaleString() }}</small>
+          </button>
+        </div>
+      </section>
 
       <div class="hazard-legend">
         <p>Live Risk Layer</p>
@@ -638,6 +715,81 @@ h1 {
   border-radius: 0.65rem;
   padding: 0.58rem;
   font-size: 0.84rem;
+}
+
+.history-panel {
+  border: 1px solid #d9e5dd;
+  border-radius: 0.68rem;
+  padding: 0.62rem;
+  background: #fbfffd;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.history-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.history-panel__head p {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #3d6658;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.history-refresh-btn {
+  border: 1px solid #bfd1c8;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #2f5448;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+}
+
+.history-refresh-btn:disabled {
+  opacity: 0.6;
+}
+
+.history-empty {
+  font-size: 0.78rem;
+  color: #45645b;
+}
+
+.history-list {
+  display: grid;
+  gap: 0.35rem;
+  max-height: 180px;
+  overflow: auto;
+  padding-right: 0.15rem;
+}
+
+.history-item {
+  border: 1px solid #dce6df;
+  border-radius: 0.58rem;
+  background: #ffffff;
+  color: #27493f;
+  text-align: left;
+  padding: 0.45rem 0.55rem;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.history-item strong {
+  font-size: 0.78rem;
+}
+
+.history-item span {
+  font-size: 0.74rem;
+  color: #49655d;
+}
+
+.history-item small {
+  font-size: 0.68rem;
+  color: #6a7f78;
 }
 
 .hazard-legend {

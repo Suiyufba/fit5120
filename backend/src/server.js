@@ -10,6 +10,7 @@ import { initKnowledgeArticleStore } from './modules/knowledge/repositories/arti
 import { initCommunityReportStore } from './modules/communityReports/repositories/communityReportRepository.js';
 import { initManualHazardStore } from './modules/hazards/repositories/manualHazardRepository.js';
 import { initRouteGeographyStore } from './modules/routes/repositories/routeGeographyRepository.js';
+import { initRoutePlanHistoryStore } from './modules/routes/repositories/routePlanHistoryRepository.js';
 
 const app = express();
 
@@ -51,7 +52,7 @@ app.use(cors({
     callback(new Error('CORS origin denied'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Plan-Session-Id'],
 }));
 
 app.use((req, res, next) => {
@@ -87,6 +88,7 @@ async function boot() {
     const communityReportStoreReady = await initCommunityReportStore();
     const manualHazardStoreReady = await initManualHazardStore();
     const routeGeographyStoreReady = await initRouteGeographyStore();
+    const routePlanHistoryStoreReady = await initRoutePlanHistoryStore();
 
     if (dbReady) {
       console.log('Postgres snapshot store ready');
@@ -113,6 +115,11 @@ async function boot() {
       console.log('Route geography store ready');
     } else {
       console.warn('DATABASE_URL is not set, route geography cache disabled');
+    }
+    if (routePlanHistoryStoreReady) {
+      console.log('Route plan history store ready');
+    } else {
+      console.warn('DATABASE_URL is not set, route plan history disabled');
     }
   } catch (error) {
     console.error('Failed to initialize database stores:', error.message);

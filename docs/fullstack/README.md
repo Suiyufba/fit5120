@@ -13,4 +13,5 @@ End-to-end features that involve both frontend and backend changes.
 - [plan-route-three-difficulty-options-2026-04-17.md](./plan-route-three-difficulty-options-2026-04-17.md)
 - [plan-route-candidate-fill-to-three-2026-04-17.md](./plan-route-candidate-fill-to-three-2026-04-17.md)
 - [route-recommendation-plain-english-2026-04-17.md](./route-recommendation-plain-english-2026-04-17.md)
+- [route-plan-history-storage-2026-04-17.md](./route-plan-history-storage-2026-04-17.md)
 - [profile-editing-feature.md](./profile-editing-feature.md)
