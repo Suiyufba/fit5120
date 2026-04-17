@@ -139,10 +139,13 @@ export async function deleteRoutePlanHistoryItem({ id, token, signal } = {}) {
     signal,
   })
   const payload = await response.json().catch(() => ({}))
+  if (response.status === 404) {
+    return { ok: true, deleted: false }
+  }
   if (!response.ok) {
     throw new Error(payload?.error || `Failed to delete route history item (${response.status})`)
   }
-  return { ok: true }
+  return { ok: true, deleted: payload?.deleted !== false }
 }
 
 export async function clearRoutePlanHistory({ token, signal } = {}) {

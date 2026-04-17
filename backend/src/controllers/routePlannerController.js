@@ -84,11 +84,7 @@ export async function deleteRoutePlanHistoryItem(req, res) {
       userId: req.auth?.userId,
       sessionId,
     });
-    if (!deleted) {
-      res.status(404).json({ error: 'History item not found' });
-      return;
-    }
-    res.json({ ok: true });
+    res.json({ ok: true, deleted });
   } catch (error) {
     res.status(500).json({
       error: error.message || 'Failed to delete route history item',
