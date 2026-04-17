@@ -4,6 +4,7 @@ import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { fetchRealtimeHazards } from '../services/hazardApi'
 import { fetchCommunityReports, submitCommunityReport } from '../services/communityReportApi'
+import { reverseLocation, searchLocations } from '../services/locationApi'
 import {
   applyVictoriaMapConstraints,
   getMapBboxWithinVictoria,
@@ -28,6 +29,13 @@ const selectedPoint = ref(null)
 const isSheetExpanded = ref(false)
 const activeMobileTab = ref('submit')
 const isMobileViewport = ref(false)
+
+const addressQuery = ref('')
+const addressSuggestions = ref([])
+const locatingMe = ref(false)
+const searchingAddress = ref(false)
+let addressSearchController = null
+let reverseLookupController = null
 
 const form = reactive({
   title: '',
@@ -318,6 +326,132 @@ async function loadReports() {
   }
 }
 
+function applyPickedLocation({ lat, lng, displayName, flyZoom } = {}) {
+  const latNum = Number(lat)
+  const lngNum = Number(lng)
+  if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) return false
+
+  if (!isLatLngInVictoria({ lat: latNum, lng: lngNum })) {
+    submitError.value = 'Report locations must be within Victoria.'
+    return false
+  }
+
+  selectedPoint.value = {
+    lat: Number(latNum.toFixed(6)),
+    lng: Number(lngNum.toFixed(6)),
+  }
+  submitError.value = ''
+
+  const trimmedName = String(displayName || '').trim()
+  if (trimmedName && !form.locationName.trim()) {
+    form.locationName = trimmedName
+  }
+
+  if (mapInstance) {
+    const zoom = Math.max(mapInstance.getZoom(), flyZoom ?? 13)
+    mapInstance.flyTo([latNum, lngNum], zoom, { duration: 0.45 })
+  }
+
+  if (isMobileViewport.value) {
+    isSheetExpanded.value = true
+    activeMobileTab.value = 'submit'
+  }
+
+  return true
+}
+
+async function reverseFillLocationName({ lat, lng }) {
+  if (reverseLookupController) reverseLookupController.abort()
+  reverseLookupController = new AbortController()
+  try {
+    const result = await reverseLocation(lat, lng, {
+      signal: reverseLookupController.signal,
+    })
+    if (result?.displayName && !form.locationName.trim()) {
+      form.locationName = result.displayName
+    }
+  } catch (_error) {
+    /* silent — reverse lookup is best-effort */
+  }
+}
+
+async function useMyLocation() {
+  submitError.value = ''
+  if (typeof navigator === 'undefined' || !navigator.geolocation) {
+    submitError.value = 'Geolocation is not available in this browser.'
+    return
+  }
+
+  locatingMe.value = true
+  try {
+    const position = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      })
+    })
+    const { latitude, longitude } = position.coords
+    const applied = applyPickedLocation({ lat: latitude, lng: longitude, flyZoom: 14 })
+    if (applied) {
+      await reverseFillLocationName({ lat: latitude, lng: longitude })
+    }
+  } catch (error) {
+    submitError.value = error?.code === 1
+      ? 'Location permission denied. Enable location access or use address search.'
+      : 'Could not determine your location. Try address search or map click instead.'
+  } finally {
+    locatingMe.value = false
+  }
+}
+
+async function searchAddress(value) {
+  const text = String(value ?? addressQuery.value ?? '').trim()
+  addressQuery.value = value ?? addressQuery.value
+
+  if (addressSearchController) addressSearchController.abort()
+
+  if (text.length < 2) {
+    addressSuggestions.value = []
+    searchingAddress.value = false
+    return
+  }
+
+  addressSearchController = new AbortController()
+  searchingAddress.value = true
+  try {
+    const results = await searchLocations(text, {
+      signal: addressSearchController.signal,
+      limit: 6,
+    })
+    addressSuggestions.value = results
+  } catch (error) {
+    if (error?.name === 'AbortError') return
+    addressSuggestions.value = []
+  } finally {
+    searchingAddress.value = false
+  }
+}
+
+function applyAddressSuggestion(item) {
+  const applied = applyPickedLocation({
+    lat: item.lat,
+    lng: item.lng,
+    displayName: item.displayName,
+    flyZoom: 13,
+  })
+  if (applied) {
+    addressQuery.value = item.displayName
+    addressSuggestions.value = []
+  }
+}
+
+function clearAddressSearch() {
+  addressQuery.value = ''
+  addressSuggestions.value = []
+  if (addressSearchController) addressSearchController.abort()
+}
+
 function validateForm() {
   if (!selectedPoint.value) return 'Please pick a location on the map first'
   if (!form.title.trim()) return 'Title is required'
@@ -392,20 +526,13 @@ onMounted(async () => {
   reportLayer = L.layerGroup().addTo(mapInstance)
   selectedPointLayer = L.layerGroup().addTo(mapInstance)
 
-  mapInstance.on('click', (event) => {
-    if (!isLatLngInVictoria(event.latlng)) {
-      submitError.value = 'Report locations must be selected within Victoria.'
-      return
-    }
-
-    selectedPoint.value = {
-      lat: Number(event.latlng.lat.toFixed(6)),
-      lng: Number(event.latlng.lng.toFixed(6)),
-    }
-    submitError.value = ''
-    if (isMobileViewport.value) {
-      isSheetExpanded.value = true
-      activeMobileTab.value = 'submit'
+  mapInstance.on('click', async (event) => {
+    const applied = applyPickedLocation({
+      lat: event.latlng.lat,
+      lng: event.latlng.lng,
+    })
+    if (applied) {
+      await reverseFillLocationName({ lat: event.latlng.lat, lng: event.latlng.lng })
     }
   })
 
@@ -427,6 +554,8 @@ onUnmounted(() => {
   if (refreshTimer) window.clearInterval(refreshTimer)
   if (inflightReportController) inflightReportController.abort()
   if (inflightHazardController) inflightHazardController.abort()
+  if (addressSearchController) addressSearchController.abort()
+  if (reverseLookupController) reverseLookupController.abort()
   if (mapInstance) {
     mapInstance.remove()
     mapInstance = null
@@ -484,6 +613,61 @@ onUnmounted(() => {
       </div>
 
       <section class="community-form" v-show="!isMobileViewport || activeMobileTab === 'submit'">
+        <div class="location-picker">
+          <p class="location-picker__title">Pick Report Location</p>
+          <p class="location-picker__hint">
+            Use your current GPS, search an address, or click the map.
+          </p>
+
+          <div class="location-picker__row">
+            <button
+              type="button"
+              class="locate-btn"
+              :disabled="locatingMe"
+              @click="useMyLocation"
+            >
+              <span class="material-symbols-outlined text-[18px]">my_location</span>
+              {{ locatingMe ? 'Locating...' : 'Use My Location' }}
+            </button>
+
+            <div class="address-field">
+              <input
+                class="field-input"
+                type="text"
+                placeholder="Search address, suburb or track"
+                :value="addressQuery"
+                @input="searchAddress($event.target.value)"
+              />
+              <button
+                v-if="addressQuery"
+                type="button"
+                class="address-field__clear"
+                aria-label="Clear search"
+                @click="clearAddressSearch"
+              >
+                <span class="material-symbols-outlined text-[16px]">close</span>
+              </button>
+              <div
+                v-if="addressSuggestions.length || searchingAddress"
+                class="address-suggestions"
+              >
+                <p v-if="searchingAddress && !addressSuggestions.length" class="address-suggestions__empty">
+                  Searching...
+                </p>
+                <button
+                  v-for="item in addressSuggestions"
+                  :key="`addr-${item.lat}-${item.lng}`"
+                  type="button"
+                  class="address-suggestion"
+                  @click="applyAddressSuggestion(item)"
+                >
+                  {{ item.displayName }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="point-card">
           <p>Selected Map Point</p>
           <strong>{{ selectedPointLabel }}</strong>
@@ -625,6 +809,138 @@ h1 {
   border: 1px solid rgba(15, 40, 45, 0.08);
   border-radius: 14px;
   padding: 0.85rem;
+}
+
+.location-picker {
+  background: linear-gradient(180deg, #f4fbf6 0%, #eef6f1 100%);
+  border: 1px solid rgba(31, 111, 87, 0.18);
+  border-radius: 12px;
+  padding: 0.8rem 0.85rem 0.9rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.location-picker__title {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #1f6e57;
+}
+
+.location-picker__hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #4c6b63;
+  line-height: 1.4;
+}
+
+.location-picker__row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.55rem;
+  align-items: start;
+}
+
+.locate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(31, 111, 87, 0.35);
+  background: #fff;
+  color: #1f6e57;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.locate-btn:hover:not(:disabled) {
+  background: #e9f5ee;
+  border-color: #1f6e57;
+}
+
+.locate-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.address-field {
+  position: relative;
+  min-width: 0;
+}
+
+.address-field .field-input {
+  padding-right: 2.1rem;
+}
+
+.address-field__clear {
+  position: absolute;
+  right: 0.45rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #6c7e7a;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
+  border-radius: 6px;
+}
+
+.address-field__clear:hover {
+  color: #1f6e57;
+  background: rgba(31, 111, 87, 0.08);
+}
+
+.address-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+  background: #fff;
+  border: 1px solid rgba(15, 40, 45, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(15, 40, 45, 0.12);
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.address-suggestions__empty {
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.8rem;
+  color: #6c7e7a;
+}
+
+.address-suggestion {
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border: none;
+  background: none;
+  color: #1a3530;
+  font-size: 0.82rem;
+  line-height: 1.3;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.address-suggestion:hover {
+  background: #eef6f1;
+  color: #1f6e57;
 }
 
 .point-card {
@@ -806,6 +1122,15 @@ h1 {
 }
 
 @media (max-width: 1000px) {
+  .location-picker__row {
+    grid-template-columns: 1fr;
+  }
+
+  .locate-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
   .community-layout {
     grid-template-columns: 1fr;
     min-height: var(--mobile-safe-height);
