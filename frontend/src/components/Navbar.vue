@@ -7,23 +7,14 @@ const route = useRoute()
 const router = useRouter()
 const isMenuOpen = ref(false)
 const { isAuthenticated, state } = useAuthState()
-const isAdminUser = computed(() =>
-  Boolean(state.user?.isAdmin || String(state.user?.email || '').toLowerCase() === 'admin')
-)
 
-const navItems = computed(() => {
-  const items = [
-    { name: 'Home', path: '/' },
-    { name: 'Risk Map', path: '/risk-map' },
-    { name: 'Plan Route', path: '/route-planner' },
-    { name: 'Community Reports', path: '/community-reports' },
-    { name: 'Knowledge Hub', path: '/knowledge-hub' },
-  ]
-  if (isAuthenticated.value && isAdminUser.value) {
-    items.push({ name: 'Dashboard', path: '/admin-dashboard' })
-  }
-  return items
-})
+const navItems = computed(() => [
+  { name: 'Home', path: '/' },
+  { name: 'Risk Map', path: '/risk-map' },
+  { name: 'Plan Route', path: '/route-planner' },
+  { name: 'Community Reports', path: '/community-reports' },
+  { name: 'Knowledge Hub', path: '/knowledge-hub' },
+])
 
 const isActive = (path) => {
   if (path === '/') return route.path === '/'
@@ -32,9 +23,6 @@ const isActive = (path) => {
 
 const accountLabel = computed(() => {
   if (!isAuthenticated.value) return 'Sign In'
-  if (isAdminUser.value) {
-    return 'Dashboard · Admin'
-  }
   const level = state.user?.experienceLevel || 'newcomer'
   if (level === 'advanced') return 'Profile · Advanced'
   if (level === 'intermediate') return 'Profile · Intermediate'
@@ -43,14 +31,8 @@ const accountLabel = computed(() => {
 
 function goAccount() {
   if (isAuthenticated.value) {
-    if (isAdminUser.value) {
-      router.push('/admin-dashboard')
-      return
-    }
     router.push('/profile')
-    return
   }
-  return
 }
 
 </script>

@@ -14,15 +14,10 @@ async function handleSubmit() {
   loading.value = true
   errorMessage.value = ''
   try {
-    const user = await signIn({
+    await signIn({
       email: email.value,
       password: password.value,
     })
-
-    if (user?.isAdmin) {
-      router.push('/admin-dashboard')
-      return
-    }
 
     const redirectPath = route.query.redirect
       ? decodeURIComponent(String(route.query.redirect))
