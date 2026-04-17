@@ -65,6 +65,51 @@ async function buildCandidateRoutes(start, end) {
   }));
 }
 
+function toRoutePayload(route) {
+  return {
+    id: route.id,
+    geometry: route.geometry,
+    distanceKm: route.distanceKm,
+    durationMin: route.durationMin,
+    difficulty: route.difficulty,
+    riskScore: route.riskScore,
+    riskLevel: route.riskLevel,
+    goNoGo: route.goNoGo,
+    explanation: route.explanation,
+    keyRisks: route.keyRisks,
+    zoneSummary: route.zoneSummary,
+    suggestedPrep: route.suggestedPrep,
+    geographyProfile: route.geographyProfile,
+  };
+}
+
+function pickDifficultyRouteOptions(scoredRoutes) {
+  const desired = ['Easy', 'Moderate', 'Hard'];
+  const selected = [];
+  const usedIds = new Set();
+
+  desired.forEach((difficulty) => {
+    const hit = scoredRoutes.find((route) => route.difficulty === difficulty && !usedIds.has(route.id));
+    if (!hit) return;
+    usedIds.add(hit.id);
+    selected.push({ slot: difficulty, route: hit });
+  });
+
+  if (selected.length < 3) {
+    scoredRoutes.forEach((route) => {
+      if (selected.length >= 3 || usedIds.has(route.id)) return;
+      usedIds.add(route.id);
+      const nextSlot = desired[selected.length] || route.difficulty || 'Moderate';
+      selected.push({ slot: nextSlot, route });
+    });
+  }
+
+  return selected.slice(0, 3).map(({ slot, route }) => ({
+    targetDifficulty: slot,
+    ...toRoutePayload(route),
+  }));
+}
+
 export async function planSaferRoute({ userId, start, end }) {
   const normalizedStart = assertCoordinate(start, 'start');
   const normalizedEnd = assertCoordinate(end, 'end');
@@ -94,33 +139,14 @@ export async function planSaferRoute({ userId, start, end }) {
   scored.sort((a, b) => a.riskScore - b.riskScore);
 
   const recommendedRoute = scored[0];
-  const alternatives = scored.slice(1).map((route) => ({
-    id: route.id,
-    geometry: route.geometry,
-    distanceKm: route.distanceKm,
-    durationMin: route.durationMin,
-    riskScore: route.riskScore,
-    riskLevel: route.riskLevel
-  }));
+  const alternatives = scored.slice(1).map((route) => toRoutePayload(route));
+  const routeOptions = pickDifficultyRouteOptions(scored);
 
   return {
     userLevel,
-    recommendedRoute: {
-      id: recommendedRoute.id,
-      geometry: recommendedRoute.geometry,
-      distanceKm: recommendedRoute.distanceKm,
-      durationMin: recommendedRoute.durationMin,
-      difficulty: recommendedRoute.difficulty,
-      riskScore: recommendedRoute.riskScore,
-      riskLevel: recommendedRoute.riskLevel,
-      goNoGo: recommendedRoute.goNoGo,
-      explanation: recommendedRoute.explanation,
-      keyRisks: recommendedRoute.keyRisks,
-      zoneSummary: recommendedRoute.zoneSummary,
-      suggestedPrep: recommendedRoute.suggestedPrep,
-      geographyProfile: recommendedRoute.geographyProfile,
-    },
+    recommendedRoute: toRoutePayload(recommendedRoute),
     alternatives,
+    routeOptions,
     scoringBreakdown: recommendedRoute.scoringBreakdown
   };
 }

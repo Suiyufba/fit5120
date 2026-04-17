@@ -31,13 +31,13 @@ function normalizeRoute(route) {
 }
 
 function normalizeAlternative(alt) {
+  return normalizeRoute(alt)
+}
+
+function normalizeRouteOption(option) {
   return {
-    id: alt?.id || '',
-    geometry: Array.isArray(alt?.geometry) ? alt.geometry : [],
-    distanceKm: Number(alt?.distanceKm || 0),
-    durationMin: Number(alt?.durationMin || 0),
-    riskScore: Number(alt?.riskScore || 0),
-    riskLevel: alt?.riskLevel || 'Low',
+    targetDifficulty: option?.targetDifficulty || '',
+    ...normalizeRoute(option),
   }
 }
 
@@ -62,6 +62,7 @@ export async function planSafeRoute({ start, end, token, signal }) {
     userLevel: payload?.userLevel || 'newcomer',
     recommendedRoute: normalizeRoute(payload?.recommendedRoute),
     alternatives: Array.isArray(payload?.alternatives) ? payload.alternatives.map(normalizeAlternative) : [],
+    routeOptions: Array.isArray(payload?.routeOptions) ? payload.routeOptions.map(normalizeRouteOption) : [],
     scoringBreakdown: payload?.scoringBreakdown || {},
   }
 }

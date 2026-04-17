@@ -24,6 +24,7 @@ const endPoint = ref(null)
 const planResult = ref(null)
 const hazards = ref([])
 const isSheetExpanded = ref(false)
+const selectedRouteId = ref('')
 
 let mapInstance
 let markerLayer
@@ -42,6 +43,12 @@ const layerMeta = {
   other: { label: 'Other', color: '#2E7D6B' },
 }
 const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
+const routeDifficultySlots = ['Easy', 'Moderate', 'Hard']
+const difficultyDisplayLabel = {
+  Easy: '简单',
+  Moderate: '中等',
+  Hard: '困难',
+}
 
 function escapeHtml(value = '') {
   return String(value)
@@ -93,9 +100,51 @@ function formatGoNoGoLabel(value) {
   return value === 'No-Go' ? 'Dangerous' : value
 }
 
+function buildRouteChoices(planPayload) {
+  if (!planPayload) return []
+
+  const fromApi = Array.isArray(planPayload.routeOptions) ? planPayload.routeOptions.slice(0, 3) : []
+  if (fromApi.length) {
+    return routeDifficultySlots.map((slot, index) => {
+      const match = fromApi.find((item) => item.targetDifficulty === slot) || fromApi[index] || null
+      if (!match) return null
+      return {
+        ...match,
+        slotDifficulty: slot,
+        slotLabel: difficultyDisplayLabel[slot] || slot,
+      }
+    }).filter(Boolean)
+  }
+
+  const pool = [planPayload.recommendedRoute, ...(planPayload.alternatives || [])].filter(Boolean)
+  const selected = []
+  const usedIds = new Set()
+  routeDifficultySlots.forEach((slot) => {
+    const hit = pool.find((item) => item.difficulty === slot && !usedIds.has(item.id))
+    if (!hit) return
+    usedIds.add(hit.id)
+    selected.push({ ...hit, slotDifficulty: slot, slotLabel: difficultyDisplayLabel[slot] || slot })
+  })
+  pool.forEach((item) => {
+    if (selected.length >= 3 || usedIds.has(item.id)) return
+    const slot = routeDifficultySlots[selected.length] || item.difficulty || 'Moderate'
+    usedIds.add(item.id)
+    selected.push({ ...item, slotDifficulty: slot, slotLabel: difficultyDisplayLabel[slot] || slot })
+  })
+  return selected.slice(0, 3)
+}
+
+const routeChoices = computed(() => buildRouteChoices(planResult.value))
+
+const selectedRoute = computed(() => {
+  if (!routeChoices.value.length) return null
+  const current = routeChoices.value.find((item) => item.id === selectedRouteId.value)
+  return current || routeChoices.value[0]
+})
+
 const summary = computed(() => {
-  if (!planResult.value?.recommendedRoute) return null
-  const route = planResult.value.recommendedRoute
+  const route = selectedRoute.value
+  if (!route) return null
   return {
     distance: `${route.distanceKm.toFixed(1)} km`,
     duration: formatDuration(route.durationMin),
@@ -105,7 +154,8 @@ const summary = computed(() => {
     goNoGoLabel: formatGoNoGoLabel(route.goNoGo),
     isDangerous: isDangerousGoNoGo(route.goNoGo),
     explanation: route.explanation,
-    zoneSummary: route.zoneSummary || { level1Count: 0, level2Count: 0, level3Count: 0 }
+    zoneSummary: route.zoneSummary || { level1Count: 0, level2Count: 0, level3Count: 0 },
+    slotLabel: route.slotLabel,
   }
 })
 
@@ -228,29 +278,22 @@ function drawRoutes() {
   if (!routeLayer) return
   routeLayer.clearLayers()
 
-  const recommended = planResult.value?.recommendedRoute
-  const alternatives = planResult.value?.alternatives || []
-
-  if (recommended?.geometry?.length) {
-    L.polyline(recommended.geometry, {
-      color: '#1F6E57',
-      weight: 6,
-      opacity: 0.9,
-    }).addTo(routeLayer)
-  }
-
-  alternatives.forEach((alt) => {
-    if (!Array.isArray(alt.geometry) || alt.geometry.length < 2) return
-    L.polyline(alt.geometry, {
-      color: '#5f6b66',
-      weight: 4,
-      opacity: 0.45,
-      dashArray: '8 8',
+  const choices = routeChoices.value
+  const currentSelected = selectedRoute.value
+  choices.forEach((route) => {
+    if (!Array.isArray(route.geometry) || route.geometry.length < 2) return
+    const isSelected = currentSelected?.id === route.id
+    const routeColor = route.slotDifficulty === 'Hard' ? '#A6382A' : route.slotDifficulty === 'Moderate' ? '#5A4B81' : '#1F6E57'
+    L.polyline(route.geometry, {
+      color: routeColor,
+      weight: isSelected ? 6 : 4,
+      opacity: isSelected ? 0.9 : 0.55,
+      dashArray: isSelected ? '' : '8 8',
     }).addTo(routeLayer)
   })
 
-  if (recommended?.geometry?.length) {
-    const bounds = clampBoundsToVictoria(L.latLngBounds(recommended.geometry))
+  if (currentSelected?.geometry?.length) {
+    const bounds = clampBoundsToVictoria(L.latLngBounds(currentSelected.geometry))
     mapInstance.fitBounds(bounds.pad(0.2))
   }
 }
@@ -260,6 +303,7 @@ function resetSelection() {
   endPoint.value = null
   error.value = ''
   planResult.value = null
+  selectedRouteId.value = ''
   setLatestRoutePlan(null)
   renderMarkers()
   drawRoutes()
@@ -281,9 +325,12 @@ async function handlePlanRoute() {
     })
 
     planResult.value = payload
+    const choices = buildRouteChoices(payload)
+    selectedRouteId.value = choices[0]?.id || ''
 
     setLatestRoutePlan({
       ...payload,
+      recommendedRoute: choices[0] || payload.recommendedRoute,
       start: startPoint.value,
       end: endPoint.value,
     })
@@ -299,8 +346,21 @@ async function handlePlanRoute() {
 }
 
 function goToDetails() {
-  if (!planResult.value?.recommendedRoute) return
+  const selected = selectedRoute.value
+  if (!selected || !planResult.value) return
+  setLatestRoutePlan({
+    ...planResult.value,
+    recommendedRoute: selected,
+    start: startPoint.value,
+    end: endPoint.value,
+  })
   router.push('/route-detail')
+}
+
+function selectRoute(routeId) {
+  if (!routeId || routeId === selectedRouteId.value) return
+  selectedRouteId.value = routeId
+  drawRoutes()
 }
 
 function toggleSheet() {
@@ -421,11 +481,27 @@ onUnmounted(() => {
       <p v-if="error" class="planner-error">{{ error }}</p>
 
       <section v-if="summary" class="planner-summary">
-        <p class="summary-kicker">Recommended Safer Route</p>
+        <p class="summary-kicker">Choose One Route</p>
+        <div class="route-options">
+          <button
+            v-for="option in routeChoices"
+            :key="option.id"
+            type="button"
+            class="route-option-card"
+            :class="{ 'route-option-card--active': selectedRoute?.id === option.id }"
+            @click="selectRoute(option.id)"
+          >
+            <p class="route-option-card__title">{{ option.slotLabel }}</p>
+            <p class="route-option-card__meta">
+              {{ option.distanceKm.toFixed(1) }} km · {{ formatDuration(option.durationMin) }}
+            </p>
+            <p class="route-option-card__risk">{{ option.riskLevel }} ({{ option.riskScore.toFixed(1) }})</p>
+          </button>
+        </div>
         <div class="summary-grid">
           <article><span>Distance</span><strong>{{ summary.distance }}</strong></article>
           <article><span>Duration</span><strong>{{ summary.duration }}</strong></article>
-          <article><span>Difficulty</span><strong>{{ summary.difficulty }}</strong></article>
+          <article><span>Difficulty</span><strong>{{ summary.slotLabel }}</strong></article>
           <article><span>Risk</span><strong>{{ summary.risk }}</strong></article>
         </div>
 
@@ -624,6 +700,46 @@ h1 {
   font-weight: 800;
 }
 
+.route-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.route-option-card {
+  border: 1px solid #d8e6de;
+  border-radius: 0.62rem;
+  background: #f9fdfb;
+  color: #2f4f45;
+  text-align: left;
+  padding: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.route-option-card--active {
+  border-color: #2e7d6b;
+  background: #e9f8f2;
+  box-shadow: 0 0 0 2px rgba(46, 125, 107, 0.16);
+}
+
+.route-option-card__title {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.route-option-card__meta {
+  margin-top: 0.1rem;
+  font-size: 0.7rem;
+  color: #456359;
+}
+
+.route-option-card__risk {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #33564b;
+}
+
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -748,6 +864,10 @@ h1 {
 
   .planner-map-wrap {
     min-height: var(--mobile-safe-height);
+  }
+
+  .route-options {
+    grid-template-columns: 1fr;
   }
 }
 </style>

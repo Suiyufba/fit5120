@@ -10,4 +10,5 @@ End-to-end features that involve both frontend and backend changes.
 - [location-detail-panel-integration-2026-04-14.md](./location-detail-panel-integration-2026-04-14.md)
 - [risk-category-visibility-update-2026-04-14.md](./risk-category-visibility-update-2026-04-14.md)
 - [public-route-planner-community-access-2026-04-16.md](./public-route-planner-community-access-2026-04-16.md)
+- [plan-route-three-difficulty-options-2026-04-17.md](./plan-route-three-difficulty-options-2026-04-17.md)
 - [profile-editing-feature.md](./profile-editing-feature.md)
