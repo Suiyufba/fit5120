@@ -3,7 +3,7 @@ import { getRouteContextByUserId } from '../../auth/services/authService.js';
 import { fetchOsrmRoutes } from '../adapters/osrmAdapter.js';
 import { listCommunityReports } from '../../communityReports/repositories/communityReportRepository.js';
 import { listManualHazards } from '../../hazards/repositories/manualHazardRepository.js';
-import { buildDetourWaypointCandidates, scoreRouteCandidate } from '../domain/routeRisk.js';
+import { buildDetourWaypointCandidates, buildSuggestedPrep, scoreRouteCandidate } from '../domain/routeRisk.js';
 import { estimateHikingDurationMin } from '../domain/routeTiming.js';
 import { getRouteGeographyProfileForRoute } from './routeGeographyService.js';
 import { config } from '../../../config/index.js';
@@ -126,7 +126,7 @@ function toRoutePayload(route) {
   };
 }
 
-function pickDifficultyRouteOptions(scoredRoutes) {
+function pickDifficultyRouteOptions(scoredRoutes, { userLevel, userProfile, now } = {}) {
   const desired = ['Easy', 'Moderate', 'Hard'];
   const selected = [];
   const usedIds = new Set();
@@ -147,10 +147,26 @@ function pickDifficultyRouteOptions(scoredRoutes) {
     });
   }
 
-  return selected.slice(0, 3).map(({ slot, route }) => ({
-    targetDifficulty: slot,
-    ...toRoutePayload(route),
-  }));
+  return selected.slice(0, 3).map(({ slot, route }) => {
+    // Re-derive suggestedPrep so the Easy / Moderate / Hard slots each surface
+    // tier-appropriate advice — otherwise a Hard-slot route with an inherent
+    // "Moderate" label would inherit Moderate-tier tips.
+    const tieredPrep = buildSuggestedPrep({
+      route,
+      userLevel,
+      userProfile,
+      keyRisks: route.keyRisks,
+      riskScore: route.riskScore,
+      goNoGo: route.goNoGo,
+      geographyProfile: route.geographyProfile,
+      difficultyTier: slot,
+      now,
+    });
+    return {
+      targetDifficulty: slot,
+      ...toRoutePayload({ ...route, suggestedPrep: tieredPrep }),
+    };
+  });
 }
 
 function burdenRatio(route, fastestRoute) {
@@ -229,7 +245,7 @@ export async function planSaferRoute({ userId, start, end, now = new Date() }) {
   // Difficulty-slot picker uses pure risk order so the 3 options reflect the
   // safest-first ranking, not the composite tie-breaker above.
   const scoredByRisk = [...scored].sort((a, b) => a.riskScore - b.riskScore);
-  const routeOptions = pickDifficultyRouteOptions(scoredByRisk);
+  const routeOptions = pickDifficultyRouteOptions(scoredByRisk, { userLevel, userProfile, now });
 
   return {
     userLevel,

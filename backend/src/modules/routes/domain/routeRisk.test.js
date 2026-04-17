@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { scoreRouteCandidate } from './routeRisk.js';
+import { buildSuggestedPrep, scoreRouteCandidate } from './routeRisk.js';
 
 const baseRoute = {
   id: 'r1',
@@ -314,6 +314,53 @@ test('suggestedPrep sorts highest-priority tips first and respects the cap', () 
   assert.ok(scored.suggestedPrep.length <= 7);
   // Closure should always be first because it has the highest priority.
   assert.match(scored.suggestedPrep[0], /Closure on route/i);
+});
+
+test('suggestedPrep content varies with difficultyTier (Easy vs Moderate vs Hard)', () => {
+  // Use a short/modest route so the generic long-outing advice does not blur
+  // the tier-specific comparisons.
+  const shortRoute = { ...baseRoute, distanceKm: 6, durationMin: 90 };
+  const common = {
+    route: shortRoute,
+    userLevel: 'intermediate',
+    userProfile: { age: 34, region: 'Victoria', assessmentAnswers: {} },
+    keyRisks: [],
+    riskScore: 40,
+    goNoGo: 'Go',
+    geographyProfile: null,
+    now: new Date('2026-04-18T08:00:00.000Z'),
+  };
+
+  const easy = buildSuggestedPrep({ ...common, difficultyTier: 'Easy' });
+  const moderate = buildSuggestedPrep({ ...common, difficultyTier: 'Moderate' });
+  const hard = buildSuggestedPrep({ ...common, difficultyTier: 'Hard' });
+
+  assert.ok(easy.some((tip) => /Easy route|comfortable walking shoes/i.test(tip)));
+  assert.ok(moderate.some((tip) => /Moderate route|pack 2 L water/i.test(tip)));
+  assert.ok(hard.some((tip) => /Hard route|turn-around time/i.test(tip)));
+  assert.ok(hard.some((tip) => /headlamp|bivvy|trekking poles/i.test(tip)));
+
+  // The three tiers must produce materially different tip sets.
+  assert.ok(!easy.some((tip) => /Hard route|Hard-route/.test(tip)));
+  assert.ok(!hard.some((tip) => /Easy route: comfortable/.test(tip)));
+  assert.ok(!moderate.some((tip) => /Hard-route gear kit/.test(tip)));
+});
+
+test('Hard tier surfaces gear and turn-around tips near the top', () => {
+  const tips = buildSuggestedPrep({
+    route: baseRoute,
+    userLevel: 'intermediate',
+    userProfile: { age: 34, region: 'Victoria', assessmentAnswers: {} },
+    keyRisks: [],
+    riskScore: 40,
+    goNoGo: 'Go',
+    geographyProfile: null,
+    difficultyTier: 'Hard',
+    now: new Date('2026-04-18T08:00:00.000Z'),
+  });
+
+  const head = tips.slice(0, 3).join(' | ');
+  assert.match(head, /Hard route: set a firm objective turn-around time/i);
 });
 
 test('difficulty label reflects geography: short steep route can still be Hard', () => {

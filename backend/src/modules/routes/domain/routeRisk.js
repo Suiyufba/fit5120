@@ -433,7 +433,7 @@ function pushTip(list, seen, key, priority, text) {
   list.push({ key, priority, text });
 }
 
-function buildSuggestedPrep({
+export function buildSuggestedPrep({
   route,
   userLevel,
   userProfile,
@@ -441,6 +441,7 @@ function buildSuggestedPrep({
   riskScore,
   goNoGo,
   geographyProfile,
+  difficultyTier = 'Moderate',
   now,
   maxTips = 7,
 }) {
@@ -460,6 +461,9 @@ function buildSuggestedPrep({
   const gaps = deriveAssessmentGaps(userProfile?.assessmentAnswers);
   const season = seasonFromDate(now);
   const hazardTypes = new Set((keyRisks || []).map((risk) => risk.type));
+  const tier = ['Easy', 'Moderate', 'Hard'].includes(difficultyTier)
+    ? difficultyTier
+    : 'Moderate';
 
   // === Hard safety blockers (highest priority) ===
   if (closureCount > 0) {
@@ -469,6 +473,30 @@ function buildSuggestedPrep({
   if (goNoGo === 'No-Go' || riskScore >= 70) {
     pushTip(tips, seen, 'elevated-risk', 95,
       'Current risk is elevated: consider postponing, shortening, or swapping to a lower-exposure route today.');
+  }
+
+  // === Tier-specific prep ===
+  // Hard routes deserve high-priority gear + protocol tips because under-prep
+  // on this tier is the most common cause of rescues.
+  if (tier === 'Hard') {
+    pushTip(tips, seen, 'tier-hard-turnaround', 86,
+      'Hard route: set a firm objective turn-around time BEFORE starting and commit to it even if the summit is close.');
+    pushTip(tips, seen, 'tier-hard-gear', 84,
+      'Hard-route gear kit: trekking poles, headlamp (descents often overrun), emergency bivvy/space blanket, full first-aid kit, and 2 layers for weather swing.');
+    pushTip(tips, seen, 'tier-hard-comms', 81,
+      'Hard-route comms: share your exact GPS track and a check-in window with a contact before losing signal; log with the local ranger if the option exists.');
+    pushTip(tips, seen, 'tier-hard-fuel', 77,
+      'Hard-route fuel plan: 3 L+ water with a backup purifier tablet, plus 250–400 kcal every 45–60 min to avoid bonking on climbs.');
+  } else if (tier === 'Moderate') {
+    pushTip(tips, seen, 'tier-moderate-kit', 69,
+      'Moderate route: pack 2 L water, trail snacks, and a packable rain layer — weather can turn inside 2 hours up here.');
+    pushTip(tips, seen, 'tier-moderate-pace', 67,
+      'Moderate pace check: at the halfway mark, reassess time and energy — if either is tight, turn back instead of pushing on.');
+  } else {
+    pushTip(tips, seen, 'tier-easy-kit', 62,
+      'Easy route: comfortable walking shoes, 1 L water, light snacks, and sun protection cover most of today\'s needs.');
+    pushTip(tips, seen, 'tier-easy-share', 60,
+      'Easy outing safety habit: still share a rough ETA with a friend — takes 10 seconds and catches the rare mishap.');
   }
 
   // === Hazard-specific prep (priority 90) ===
@@ -645,9 +673,11 @@ export function scoreRouteCandidate({
     geographyProfile,
   });
 
+  const difficulty = difficultyLabel(routeDifficultyScore, geographyProfile);
+
   return {
     ...route,
-    difficulty: difficultyLabel(routeDifficultyScore, geographyProfile),
+    difficulty,
     riskScore: Number(adjustedWeightedTotal.toFixed(1)),
     riskLevel,
     goNoGo,
@@ -667,6 +697,7 @@ export function scoreRouteCandidate({
       riskScore: adjustedWeightedTotal,
       goNoGo,
       geographyProfile,
+      difficultyTier: difficulty,
       now,
     }),
     scoringBreakdown: {
