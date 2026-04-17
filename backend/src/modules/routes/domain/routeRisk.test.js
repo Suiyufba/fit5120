@@ -170,8 +170,39 @@ test('very long hiking route becomes No-Go even with limited hazard overlap', ()
   });
 
   assert.equal(scored.goNoGo, 'No-Go');
-  assert.ok(scored.riskScore >= 35);
-  assert.match(scored.explanation, /unusually long for a hiking plan/i);
+  assert.ok(scored.riskScore >= 65);
+  assert.match(scored.explanation, /very long/i);
+});
+
+test('no-go routes do not keep a low risk label', () => {
+  const longRoute = {
+    ...baseRoute,
+    distanceKm: 70,
+    durationMin: 900
+  };
+
+  const scored = scoreRouteCandidate({
+    route: longRoute,
+    hazards: [],
+    userLevel: 'advanced',
+    fastestRoute: longRoute,
+    geographyProfile: {
+      totalAscentM: 50,
+      totalDescentM: 50,
+      maxSlopePct: 4,
+      avgSlopePct: 2,
+      terrainType: 'path',
+      surfaceType: 'compacted',
+      trailCondition: 'good',
+      riverCrossingCount: 0,
+      cliffExposureCount: 0,
+      closureCount: 0,
+    }
+  });
+
+  assert.equal(scored.goNoGo, 'No-Go');
+  assert.ok(['High', 'Extreme'].includes(scored.riskLevel));
+  assert.ok(scored.riskScore >= 65);
 });
 
 test('geography profile raises risk when route has steep slopes and closures', () => {

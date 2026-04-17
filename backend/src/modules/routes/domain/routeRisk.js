@@ -266,6 +266,14 @@ function riskLevelByScore(score) {
   return 'Low';
 }
 
+function noGoFloorScoreByReason(reasons = {}) {
+  if (reasons.hasExtremeTooClose || reasons.hasRouteClosure) return 85;
+  if (reasons.hasSevereCliffExposure || reasons.hasSteepTerrainForUser) return 72;
+  if (reasons.exceedsDistanceCap || reasons.exceedsDurationCap) return 65;
+  if (reasons.exceedsScoreThreshold) return 65;
+  return 0;
+}
+
 function difficultyLabel(score) {
   if (score >= 78) return 'Hard';
   if (score >= 42) return 'Moderate';
@@ -294,8 +302,21 @@ function goNoGoDecision({ userLevel, riskScore, impacts, geographyProfile }) {
   const hasSteepTerrainForUser =
     (userLevel === 'newcomer' && Number(geographyProfile?.maxSlopePct || 0) >= 22)
     || (userLevel === 'intermediate' && Number(geographyProfile?.maxSlopePct || 0) >= 30);
-  if (hasExtremeTooClose || exceedsDistanceCap || exceedsDurationCap || hasRouteClosure || hasSevereCliffExposure || hasSteepTerrainForUser || riskScore >= current.score) return 'No-Go';
-  return 'Go';
+  const exceedsScoreThreshold = riskScore >= current.score;
+  const noGoReasons = {
+    hasExtremeTooClose,
+    exceedsDistanceCap,
+    exceedsDurationCap,
+    hasRouteClosure,
+    hasSevereCliffExposure,
+    hasSteepTerrainForUser,
+    exceedsScoreThreshold,
+  };
+
+  return {
+    goNoGo: Object.values(noGoReasons).some(Boolean) ? 'No-Go' : 'Go',
+    noGoReasons,
+  };
 }
 
 function buildExplanation({ chosenRoute, fastestRoute, topHazards, goNoGo, geographyProfile }) {
@@ -417,9 +438,8 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute, g
   );
   const profileFactor = USER_RISK_FACTOR[userLevel] || USER_RISK_FACTOR.newcomer;
   const weightedTotal = clamp(rawWeighted * profileFactor);
-  const riskLevel = riskLevelByScore(weightedTotal);
 
-  const goNoGo = goNoGoDecision({
+  const goNoGoResult = goNoGoDecision({
     userLevel,
     riskScore: weightedTotal,
     impacts: Object.assign([...hazardAgg.impacts], {
@@ -428,6 +448,10 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute, g
     }),
     geographyProfile,
   });
+  const goNoGo = goNoGoResult.goNoGo;
+  const noGoFloorScore = goNoGo === 'No-Go' ? noGoFloorScoreByReason(goNoGoResult.noGoReasons) : 0;
+  const adjustedWeightedTotal = clamp(Math.max(weightedTotal, noGoFloorScore));
+  const riskLevel = riskLevelByScore(adjustedWeightedTotal);
 
   const keyRisks = coverageImpacts.slice(0, 3).map((item) => ({
     id: item.hazard.id,
@@ -456,7 +480,7 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute, g
   return {
     ...route,
     difficulty: difficultyLabel(routeDifficultyScore),
-    riskScore: Number(weightedTotal.toFixed(1)),
+    riskScore: Number(adjustedWeightedTotal.toFixed(1)),
     riskLevel,
     goNoGo,
     explanation,
@@ -471,7 +495,7 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute, g
       route,
       userLevel,
       keyRisks,
-      riskScore: weightedTotal,
+      riskScore: adjustedWeightedTotal,
       goNoGo,
       geographyProfile,
     }),
@@ -484,7 +508,8 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute, g
       feasibilityScore: Number(feasibilityScore.toFixed(1)),
       baseWeightedTotal: Number(rawWeighted.toFixed(1)),
       profileFactor: Number(profileFactor.toFixed(2)),
-      weightedTotal: Number(weightedTotal.toFixed(1))
+      weightedTotal: Number(adjustedWeightedTotal.toFixed(1)),
+      noGoFloorScore: Number(noGoFloorScore.toFixed(1)),
     }
   };
 }
