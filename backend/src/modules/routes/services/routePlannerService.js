@@ -1,5 +1,5 @@
 import { getLatestHazardSnapshot } from '../../../infrastructure/db/hazardSnapshotRepository.js';
-import { getProfileByUserId } from '../../auth/services/authService.js';
+import { getRouteContextByUserId } from '../../auth/services/authService.js';
 import { fetchOsrmRoutes } from '../adapters/osrmAdapter.js';
 import { listCommunityReports } from '../../communityReports/repositories/communityReportRepository.js';
 import { listManualHazards } from '../../hazards/repositories/manualHazardRepository.js';
@@ -170,12 +170,12 @@ function compositeSelectionScore(route, fastestRoute) {
   return Number(route.riskScore || 0) + burdenPenalty;
 }
 
-export async function planSaferRoute({ userId, start, end }) {
+export async function planSaferRoute({ userId, start, end, now = new Date() }) {
   const normalizedStart = assertCoordinate(start, 'start');
   const normalizedEnd = assertCoordinate(end, 'end');
 
-  const user = userId ? await getProfileByUserId(userId) : null;
-  const userLevel = user?.experienceLevel || 'newcomer';
+  const userProfile = userId ? await getRouteContextByUserId(userId) : null;
+  const userLevel = userProfile?.experienceLevel || 'newcomer';
 
   const candidates = await buildCandidateRoutes(normalizedStart, normalizedEnd);
   if (!candidates.length) {
@@ -200,8 +200,10 @@ export async function planSaferRoute({ userId, start, end }) {
       route,
       hazards,
       userLevel,
+      userProfile,
       fastestRoute,
       geographyProfile,
+      now,
     }),
   );
 

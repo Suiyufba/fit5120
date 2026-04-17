@@ -205,6 +205,117 @@ test('no-go routes do not keep a low risk label', () => {
   assert.ok(scored.riskScore >= 65);
 });
 
+test('suggestedPrep surfaces gaps derived from the user assessment answers', () => {
+  const scored = scoreRouteCandidate({
+    route: baseRoute,
+    hazards: [],
+    userLevel: 'intermediate',
+    fastestRoute: baseRoute,
+    userProfile: {
+      age: 28,
+      region: 'Victoria',
+      assessmentAnswers: {
+        q_weather: 'a',
+        q_injury: 'b',
+        q_lost: 'c',
+        q_fire: 'a',
+      },
+    },
+    now: new Date('2026-04-18T09:00:00+10:00'),
+  });
+
+  const prepText = scored.suggestedPrep.join(' | ');
+  assert.match(prepText, /weather-awareness gap/i);
+  assert.match(prepText, /injury-response gap/i);
+  assert.match(prepText, /navigation gap/i);
+});
+
+test('suggestedPrep adds senior-specific advice for 60+ hikers', () => {
+  const scored = scoreRouteCandidate({
+    route: baseRoute,
+    hazards: [],
+    userLevel: 'intermediate',
+    fastestRoute: baseRoute,
+    userProfile: { age: 68, region: 'Victoria', assessmentAnswers: {} },
+  });
+  assert.ok(scored.suggestedPrep.some((tip) => /60\+|senior|medication|trekking poles/i.test(tip)));
+});
+
+test('suggestedPrep adds minor-specific advice for under-18 hikers', () => {
+  const scored = scoreRouteCandidate({
+    route: baseRoute,
+    hazards: [],
+    userLevel: 'newcomer',
+    fastestRoute: baseRoute,
+    userProfile: { age: 15, region: 'Victoria', assessmentAnswers: {} },
+  });
+  assert.ok(scored.suggestedPrep.some((tip) => /under-18|guardian|whistle/i.test(tip)));
+});
+
+test('suggestedPrep season context switches with the provided date', () => {
+  const summer = scoreRouteCandidate({
+    route: baseRoute,
+    hazards: [],
+    userLevel: 'newcomer',
+    fastestRoute: baseRoute,
+    userProfile: { age: 30, region: 'Victoria', assessmentAnswers: {} },
+    now: new Date('2026-01-15T08:00:00+11:00'),
+  });
+  const winter = scoreRouteCandidate({
+    route: baseRoute,
+    hazards: [],
+    userLevel: 'newcomer',
+    fastestRoute: baseRoute,
+    userProfile: { age: 30, region: 'Victoria', assessmentAnswers: {} },
+    now: new Date('2026-07-15T08:00:00+10:00'),
+  });
+
+  assert.ok(summer.suggestedPrep.some((tip) => /summer|start before 7 am|snakes/i.test(tip)));
+  assert.ok(winter.suggestedPrep.some((tip) => /winter|daylight|thermal|turn-around by 3 pm/i.test(tip)));
+});
+
+test('suggestedPrep flags non-Victorian visitors once with region context', () => {
+  const scored = scoreRouteCandidate({
+    route: baseRoute,
+    hazards: [],
+    userLevel: 'intermediate',
+    fastestRoute: baseRoute,
+    userProfile: { age: 34, region: 'Shanghai', assessmentAnswers: {} },
+  });
+  const match = scored.suggestedPrep.filter((tip) => /Visiting Victoria from/i.test(tip));
+  assert.equal(match.length, 1);
+  assert.match(match[0], /Shanghai/);
+});
+
+test('suggestedPrep sorts highest-priority tips first and respects the cap', () => {
+  const scored = scoreRouteCandidate({
+    route: { ...baseRoute, distanceKm: 40, durationMin: 600 },
+    hazards: [
+      { id: 'h', type: 'fire', severity: 'high', source: 'VicEmergency', title: 'Fire', coordinates: [-37.79, 144.95] },
+    ],
+    userLevel: 'newcomer',
+    fastestRoute: baseRoute,
+    userProfile: {
+      age: 15,
+      region: 'NSW',
+      assessmentAnswers: { q_weather: 'a', q_injury: 'b', q_lost: 'c', q_fire: 'a' },
+    },
+    geographyProfile: {
+      totalAscentM: 900,
+      totalDescentM: 800,
+      maxSlopePct: 24,
+      avgSlopePct: 10,
+      riverCrossingCount: 1,
+      cliffExposureCount: 1,
+      closureCount: 1,
+    },
+  });
+
+  assert.ok(scored.suggestedPrep.length <= 7);
+  // Closure should always be first because it has the highest priority.
+  assert.match(scored.suggestedPrep[0], /Closure on route/i);
+});
+
 test('difficulty label reflects geography: short steep route can still be Hard', () => {
   const shortRoute = {
     ...baseRoute,

@@ -384,59 +384,210 @@ function riskAdviceByType({ type, severity, distanceKm }) {
   return `${prefix}. Stay flexible and check official updates.`;
 }
 
-function buildSuggestedPrep({ route, userLevel, keyRisks, riskScore, goNoGo, geographyProfile }) {
-  const tips = [];
-  const distanceKm = route.distanceKm || 0;
-  const durationMin = route.durationMin || 0;
-
-  if (durationMin >= 180) {
-    tips.push('Long-duration route: carry a headlamp, power bank, and spare warm layer.');
-  }
-  if (distanceKm >= 20) {
-    tips.push('Long-distance route: bring enough food, blister care, and at least 2.5L water per person.');
-  }
-  if (distanceKm >= 30 || durationMin >= 300) {
-    tips.push('Extended outing: pack emergency shelter (tent/bivy), thermal blanket, and offline map.');
-  }
-
-  if (keyRisks.some((risk) => risk.type === 'fire')) {
-    tips.push('Fire-aware prep: verify evacuation roads and set a strict no-go trigger before departure.');
-  }
-  if (keyRisks.some((risk) => risk.type === 'heat')) {
-    tips.push('Heat-aware prep: include electrolytes, sun protection, and reduce midday exposure.');
-  }
-  if (keyRisks.some((risk) => ['flood', 'storm'].includes(risk.type))) {
-    tips.push('Rain/storm prep: waterproof gear, dry bag for phone, and avoid low-lying shortcuts.');
-  }
-  if (Number(geographyProfile?.totalAscentM || 0) >= 700) {
-    tips.push('High-ascent route: pace conservatively, refuel early, and keep spare water for the climbing sections.');
-  }
-  if (Number(geographyProfile?.riverCrossingCount || 0) > 0) {
-    tips.push('River crossing exposure: check crossing depth and current before committing, especially after recent rain.');
-  }
-  if (Number(geographyProfile?.cliffExposureCount || 0) > 0) {
-    tips.push('Cliff exposure: avoid poor-visibility travel and keep extra spacing on narrow edges or loose sidesteps.');
-  }
-  if (Number(geographyProfile?.closureCount || 0) > 0) {
-    tips.push('Mapped closure on route: choose an alternate path rather than attempting to bypass the closure.');
-  }
-
-  if (userLevel === 'newcomer') {
-    tips.push('Newcomer safety: hike with a partner and share ETA/check-in time with a trusted contact.');
-  } else if (userLevel === 'intermediate') {
-    tips.push('Intermediate safety: keep one fallback route and reassess alerts at midpoint.');
-  } else {
-    tips.push('Advanced safety: define objective turnaround thresholds before committing to exposed sections.');
-  }
-
-  if (goNoGo === 'No-Go' || riskScore >= 70) {
-    tips.push('Current risk is elevated: postpone or switch to a shorter low-exposure route today.');
-  }
-
-  return [...new Set(tips)].slice(0, 6);
+// Maps a raw assessment answer object to the list of weakness keys the user
+// demonstrated. Alignment with `backend/src/modules/auth/domain/assessment.js`:
+//   q_weather: option 'a' scores 0  → weather-awareness gap
+//   q_injury:  option 'b' scores 0  → injury/first-aid gap
+//   q_lost:    option 'c' scores 0  → navigation gap
+//   q_fire:    option 'a' scores 0  → fire-awareness gap
+function deriveAssessmentGaps(answers = {}) {
+  const gaps = new Set();
+  const normalized = Object.fromEntries(
+    Object.entries(answers || {}).map(([k, v]) => [k, String(v || '').toLowerCase()]),
+  );
+  if (normalized.q_weather === 'a') gaps.add('weather');
+  if (normalized.q_injury === 'b') gaps.add('injury');
+  if (normalized.q_lost === 'c') gaps.add('navigation');
+  if (normalized.q_fire === 'a') gaps.add('fire');
+  return Array.from(gaps);
 }
 
-export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute, geographyProfile = null }) {
+function ageBracket(age) {
+  const numeric = Number(age);
+  if (!Number.isFinite(numeric) || numeric <= 0) return 'unknown';
+  if (numeric < 18) return 'minor';
+  if (numeric >= 60) return 'senior';
+  return 'adult';
+}
+
+// Southern-hemisphere season since HikeShield targets Victoria, AU.
+function seasonFromDate(date = new Date()) {
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return 'unknown';
+  const month = d.getMonth();
+  if ([11, 0, 1].includes(month)) return 'summer';
+  if ([2, 3, 4].includes(month)) return 'autumn';
+  if ([5, 6, 7].includes(month)) return 'winter';
+  return 'spring';
+}
+
+function isVictorianRegion(region = '') {
+  const v = String(region || '').trim().toLowerCase();
+  if (!v) return true;
+  return ['victoria', 'vic', 'melbourne', 'au-vic'].some((token) => v.includes(token));
+}
+
+function pushTip(list, seen, key, priority, text) {
+  if (seen.has(key)) return;
+  seen.add(key);
+  list.push({ key, priority, text });
+}
+
+function buildSuggestedPrep({
+  route,
+  userLevel,
+  userProfile,
+  keyRisks,
+  riskScore,
+  goNoGo,
+  geographyProfile,
+  now,
+  maxTips = 7,
+}) {
+  const tips = [];
+  const seen = new Set();
+
+  const distanceKm = Number(route?.distanceKm || 0);
+  const durationMin = Number(route?.durationMin || 0);
+  const ascentM = Number(geographyProfile?.totalAscentM || 0);
+  const maxSlope = Number(geographyProfile?.maxSlopePct || 0);
+  const riverCount = Number(geographyProfile?.riverCrossingCount || 0);
+  const cliffCount = Number(geographyProfile?.cliffExposureCount || 0);
+  const closureCount = Number(geographyProfile?.closureCount || 0);
+
+  const bracket = ageBracket(userProfile?.age);
+  const region = String(userProfile?.region || '');
+  const gaps = deriveAssessmentGaps(userProfile?.assessmentAnswers);
+  const season = seasonFromDate(now);
+  const hazardTypes = new Set((keyRisks || []).map((risk) => risk.type));
+
+  // === Hard safety blockers (highest priority) ===
+  if (closureCount > 0) {
+    pushTip(tips, seen, 'closure', 100,
+      'Closure on route: do not try to bypass the barrier. Pick an alternate trail or turn around.');
+  }
+  if (goNoGo === 'No-Go' || riskScore >= 70) {
+    pushTip(tips, seen, 'elevated-risk', 95,
+      'Current risk is elevated: consider postponing, shortening, or swapping to a lower-exposure route today.');
+  }
+
+  // === Hazard-specific prep (priority 90) ===
+  if (hazardTypes.has('fire')) {
+    pushTip(tips, seen, 'hazard-fire', 92,
+      'Fire-aware prep: check VicEmergency fire danger rating before leaving, set a strict turn-around trigger, and verify an evacuation road.');
+  }
+  if (hazardTypes.has('flood') || hazardTypes.has('storm')) {
+    pushTip(tips, seen, 'hazard-weather', 90,
+      'Rain/storm prep: waterproof outer shell, dry bag for phone, avoid creek fords and low-lying shortcuts.');
+  }
+  if (hazardTypes.has('heat')) {
+    pushTip(tips, seen, 'hazard-heat', 88,
+      'Heat-aware prep: electrolytes, UPF clothing, extra 1L water, and aim to finish exposed sections before 11 am.');
+  }
+
+  // === Personalized assessment-gap coaching (priority 85) ===
+  if (gaps.includes('weather')) {
+    pushTip(tips, seen, 'gap-weather', 85,
+      'Weather-awareness gap (from your assessment): double-check BOM radar on the morning of, and pre-plan a weather turn-around cue.');
+  }
+  if (gaps.includes('injury')) {
+    pushTip(tips, seen, 'gap-injury', 85,
+      'Injury-response gap: carry a compact first-aid kit (bandage + elastic wrap + painkillers) and review how to manage a sprain before you go.');
+  }
+  if (gaps.includes('navigation')) {
+    pushTip(tips, seen, 'gap-navigation', 85,
+      'Navigation gap: download an offline map (AllTrails / Gaia), bring a fully-charged power bank, and share your GPS track before starting.');
+  }
+  if (gaps.includes('fire') && !hazardTypes.has('fire')) {
+    pushTip(tips, seen, 'gap-fire', 82,
+      'Fire-awareness gap: refresh the Fire Danger Rating system (Moderate/High/Extreme/Catastrophic) and commit to no-go on Extreme+ days.');
+  }
+
+  // === Age-bracket safety (priority 80) ===
+  if (bracket === 'minor') {
+    pushTip(tips, seen, 'age-minor', 80,
+      'Under-18 outing: hike with a guardian or experienced partner, share an exact return time, and carry a whistle.');
+  } else if (bracket === 'senior') {
+    pushTip(tips, seen, 'age-senior', 80,
+      '60+ safety: pace conservatively, carry any daily medication plus a spare dose, and consider trekking poles on descents.');
+  }
+
+  // === Route geography / effort (priority 72-76) ===
+  if (ascentM >= 700) {
+    pushTip(tips, seen, 'effort-ascent', 76,
+      `High-ascent route (${Math.round(ascentM)} m climb): fuel up every 45 min, ration water for the climb, and slow the pace on steep pitches.`);
+  }
+  if (maxSlope >= 22) {
+    pushTip(tips, seen, 'effort-slope', 74,
+      `Steep section (max ${maxSlope.toFixed(0)}% grade): use trekking poles, sidestep on descents, and avoid loose rock edges.`);
+  }
+  if (riverCount > 0) {
+    pushTip(tips, seen, 'effort-river', 74,
+      `River/ford crossing (${riverCount}): test depth with a pole before committing; avoid crossings after heavy rain in the last 24h.`);
+  }
+  if (cliffCount > 0) {
+    pushTip(tips, seen, 'effort-cliff', 72,
+      `Cliff exposure (${cliffCount} section${cliffCount > 1 ? 's' : ''}): do not attempt in low visibility; keep a phone/whistle accessible.`);
+  }
+
+  // === Distance / duration (priority 70) ===
+  if (distanceKm >= 30 || durationMin >= 300) {
+    pushTip(tips, seen, 'long-outing', 72,
+      'Extended outing: pack an emergency bivvy/thermal blanket, offline map, and plan a realistic bail-out at the midpoint.');
+  } else if (distanceKm >= 20) {
+    pushTip(tips, seen, 'long-distance', 68,
+      'Long-distance hike: bring 2.5 L+ water, blister care (tape/leukotape), and a protein-rich lunch.');
+  } else if (durationMin >= 180) {
+    pushTip(tips, seen, 'long-duration', 64,
+      'Multi-hour route: carry a headlamp + power bank in case the return runs late.');
+  }
+
+  // === Season-aware prep (priority 60-66) ===
+  if (season === 'summer') {
+    pushTip(tips, seen, 'season-summer', 66,
+      'Australian summer: start before 7 am to beat heat, carry extra electrolytes, and watch for snakes on the trail edge.');
+  } else if (season === 'winter') {
+    pushTip(tips, seen, 'season-winter', 66,
+      'Victorian winter: daylight ends by ~5 pm — set a turn-around by 3 pm, pack thermal mid-layer and beanie/gloves.');
+  } else if (season === 'autumn') {
+    pushTip(tips, seen, 'season-autumn', 60,
+      'Autumn conditions: wet leaves are slippery on stone steps; add an insulating layer for after-sunset temps.');
+  } else if (season === 'spring') {
+    pushTip(tips, seen, 'season-spring', 60,
+      'Spring conditions: snow can linger above 1000 m, streams may run high from melt — allow extra buffer time.');
+  }
+
+  // === Region context (priority 58) ===
+  if (region && !isVictorianRegion(region)) {
+    pushTip(tips, seen, 'region-visitor', 58,
+      `Visiting Victoria from ${region}: monitor VicEmergency, know that mobile coverage drops outside main trails, and snakes are most active Oct–Apr.`);
+  }
+
+  // === Experience-level safety (priority 55) ===
+  if (userLevel === 'newcomer') {
+    pushTip(tips, seen, 'level-newcomer', 56,
+      'Newcomer safety: hike with a partner and share your start/ETA with a trusted contact before you lose signal.');
+  } else if (userLevel === 'intermediate') {
+    pushTip(tips, seen, 'level-intermediate', 54,
+      'Intermediate safety: keep one named fallback route and re-check alerts at the midpoint.');
+  } else {
+    pushTip(tips, seen, 'level-advanced', 52,
+      'Advanced safety: set objective turn-around thresholds (time / weather / fatigue) before committing to exposed sections.');
+  }
+
+  tips.sort((a, b) => b.priority - a.priority);
+  return tips.slice(0, maxTips).map((tip) => tip.text);
+}
+
+export function scoreRouteCandidate({
+  route,
+  hazards,
+  userLevel,
+  userProfile = null,
+  fastestRoute,
+  geographyProfile = null,
+  now = new Date(),
+}) {
   const geometry = route.geometry || [];
   const hazardAgg = topImpactAverage(hazards, geometry, () => true);
   const weatherAgg = topImpactAverage(hazards, geometry, (hazard) => isOpenWeatherHazard(hazard));
@@ -511,10 +662,12 @@ export function scoreRouteCandidate({ route, hazards, userLevel, fastestRoute, g
     suggestedPrep: buildSuggestedPrep({
       route,
       userLevel,
+      userProfile,
       keyRisks,
       riskScore: adjustedWeightedTotal,
       goNoGo,
       geographyProfile,
+      now,
     }),
     scoringBreakdown: {
       hazardScore: Number(hazardAgg.score.toFixed(1)),

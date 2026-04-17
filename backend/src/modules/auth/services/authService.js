@@ -281,6 +281,39 @@ export async function getProfileByUserId(userId) {
   return sanitizeUser(user);
 }
 
+/**
+ * Return an extended profile for route planning that includes the raw
+ * assessment answers and region. This is trusted for server-side use only;
+ * the public /profile endpoint should keep using getProfileByUserId.
+ */
+export async function getRouteContextByUserId(userId) {
+  if (!userId) return null;
+  if (config.localAdminEnabled && String(userId) === config.localAdminUserId) {
+    const user = buildLocalAdminUser();
+    return {
+      id: user.id,
+      email: user.email,
+      age: user.age,
+      region: user.region,
+      experienceLevel: user.experienceLevel,
+      assessmentScore: user.assessmentScore,
+      assessmentAnswers: {},
+    };
+  }
+
+  const user = await findUserById(userId);
+  if (!user) return null;
+  return {
+    id: user.id,
+    email: user.email,
+    age: user.age ?? null,
+    region: user.region || '',
+    experienceLevel: user.experienceLevel,
+    assessmentScore: Number(user.assessmentScore || 0),
+    assessmentAnswers: user.assessmentAnswers || {},
+  };
+}
+
 export async function updateProfileByUserId(userId, { age, region }) {
   const result = await updateOwnProfileById(userId, { age, region });
   if (!result) {
