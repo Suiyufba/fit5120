@@ -1,8 +1,8 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import * as L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+import mapboxgl from 'mapbox-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
 import { restoreLatestRoutePlan, setLatestRoutePlan } from '../services/routePlanStore'
 import { fetchRealtimeHazards } from '../services/hazardApi'
 import { planSafeRoute } from '../services/routeApi'
@@ -14,15 +14,26 @@ const plan = ref(null)
 const planningFromShare = ref(false)
 const shareMessage = ref('')
 const shareError = ref('')
+const mapInitError = ref('')
 const isSheetExpanded = ref(false)
 
+const routeSourceId = 'recommended-route-source'
+const routeLayerId = 'recommended-route-line'
+const hazardZoneSourceId = 'hazard-zone-source'
+const hazardZoneLayerId = 'hazard-zone-layer'
+const hazardPointSourceId = 'hazard-point-source'
+const hazardPointLayerId = 'hazard-point-layer'
+
 let mapInstance
-let routeLayer
-let hazardLayer
+let mapReady = false
 let hazardInflightController
 let hazardRefreshTimer
+let startMarker
+let endMarker
+let activeHazardPopup
 
 const hazards = ref([])
+const mapboxToken = String(import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '').trim()
 
 const layerMeta = {
   fire: { label: 'Bushfire', color: '#D84727' },
@@ -32,6 +43,8 @@ const layerMeta = {
   trail: { label: 'Trail', color: '#6B5C4F' },
   other: { label: 'Other', color: '#2E7D6B' },
 }
+
+const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
 
 const recommended = computed(() => plan.value?.recommendedRoute || null)
 const prepTips = computed(() => recommended.value?.suggestedPrep || [])
@@ -62,125 +75,41 @@ function formatDuration(durationMin) {
   return hours ? `${days} d ${hours} h` : `${days} d`
 }
 
-function zoneOpacitiesBySeverity(severity) {
-  if (severity === 'extreme') return { l1: 0.28, l2: 0.18, l3: 0.1 }
-  if (severity === 'high') return { l1: 0.23, l2: 0.14, l3: 0.08 }
-  if (severity === 'moderate') return { l1: 0.18, l2: 0.11, l3: 0.06 }
-  return { l1: 0.14, l2: 0.09, l3: 0.05 }
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
-function markerRadiusBySeverity(severity) {
-  if (severity === 'extreme') return 9
-  if (severity === 'high') return 8
-  if (severity === 'moderate') return 7
-  return 6
+function cleanPopupDescription(value = '') {
+  return String(value)
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/?strong>/gi, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
 }
 
-function drawHazards() {
-  if (!hazardLayer) return
-  hazardLayer.clearLayers()
-
-  hazards.value.forEach((hazard) => {
-    if (!Array.isArray(hazard.coordinates) || hazard.coordinates.length !== 2) return
-    const meta = layerMeta[hazard.type] || layerMeta.other
-    const opacity = zoneOpacitiesBySeverity(hazard.severity)
-
-    ;[
-      { radius: 5000, fillOpacity: opacity.l3, weight: 1 },
-      { radius: 3000, fillOpacity: opacity.l2, weight: 1 },
-      { radius: 1000, fillOpacity: opacity.l1, weight: 2 },
-    ].forEach((zone) => {
-      L.circle(hazard.coordinates, {
-        radius: zone.radius,
-        color: meta.color,
-        fillColor: meta.color,
-        fillOpacity: zone.fillOpacity,
-        opacity: 0.4,
-        weight: zone.weight,
-        interactive: false,
-      }).addTo(hazardLayer)
-    })
-
-    L.circleMarker(hazard.coordinates, {
-      radius: markerRadiusBySeverity(hazard.severity),
-      color: meta.color,
-      fillColor: meta.color,
-      fillOpacity: 0.88,
-      weight: 2,
-    }).bindPopup(`${hazard.title}<br/>${meta.label} · ${hazard.severity}`).addTo(hazardLayer)
-  })
+function formatUpdatedTime(value) {
+  const ts = Date.parse(value || '')
+  if (Number.isNaN(ts)) return 'Time unknown'
+  return new Date(ts).toLocaleString()
 }
 
-async function loadHazards() {
-  if (!mapInstance) return
-  if (hazardInflightController) hazardInflightController.abort()
-  hazardInflightController = new AbortController()
-
-  try {
-    const bounds = mapInstance.getBounds()
-    const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
-    const payload = await fetchRealtimeHazards({
-      bbox,
-      layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
-      signal: hazardInflightController.signal,
-      preferCache: true,
-      onUpdate: (freshPayload) => {
-        hazards.value = freshPayload.hazards
-        drawHazards()
-      },
-    })
-    hazards.value = payload.hazards
-    drawHazards()
-  } catch (error) {
-    if (error?.name === 'AbortError') return
-    console.error('Failed to load hazards on route detail map:', error)
-  }
+function createPin(label, colors) {
+  const el = document.createElement('div')
+  el.className = 'route-pin-marker'
+  el.innerHTML = `<span style="background:${colors.bg};border-color:${colors.border};">${label}</span>`
+  return el
 }
 
-function drawRecommendedRoute() {
-  if (!routeLayer || !recommended.value?.geometry?.length) return
-  routeLayer.clearLayers()
-
-  L.polyline(recommended.value.geometry, {
-    color: '#1F6E57',
-    weight: 6,
-    opacity: 0.9,
-  }).addTo(routeLayer)
-
-  const start = recommended.value.geometry[0]
-  const end = recommended.value.geometry[recommended.value.geometry.length - 1]
-  L.circleMarker(start, {
-    radius: 7,
-    color: '#1F6E57',
-    fillColor: '#2E9D7A',
-    fillOpacity: 0.95,
-    weight: 2,
-  }).bindPopup('Start').addTo(routeLayer)
-
-  L.circleMarker(end, {
-    radius: 7,
-    color: '#A6382A',
-    fillColor: '#D84727',
-    fillOpacity: 0.95,
-    weight: 2,
-  }).bindPopup('Destination').addTo(routeLayer)
-
-  mapInstance.fitBounds(L.latLngBounds(recommended.value.geometry).pad(0.2))
-}
-
-function parseSharedPoint() {
-  const asValue = (value) => Array.isArray(value) ? value[0] : value
-  const slat = Number(asValue(route.query.slat))
-  const slng = Number(asValue(route.query.slng))
-  const elat = Number(asValue(route.query.elat))
-  const elng = Number(asValue(route.query.elng))
-
-  const allValid = [slat, slng, elat, elng].every((v) => Number.isFinite(v))
-  if (!allValid) return null
-  return {
-    start: { lat: slat, lng: slng },
-    end: { lat: elat, lng: elng },
-  }
+function routeGeometryToLngLat(geometry = []) {
+  return geometry
+    .filter((point) => Array.isArray(point) && point.length === 2)
+    .map(([lat, lng]) => [Number(lng), Number(lat)])
+    .filter(([lng, lat]) => Number.isFinite(lat) && Number.isFinite(lng))
 }
 
 function inferStartEndFromPlan() {
@@ -195,6 +124,300 @@ function inferStartEndFromPlan() {
   return {
     start: { lat: start[0], lng: start[1] },
     end: { lat: end[0], lng: end[1] },
+  }
+}
+
+function isThreeDReady() {
+  const points = inferStartEndFromPlan()
+  return Boolean(points?.start && points?.end && recommended.value?.geometry?.length)
+}
+
+function toFeatureCollection(features) {
+  return {
+    type: 'FeatureCollection',
+    features,
+  }
+}
+
+function buildHazardZoneFeatures() {
+  const features = []
+
+  hazards.value.forEach((hazard) => {
+    const meta = layerMeta[hazard.type] || layerMeta.other
+    if (!Array.isArray(hazard.coordinates) || hazard.coordinates.length !== 2) return
+
+    const [lat, lng] = hazard.coordinates
+    const severity = hazard.severity || 'low'
+    const opacities = severity === 'extreme'
+      ? { near: 0.24, mid: 0.15, far: 0.08 }
+      : severity === 'high'
+        ? { near: 0.2, mid: 0.12, far: 0.07 }
+        : severity === 'moderate'
+          ? { near: 0.16, mid: 0.1, far: 0.06 }
+          : { near: 0.13, mid: 0.08, far: 0.05 }
+
+    ;[
+      { key: 'far', radius: 34, opacity: opacities.far },
+      { key: 'mid', radius: 24, opacity: opacities.mid },
+      { key: 'near', radius: 14, opacity: opacities.near },
+    ].forEach((zone) => {
+      features.push({
+        type: 'Feature',
+        properties: {
+          id: `${hazard.id || hazard.title || 'hazard'}-${zone.key}`,
+          color: meta.color,
+          radius: zone.radius,
+          opacity: zone.opacity,
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [Number(lng), Number(lat)],
+        },
+      })
+    })
+  })
+
+  return features
+}
+
+function buildHazardPointFeatures() {
+  const features = []
+
+  hazards.value.forEach((hazard) => {
+    const meta = layerMeta[hazard.type] || layerMeta.other
+    if (!Array.isArray(hazard.coordinates) || hazard.coordinates.length !== 2) return
+
+    const [lat, lng] = hazard.coordinates
+    const severity = hazard.severity || 'low'
+    const markerRadius = severity === 'extreme' ? 8 : severity === 'high' ? 7 : severity === 'moderate' ? 6 : 5
+
+    features.push({
+      type: 'Feature',
+      properties: {
+        id: String(hazard.id || `${hazard.type}-${hazard.title}`),
+        title: hazard.title || 'Hazard',
+        description: cleanPopupDescription(hazard.description || ''),
+        severity,
+        type: hazard.type || 'other',
+        category: hazard.type === 'other' ? 'Other' : (hazard.riskCategory || meta.label || 'Unspecified'),
+        source: hazard.source || 'Unknown',
+        updatedAt: formatUpdatedTime(hazard.updatedAt),
+        color: meta.color,
+        radius: markerRadius,
+        label: meta.label,
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: [Number(lng), Number(lat)],
+      },
+    })
+  })
+
+  return features
+}
+
+function applyRouteGeometry() {
+  if (!mapInstance || !mapReady) return
+
+  const routeCoordinates = routeGeometryToLngLat(recommended.value?.geometry || [])
+  const routeData = toFeatureCollection(routeCoordinates.length
+    ? [{ type: 'Feature', geometry: { type: 'LineString', coordinates: routeCoordinates }, properties: { id: 'recommended-route' } }]
+    : [])
+
+  const existingSource = mapInstance.getSource(routeSourceId)
+  if (existingSource) {
+    existingSource.setData(routeData)
+  } else {
+    mapInstance.addSource(routeSourceId, {
+      type: 'geojson',
+      data: routeData,
+    })
+    mapInstance.addLayer({
+      id: routeLayerId,
+      type: 'line',
+      source: routeSourceId,
+      layout: {
+        'line-cap': 'round',
+        'line-join': 'round',
+      },
+      paint: {
+        'line-color': '#1F6E57',
+        'line-width': 6,
+        'line-opacity': 0.92,
+      },
+    })
+  }
+
+  if (startMarker) {
+    startMarker.remove()
+    startMarker = null
+  }
+  if (endMarker) {
+    endMarker.remove()
+    endMarker = null
+  }
+
+  if (routeCoordinates.length >= 2) {
+    startMarker = new mapboxgl.Marker({ element: createPin('S', { bg: '#2E9D7A', border: '#1F6E57' }) })
+      .setLngLat(routeCoordinates[0])
+      .setPopup(new mapboxgl.Popup({ offset: 14 }).setText('Start'))
+      .addTo(mapInstance)
+
+    endMarker = new mapboxgl.Marker({ element: createPin('E', { bg: '#D84727', border: '#A6382A' }) })
+      .setLngLat(routeCoordinates[routeCoordinates.length - 1])
+      .setPopup(new mapboxgl.Popup({ offset: 14 }).setText('Destination'))
+      .addTo(mapInstance)
+
+    const bounds = routeCoordinates.reduce(
+      (acc, coordinate) => acc.extend(coordinate),
+      new mapboxgl.LngLatBounds(routeCoordinates[0], routeCoordinates[0]),
+    )
+
+    mapInstance.fitBounds(bounds, {
+      padding: { top: 80, right: 90, bottom: 100, left: 90 },
+      duration: 900,
+      pitch: isThreeDReady() ? 63 : 0,
+      bearing: isThreeDReady() ? 28 : 0,
+    })
+
+    if (isThreeDReady()) {
+      window.setTimeout(() => {
+        if (!mapInstance) return
+        mapInstance.easeTo({
+          pitch: 66,
+          bearing: 32,
+          duration: 900,
+          essential: true,
+        })
+      }, 980)
+    }
+  }
+}
+
+function applyHazardLayers() {
+  if (!mapInstance || !mapReady) return
+
+  const zoneData = toFeatureCollection(buildHazardZoneFeatures())
+  const pointData = toFeatureCollection(buildHazardPointFeatures())
+
+  const zoneSource = mapInstance.getSource(hazardZoneSourceId)
+  if (zoneSource) {
+    zoneSource.setData(zoneData)
+  } else {
+    mapInstance.addSource(hazardZoneSourceId, { type: 'geojson', data: zoneData })
+    mapInstance.addLayer({
+      id: hazardZoneLayerId,
+      type: 'circle',
+      source: hazardZoneSourceId,
+      paint: {
+        'circle-radius': ['get', 'radius'],
+        'circle-color': ['get', 'color'],
+        'circle-opacity': ['get', 'opacity'],
+      },
+    })
+  }
+
+  const pointSource = mapInstance.getSource(hazardPointSourceId)
+  if (pointSource) {
+    pointSource.setData(pointData)
+  } else {
+    mapInstance.addSource(hazardPointSourceId, { type: 'geojson', data: pointData })
+    mapInstance.addLayer({
+      id: hazardPointLayerId,
+      type: 'circle',
+      source: hazardPointSourceId,
+      paint: {
+        'circle-radius': ['get', 'radius'],
+        'circle-color': ['get', 'color'],
+        'circle-stroke-width': 1.5,
+        'circle-stroke-color': '#ffffff',
+        'circle-opacity': 0.9,
+      },
+    })
+
+    mapInstance.on('mouseenter', hazardPointLayerId, () => {
+      mapInstance.getCanvas().style.cursor = 'pointer'
+    })
+
+    mapInstance.on('mouseleave', hazardPointLayerId, () => {
+      mapInstance.getCanvas().style.cursor = ''
+    })
+
+    mapInstance.on('click', hazardPointLayerId, (event) => {
+      const clickedFeature = event?.features?.[0]
+      if (!clickedFeature?.properties) return
+
+      if (activeHazardPopup) {
+        activeHazardPopup.remove()
+        activeHazardPopup = null
+      }
+
+      const props = clickedFeature.properties
+      const title = escapeHtml(props.title || 'Hazard')
+      const desc = escapeHtml(props.description || '')
+      const label = escapeHtml(props.label || 'Other')
+      const severity = escapeHtml(severityLabel[props.severity] || 'Unknown')
+      const category = escapeHtml(props.category || 'Unspecified')
+      const updatedAt = escapeHtml(props.updatedAt || 'Time unknown')
+      const source = escapeHtml(props.source || 'Unknown')
+
+      activeHazardPopup = new mapboxgl.Popup({ closeButton: true, closeOnClick: true, offset: 12 })
+        .setLngLat(clickedFeature.geometry.coordinates)
+        .setHTML(`
+          <div style="min-width: 200px;">
+            <div style="font-weight: 800; margin-bottom: 6px;">${title}</div>
+            <div style="font-size: 12px; margin-bottom: 8px;">${desc}</div>
+            <div style="font-size: 11px; color: #5f6b66;">
+              ${label} · ${severity}<br />
+              Category: ${category}<br />
+              Updated: ${updatedAt}<br />
+              Source: ${source}
+            </div>
+          </div>
+        `)
+        .addTo(mapInstance)
+    })
+  }
+}
+
+async function loadHazards() {
+  if (!mapInstance || !mapReady) return
+  if (hazardInflightController) hazardInflightController.abort()
+  hazardInflightController = new AbortController()
+
+  try {
+    const bounds = mapInstance.getBounds()
+    const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
+    const payload = await fetchRealtimeHazards({
+      bbox,
+      layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
+      signal: hazardInflightController.signal,
+      preferCache: true,
+      onUpdate: (freshPayload) => {
+        hazards.value = freshPayload.hazards
+        applyHazardLayers()
+      },
+    })
+    hazards.value = payload.hazards
+    applyHazardLayers()
+  } catch (error) {
+    if (error?.name === 'AbortError') return
+    console.error('Failed to load hazards on route detail map:', error)
+  }
+}
+
+function parseSharedPoint() {
+  const asValue = (value) => Array.isArray(value) ? value[0] : value
+  const slat = Number(asValue(route.query.slat))
+  const slng = Number(asValue(route.query.slng))
+  const elat = Number(asValue(route.query.elat))
+  const elng = Number(asValue(route.query.elng))
+
+  const allValid = [slat, slng, elat, elng].every((v) => Number.isFinite(v))
+  if (!allValid) return null
+  return {
+    start: { lat: slat, lng: slng },
+    end: { lat: elat, lng: elng },
   }
 }
 
@@ -258,7 +481,7 @@ async function hydrateFromSharedLink() {
     }
     setLatestRoutePlan(nextPlan)
     plan.value = nextPlan
-    drawRecommendedRoute()
+    applyRouteGeometry()
   } catch (error) {
     shareError.value = error?.message || 'Failed to load shared route.'
   } finally {
@@ -266,40 +489,92 @@ async function hydrateFromSharedLink() {
   }
 }
 
+function initMap() {
+  if (!mapElement.value) return
+  if (!mapboxToken) {
+    mapInitError.value = 'Mapbox token is missing. Add VITE_MAPBOX_ACCESS_TOKEN to enable 3D route view.'
+    return
+  }
+
+  mapboxgl.accessToken = mapboxToken
+
+  mapInstance = new mapboxgl.Map({
+    container: mapElement.value,
+    style: 'mapbox://styles/mapbox/outdoors-v12',
+    center: [144.9631, -37.8136],
+    zoom: 7,
+    pitch: 0,
+    bearing: 0,
+    antialias: true,
+  })
+
+  mapInstance.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'bottom-right')
+
+  mapInstance.on('load', () => {
+    mapReady = true
+
+    if (!mapInstance.getSource('mapbox-dem')) {
+      mapInstance.addSource('mapbox-dem', {
+        type: 'raster-dem',
+        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+        tileSize: 512,
+        maxzoom: 14,
+      })
+      mapInstance.setTerrain({ source: 'mapbox-dem', exaggeration: 1.18 })
+    }
+
+    mapInstance.setFog({
+      color: '#d7ebdf',
+      'high-color': '#f2f8f5',
+      'space-color': '#f7fbfa',
+      'horizon-blend': 0.22,
+    })
+
+    applyRouteGeometry()
+    applyHazardLayers()
+    loadHazards()
+
+    hazardRefreshTimer = window.setInterval(loadHazards, 60_000)
+    mapInstance.on('moveend', loadHazards)
+  })
+}
+
 onMounted(() => {
   plan.value = restoreLatestRoutePlan()
-
-  mapInstance = L.map(mapElement.value, {
-    zoomControl: true,
-    attributionControl: true,
-  }).setView([-37.8136, 144.9631], 7)
-
-  mapInstance.attributionControl.setPrefix(false)
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-    attribution: '&copy; OpenStreetMap contributors',
-  }).addTo(mapInstance)
-
-  routeLayer = L.layerGroup().addTo(mapInstance)
-  hazardLayer = L.layerGroup().addTo(mapInstance)
-  drawRecommendedRoute()
-  loadHazards()
-  hazardRefreshTimer = window.setInterval(loadHazards, 60_000)
-  mapInstance.on('moveend', loadHazards)
+  initMap()
   hydrateFromSharedLink()
 })
+
+watch(
+  () => recommended.value?.id,
+  () => {
+    applyRouteGeometry()
+  },
+)
 
 watch(
   () => route.fullPath,
   () => {
     if (plan.value?.recommendedRoute) return
     hydrateFromSharedLink()
-  }
+  },
 )
 
 onUnmounted(() => {
   if (hazardInflightController) hazardInflightController.abort()
   if (hazardRefreshTimer) window.clearInterval(hazardRefreshTimer)
+  if (activeHazardPopup) {
+    activeHazardPopup.remove()
+    activeHazardPopup = null
+  }
+  if (startMarker) {
+    startMarker.remove()
+    startMarker = null
+  }
+  if (endMarker) {
+    endMarker.remove()
+    endMarker = null
+  }
   if (mapInstance) {
     mapInstance.remove()
     mapInstance = null
@@ -311,6 +586,7 @@ onUnmounted(() => {
   <main class="detail-layout">
     <section class="detail-map-wrap">
       <div ref="mapElement" class="detail-map"></div>
+      <p v-if="mapInitError" class="map-init-error">{{ mapInitError }}</p>
     </section>
 
     <aside class="detail-panel mobile-sheet" :class="{ 'mobile-sheet--expanded': isSheetExpanded }">
@@ -325,6 +601,7 @@ onUnmounted(() => {
       <template v-if="recommended">
         <p class="detail-kicker">Route Safety Detail</p>
         <h1>Recommended Route</h1>
+        <p class="detail-note detail-note--view">3D view is enabled after selecting both points and entering Route Details.</p>
         <p v-if="planningFromShare" class="detail-note">Loading shared route...</p>
         <p v-if="shareMessage" class="detail-note detail-note--ok">{{ shareMessage }}</p>
         <p v-if="shareError" class="detail-note detail-note--error">{{ shareError }}</p>
@@ -401,6 +678,21 @@ onUnmounted(() => {
 .detail-map {
   width: 100%;
   height: 100%;
+}
+
+.map-init-error {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  max-width: 420px;
+  z-index: 2;
+  border: 1px solid #e9b2a8;
+  color: #7d2a21;
+  background: rgba(255, 242, 239, 0.95);
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.55rem;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 .detail-panel {
@@ -488,16 +780,6 @@ h1 {
   font-size: 0.9rem;
 }
 
-.zone-summary {
-  color: #25473f;
-  font-size: 0.83rem;
-  font-weight: 700;
-  background: #edf7f2;
-  border: 1px solid #d2e6db;
-  border-radius: 0.6rem;
-  padding: 0.5rem 0.6rem;
-}
-
 .risk-block h2 {
   font-size: 0.92rem;
   color: #28473f;
@@ -559,6 +841,12 @@ h1 {
   background: #f6fbf8;
 }
 
+.detail-note--view {
+  border-color: #b8d8cb;
+  background: #edf8f2;
+  color: #234b3f;
+}
+
 .detail-note--ok {
   border-color: #c6dfd3;
   background: #eef8f2;
@@ -592,5 +880,25 @@ h1 {
   .detail-map-wrap {
     min-height: var(--mobile-safe-height);
   }
+
+  .map-init-error {
+    right: 1rem;
+    max-width: none;
+  }
+}
+</style>
+
+<style>
+.route-pin-marker span {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 2px solid;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
+  box-shadow: 0 5px 14px rgba(13, 31, 24, 0.25);
 }
 </style>
