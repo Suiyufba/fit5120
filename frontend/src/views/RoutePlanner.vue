@@ -100,16 +100,9 @@ function formatDuration(durationMin) {
   return hours ? `${days} d ${hours} h` : `${days} d`
 }
 
-function formatCoordinateText(point) {
-  if (!point) return ''
-  return `${point.lat}, ${point.lng}`
-}
-
 function formatPointLabel(label, point) {
   if (!point) return ''
-  const coordinate = formatCoordinateText(point)
-  if (!label) return coordinate
-  return `${label} (${coordinate})`
+  return label || 'Selected location'
 }
 
 function applyPointSelection(type, location) {
@@ -121,12 +114,12 @@ function applyPointSelection(type, location) {
   if (type === 'start') {
     startPoint.value = point
     startLabel.value = location.displayName || ''
-    startInput.value = startLabel.value
+    startInput.value = startLabel.value || 'Selected location'
     startSuggestions.value = []
   } else {
     endPoint.value = point
     endLabel.value = location.displayName || ''
-    endInput.value = endLabel.value
+    endInput.value = endLabel.value || 'Selected location'
     endSuggestions.value = []
   }
 
@@ -431,8 +424,8 @@ function applyHistoryPlan(item) {
   endPoint.value = item.end || null
   startLabel.value = ''
   endLabel.value = ''
-  startInput.value = startPoint.value ? formatCoordinateText(startPoint.value) : ''
-  endInput.value = endPoint.value ? formatCoordinateText(endPoint.value) : ''
+  startInput.value = startPoint.value ? 'Saved location' : ''
+  endInput.value = endPoint.value ? 'Saved location' : ''
   startSuggestions.value = []
   endSuggestions.value = []
   planResult.value = item.planPayload
@@ -576,7 +569,7 @@ onMounted(() => {
 
     startPoint.value = endPoint.value
     startLabel.value = endLabel.value
-    startInput.value = startLabel.value || formatCoordinateText(startPoint.value)
+    startInput.value = startLabel.value || 'Selected location'
     startSuggestions.value = []
     await applyPointFromMap('end', point)
     planResult.value = null
