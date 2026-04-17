@@ -85,7 +85,6 @@ export async function listRoutePlanHistory({
   const safeLimit = Math.max(1, Math.min(Number(limit) || 20, 100));
   const args = [];
   const where = [];
-
   if (normalizedUserId) {
     args.push(normalizedUserId);
     where.push(`user_id = $${args.length}`);
@@ -105,4 +104,75 @@ export async function listRoutePlanHistory({
   `;
   const result = await pool.query(sql, args);
   return result.rows || [];
+}
+
+export async function deleteRoutePlanHistoryEntry({
+  entryId,
+  userId,
+  sessionId,
+}) {
+  const pool = getPgPool();
+  if (!pool) return false;
+
+  const normalizedEntryId = Number(entryId);
+  if (!Number.isInteger(normalizedEntryId) || normalizedEntryId <= 0) return false;
+
+  const normalizedUserId = String(userId || '').trim() || null;
+  const normalizedSessionId = String(sessionId || '').trim() || null;
+  if (!normalizedUserId && !normalizedSessionId) return false;
+
+  const args = [normalizedEntryId];
+  const ownerWhere = [];
+  if (normalizedUserId) {
+    args.push(normalizedUserId);
+    ownerWhere.push(`user_id = $${args.length}`);
+  }
+  if (normalizedSessionId) {
+    args.push(normalizedSessionId);
+    ownerWhere.push(`session_id = $${args.length}`);
+  }
+
+  const result = await pool.query(
+    `
+      DELETE FROM route_plan_history
+      WHERE id = $1
+      AND (${ownerWhere.join(' OR ')})
+    `,
+    args
+  );
+
+  return (result.rowCount || 0) > 0;
+}
+
+export async function clearRoutePlanHistory({
+  userId,
+  sessionId,
+}) {
+  const pool = getPgPool();
+  if (!pool) return 0;
+
+  const normalizedUserId = String(userId || '').trim() || null;
+  const normalizedSessionId = String(sessionId || '').trim() || null;
+  if (!normalizedUserId && !normalizedSessionId) return 0;
+
+  const args = [];
+  const where = [];
+  if (normalizedUserId) {
+    args.push(normalizedUserId);
+    where.push(`user_id = $${args.length}`);
+  }
+  if (normalizedSessionId) {
+    args.push(normalizedSessionId);
+    where.push(`session_id = $${args.length}`);
+  }
+
+  const result = await pool.query(
+    `
+      DELETE FROM route_plan_history
+      WHERE ${where.map((clause) => `(${clause})`).join(' OR ')}
+    `,
+    args
+  );
+
+  return result.rowCount || 0;
 }

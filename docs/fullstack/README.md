@@ -16,4 +16,5 @@ End-to-end features that involve both frontend and backend changes.
 - [route-plan-history-storage-2026-04-17.md](./route-plan-history-storage-2026-04-17.md)
 - [location-search-reverse-geocoding-api-2026-04-17.md](./location-search-reverse-geocoding-api-2026-04-17.md)
 - [location-reverse-name-fallback-fix-2026-04-17.md](./location-reverse-name-fallback-fix-2026-04-17.md)
+- [route-history-delete-endpoints-2026-04-17.md](./route-history-delete-endpoints-2026-04-17.md)
 - [profile-editing-feature.md](./profile-editing-feature.md)

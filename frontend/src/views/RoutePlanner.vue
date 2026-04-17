@@ -3,7 +3,12 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { fetchRoutePlanHistory, planSafeRoute } from '../services/routeApi'
+import {
+  clearRoutePlanHistory,
+  deleteRoutePlanHistoryItem,
+  fetchRoutePlanHistory,
+  planSafeRoute
+} from '../services/routeApi'
 import { reverseLocation, searchLocations } from '../services/locationApi'
 import { setLatestRoutePlan } from '../services/routePlanStore'
 import { useAuthState } from '../services/authStore'
@@ -22,6 +27,8 @@ const { state: authState } = useAuthState()
 const mapElement = ref(null)
 const loading = ref(false)
 const loadingHistory = ref(false)
+const clearingHistory = ref(false)
+const deletingHistoryId = ref('')
 const error = ref('')
 const startPoint = ref(null)
 const endPoint = ref(null)
@@ -471,6 +478,42 @@ async function loadHistory() {
   }
 }
 
+async function clearAllHistory() {
+  if (!historyItems.value.length || clearingHistory.value) return
+  const confirmed = window.confirm('Clear all route history records?')
+  if (!confirmed) return
+
+  clearingHistory.value = true
+  try {
+    await clearRoutePlanHistory({
+      token: authState.token || '',
+    })
+    historyItems.value = []
+  } catch (nextError) {
+    if (nextError?.name !== 'AbortError') {
+      error.value = nextError.message || 'Failed to clear route history'
+    }
+  } finally {
+    clearingHistory.value = false
+  }
+}
+
+async function clearHistoryItem(itemId) {
+  if (!itemId || deletingHistoryId.value) return
+  deletingHistoryId.value = String(itemId)
+  try {
+    await deleteRoutePlanHistoryItem({
+      id: itemId,
+      token: authState.token || '',
+    })
+    historyItems.value = historyItems.value.filter((item) => String(item.id) !== String(itemId))
+  } catch (nextError) {
+    error.value = nextError.message || 'Failed to clear route history item'
+  } finally {
+    deletingHistoryId.value = ''
+  }
+}
+
 async function handlePlanRoute() {
   if (!canPlan.value) return
   if (inflightController) inflightController.abort()
@@ -676,31 +719,48 @@ onUnmounted(() => {
       <section class="history-panel">
         <div class="history-panel__head">
           <p>Your Route History</p>
-          <button class="history-refresh-btn" :disabled="loadingHistory" @click="loadHistory">
-            {{ loadingHistory ? 'Loading...' : 'Refresh' }}
-          </button>
+          <div class="history-actions">
+            <button class="history-clear-all-btn" :disabled="clearingHistory || !historyItems.length" @click="clearAllHistory">
+              {{ clearingHistory ? 'Clearing...' : 'Clear All' }}
+            </button>
+            <button class="history-refresh-btn" :disabled="loadingHistory" @click="loadHistory">
+              {{ loadingHistory ? 'Loading...' : 'Refresh' }}
+            </button>
+          </div>
         </div>
         <p v-if="!historyItems.length && !loadingHistory" class="history-empty">
           No route history yet. Plan a route to save your first record.
         </p>
         <div v-else class="history-list">
-          <button
+          <article
             v-for="item in historyItems"
             :key="item.id"
-            type="button"
             class="history-item"
-            @click="applyHistoryPlan(item)"
           >
-            <strong>
-              {{ item.planPayload?.recommendedRoute?.distanceKm?.toFixed?.(1) || '0.0' }} km ·
-              {{ formatDuration(item.planPayload?.recommendedRoute?.durationMin || 0) }}
-            </strong>
-            <span>
-              {{ item.planPayload?.recommendedRoute?.riskLevel || 'Low' }}
-              ({{ Number(item.planPayload?.recommendedRoute?.riskScore || 0).toFixed(1) }})
-            </span>
-            <small>{{ new Date(item.createdAt).toLocaleString() }}</small>
-          </button>
+            <button
+              type="button"
+              class="history-item__main"
+              @click="applyHistoryPlan(item)"
+            >
+              <strong>
+                {{ item.planPayload?.recommendedRoute?.distanceKm?.toFixed?.(1) || '0.0' }} km ·
+                {{ formatDuration(item.planPayload?.recommendedRoute?.durationMin || 0) }}
+              </strong>
+              <span>
+                {{ item.planPayload?.recommendedRoute?.riskLevel || 'Low' }}
+                ({{ Number(item.planPayload?.recommendedRoute?.riskScore || 0).toFixed(1) }})
+              </span>
+              <small>{{ new Date(item.createdAt).toLocaleString() }}</small>
+            </button>
+            <button
+              type="button"
+              class="history-item__clear"
+              :disabled="deletingHistoryId === String(item.id)"
+              @click.stop="clearHistoryItem(item.id)"
+            >
+              {{ deletingHistoryId === String(item.id) ? 'Clearing...' : 'Clear' }}
+            </button>
+          </article>
         </div>
       </section>
 
@@ -920,6 +980,7 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.4rem;
 }
 
 .history-panel__head p {
@@ -940,6 +1001,22 @@ h1 {
   padding: 0.2rem 0.55rem;
 }
 
+.history-actions {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+
+.history-clear-all-btn {
+  border: 1px solid #e2b8b1;
+  border-radius: 999px;
+  background: #fff3f1;
+  color: #8e2f25;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+}
+
+.history-clear-all-btn:disabled,
 .history-refresh-btn:disabled {
   opacity: 0.6;
 }
@@ -962,24 +1039,49 @@ h1 {
   border-radius: 0.58rem;
   background: #ffffff;
   color: #27493f;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.history-item__main {
+  border: 0;
+  background: transparent;
   text-align: left;
   padding: 0.45rem 0.55rem;
   display: grid;
   gap: 0.1rem;
+  color: inherit;
 }
 
-.history-item strong {
+.history-item__main strong {
   font-size: 0.78rem;
 }
 
-.history-item span {
+.history-item__main span {
   font-size: 0.74rem;
   color: #49655d;
 }
 
-.history-item small {
+.history-item__main small {
   font-size: 0.68rem;
   color: #6a7f78;
+}
+
+.history-item__clear {
+  border: 1px solid #e2b8b1;
+  border-radius: 999px;
+  background: #fff3f1;
+  color: #8e2f25;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.22rem 0.5rem;
+  margin-right: 0.55rem;
+}
+
+.history-item__clear:disabled {
+  opacity: 0.6;
 }
 
 .hazard-legend {

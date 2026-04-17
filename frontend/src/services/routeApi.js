@@ -126,3 +126,42 @@ export async function fetchRoutePlanHistory({ token, limit = 20, signal } = {}) 
     history: Array.isArray(payload?.history) ? payload.history.map(normalizeHistoryItem) : [],
   }
 }
+
+export async function deleteRoutePlanHistoryItem({ id, token, signal } = {}) {
+  const sessionId = getOrCreatePlanSessionId()
+  const response = await fetch(`${DEFAULT_BASE_URL}/routes/history/${encodeURIComponent(String(id || ''))}`, {
+    method: 'DELETE',
+    headers: {
+      Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'X-Plan-Session-Id': sessionId,
+    },
+    signal,
+  })
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(payload?.error || `Failed to delete route history item (${response.status})`)
+  }
+  return { ok: true }
+}
+
+export async function clearRoutePlanHistory({ token, signal } = {}) {
+  const sessionId = getOrCreatePlanSessionId()
+  const response = await fetch(`${DEFAULT_BASE_URL}/routes/history`, {
+    method: 'DELETE',
+    headers: {
+      Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'X-Plan-Session-Id': sessionId,
+    },
+    signal,
+  })
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(payload?.error || `Failed to clear route history (${response.status})`)
+  }
+  return {
+    ok: true,
+    deletedCount: Number(payload?.deletedCount || 0),
+  }
+}

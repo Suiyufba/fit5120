@@ -1,6 +1,8 @@
 import { planSaferRoute } from '../modules/routes/services/routePlannerService.js';
 import {
+  clearRoutePlanHistory,
   createRoutePlanHistoryEntry,
+  deleteRoutePlanHistoryEntry,
   listRoutePlanHistory,
 } from '../modules/routes/repositories/routePlanHistoryRepository.js';
 
@@ -70,6 +72,44 @@ export async function getRoutePlanHistory(req, res) {
     res.status(500).json({
       history: [],
       error: error.message || 'Failed to fetch route history',
+    });
+  }
+}
+
+export async function deleteRoutePlanHistoryItem(req, res) {
+  try {
+    const sessionId = normalizeSessionId(req.headers['x-plan-session-id']);
+    const deleted = await deleteRoutePlanHistoryEntry({
+      entryId: req.params?.id,
+      userId: req.auth?.userId,
+      sessionId,
+    });
+    if (!deleted) {
+      res.status(404).json({ error: 'History item not found' });
+      return;
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message || 'Failed to delete route history item',
+    });
+  }
+}
+
+export async function clearRoutePlanHistoryItems(req, res) {
+  try {
+    const sessionId = normalizeSessionId(req.headers['x-plan-session-id']);
+    const deletedCount = await clearRoutePlanHistory({
+      userId: req.auth?.userId,
+      sessionId,
+    });
+    res.json({
+      ok: true,
+      deletedCount,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message || 'Failed to clear route history',
     });
   }
 }
