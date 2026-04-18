@@ -54,7 +54,10 @@ let hazardRefreshTimer
 let historyInflightController
 let startSearchController
 let endSearchController
-let reverseLookupController
+let startReverseLookupController
+let endReverseLookupController
+let startReverseLookupRequestId = 0
+let endReverseLookupRequestId = 0
 
 const layerMeta = {
   fire: { label: 'Bushfire', color: '#D84727' },
@@ -154,6 +157,11 @@ function applyPointSelection(type, location) {
   }
 }
 
+function pointMatches(currentPoint, nextPoint) {
+  if (!currentPoint || !nextPoint) return false
+  return currentPoint.lat === nextPoint.lat && currentPoint.lng === nextPoint.lng
+}
+
 async function searchLocationOptions(type, query) {
   const text = String(query || '').trim()
   if (type === 'start') {
@@ -188,26 +196,49 @@ async function searchLocationOptions(type, query) {
   }
 }
 
-async function reverseLookupPointName(point) {
+async function reverseLookupPointName(type, point) {
   if (!point) return null
-  if (reverseLookupController) reverseLookupController.abort()
-  reverseLookupController = new AbortController()
+  const controller = new AbortController()
+  const requestId = type === 'start'
+    ? ++startReverseLookupRequestId
+    : ++endReverseLookupRequestId
+
+  if (type === 'start') {
+    if (startReverseLookupController) startReverseLookupController.abort()
+    startReverseLookupController = controller
+  } else {
+    if (endReverseLookupController) endReverseLookupController.abort()
+    endReverseLookupController = controller
+  }
+
   try {
-    return await reverseLocation(point.lat, point.lng, {
-      signal: reverseLookupController.signal,
+    const result = await reverseLocation(point.lat, point.lng, {
+      signal: controller.signal,
     })
+    return { result, requestId }
   } catch (error) {
     return null
   }
 }
 
 async function applyPointFromMap(type, point) {
-  const fallback = { lat: point.lat, lng: point.lng, displayName: '' }
-  const reverse = await reverseLookupPointName(point)
   applyPointSelection(type, {
     lat: point.lat,
     lng: point.lng,
-    displayName: reverse?.displayName || fallback.displayName,
+    displayName: 'Dropped pin location',
+  })
+
+  const reversePayload = await reverseLookupPointName(type, point)
+  if (!reversePayload?.result?.displayName) return
+
+  const currentPoint = type === 'start' ? startPoint.value : endPoint.value
+  const activeRequestId = type === 'start' ? startReverseLookupRequestId : endReverseLookupRequestId
+  if (!pointMatches(currentPoint, point) || reversePayload.requestId !== activeRequestId) return
+
+  applyPointSelection(type, {
+    lat: point.lat,
+    lng: point.lng,
+    displayName: reversePayload.result.displayName,
   })
 }
 
@@ -623,9 +654,7 @@ onMounted(() => {
     }
 
     const target = !startPoint.value ? 'start' : 'end'
-    await applyPointFromMap(target, point)
-    planResult.value = null
-    error.value = ''
+    void applyPointFromMap(target, point)
   })
 })
 
@@ -634,7 +663,8 @@ onUnmounted(() => {
   if (historyInflightController) historyInflightController.abort()
   if (startSearchController) startSearchController.abort()
   if (endSearchController) endSearchController.abort()
-  if (reverseLookupController) reverseLookupController.abort()
+  if (startReverseLookupController) startReverseLookupController.abort()
+  if (endReverseLookupController) endReverseLookupController.abort()
   if (hazardInflightController) hazardInflightController.abort()
   if (hazardRefreshTimer) window.clearInterval(hazardRefreshTimer)
   if (mapInstance) {
