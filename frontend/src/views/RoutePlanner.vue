@@ -43,6 +43,7 @@ const startSuggestions = ref([])
 const endSuggestions = ref([])
 const startLabel = ref('')
 const endLabel = ref('')
+const activeMapSelection = ref('start')
 
 let mapInstance
 let markerLayer
@@ -118,6 +119,7 @@ function formatPointCoordinates(point) {
 }
 
 function handlePointInputFocus(type) {
+  activeMapSelection.value = type
   if (type === 'start') {
     startInput.value = ''
     startSuggestions.value = []
@@ -125,6 +127,10 @@ function handlePointInputFocus(type) {
   }
   endInput.value = ''
   endSuggestions.value = []
+}
+
+function setActiveMapSelection(type) {
+  activeMapSelection.value = type
 }
 
 function applyPointSelection(type, location) {
@@ -138,11 +144,13 @@ function applyPointSelection(type, location) {
     startLabel.value = location.displayName || ''
     startInput.value = startLabel.value || 'Selected location'
     startSuggestions.value = []
+    activeMapSelection.value = endPoint.value ? 'start' : 'end'
   } else {
     endPoint.value = point
     endLabel.value = location.displayName || ''
     endInput.value = endLabel.value || 'Selected location'
     endSuggestions.value = []
+    activeMapSelection.value = 'end'
   }
 
   planResult.value = null
@@ -438,6 +446,7 @@ function resetSelection() {
   error.value = ''
   planResult.value = null
   selectedRouteId.value = ''
+  activeMapSelection.value = 'start'
   setLatestRoutePlan(null)
   renderMarkers()
   drawRoutes()
@@ -453,6 +462,7 @@ function applyHistoryPlan(item) {
   endInput.value = endPoint.value ? formatPointLabel(endLabel.value, endPoint.value) : ''
   startSuggestions.value = []
   endSuggestions.value = []
+  activeMapSelection.value = 'end'
   planResult.value = item.planPayload
   const choices = buildRouteChoices(item.planPayload)
   selectedRouteId.value = item.planPayload?.recommendedRoute?.id || choices[0]?.id || ''
@@ -617,22 +627,12 @@ onMounted(() => {
     }
 
     error.value = ''
+    const target =
+      !startPoint.value ? 'start'
+      : !endPoint.value ? 'end'
+      : activeMapSelection.value
 
-    if (!startPoint.value) {
-      await applyPointFromMap('start', point)
-      return
-    }
-
-    if (!endPoint.value) {
-      await applyPointFromMap('end', point)
-      return
-    }
-
-  startPoint.value = endPoint.value
-  startLabel.value = endLabel.value
-  startInput.value = formatPointLabel(startLabel.value, startPoint.value)
-  startSuggestions.value = []
-  await applyPointFromMap('end', point)
+    await applyPointFromMap(target, point)
     planResult.value = null
     error.value = ''
   })
@@ -672,7 +672,17 @@ onUnmounted(() => {
 
       <div class="planner-points">
         <div class="point-card">
-          <p>Start</p>
+          <div class="point-card__head">
+            <p>Start</p>
+            <button
+              type="button"
+              class="point-map-target-btn"
+              :class="{ 'point-map-target-btn--active': activeMapSelection === 'start' }"
+              @click="setActiveMapSelection('start')"
+            >
+              {{ activeMapSelection === 'start' ? 'Picking on map' : 'Pick on map' }}
+            </button>
+          </div>
           <input
             class="point-input"
             type="text"
@@ -696,7 +706,17 @@ onUnmounted(() => {
           </div>
         </div>
         <div class="point-card">
-          <p>Destination</p>
+          <div class="point-card__head">
+            <p>Destination</p>
+            <button
+              type="button"
+              class="point-map-target-btn"
+              :class="{ 'point-map-target-btn--active': activeMapSelection === 'end' }"
+              @click="setActiveMapSelection('end')"
+            >
+              {{ activeMapSelection === 'end' ? 'Picking on map' : 'Pick on map' }}
+            </button>
+          </div>
           <input
             class="point-input"
             type="text"
@@ -901,6 +921,29 @@ h1 {
   font-size: 0.68rem;
   color: #4f6b63;
   font-weight: 700;
+}
+
+.point-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.point-map-target-btn {
+  border: 1px solid #cfe0d7;
+  background: #ffffff;
+  color: #36584d;
+  border-radius: 999px;
+  padding: 0.22rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.point-map-target-btn--active {
+  background: #2e7d6b;
+  border-color: #2e7d6b;
+  color: #ffffff;
 }
 
 .point-card strong {
