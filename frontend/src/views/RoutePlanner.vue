@@ -742,10 +742,6 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <p v-if="startPoint && endPoint" class="planner-lock-note">
-        Start and destination are locked after selection. Use Reset Points to choose a different pair.
-      </p>
-
       <div class="planner-actions">
         <button class="primary-btn" :disabled="!canPlan" @click="handlePlanRoute">
           {{ loading ? 'Planning...' : 'Plan Safe Route' }}
@@ -940,14 +936,6 @@ h1 {
   font-size: 0.74rem;
 }
 
-.planner-lock-note {
-  border-radius: 0.65rem;
-  padding: 0.58rem 0.7rem;
-  background: #eef7f3;
-  border: 1px solid #cfe2d8;
-  color: #33574b;
-  font-size: 0.8rem;
-}
 
 .point-input {
   border: 1px solid #cfded6;
