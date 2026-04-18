@@ -112,6 +112,11 @@ function formatPointLabel(label, point) {
   return label || 'Selected location'
 }
 
+function formatPointCoordinates(point) {
+  if (!point) return ''
+  return `${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}`
+}
+
 function handlePointInputFocus(type) {
   if (type === 'start') {
     startInput.value = ''
@@ -199,7 +204,11 @@ async function reverseLookupPointName(point) {
 async function applyPointFromMap(type, point) {
   const fallback = { lat: point.lat, lng: point.lng, displayName: '' }
   const reverse = await reverseLookupPointName(point)
-  applyPointSelection(type, reverse || fallback)
+  applyPointSelection(type, {
+    lat: point.lat,
+    lng: point.lng,
+    displayName: reverse?.displayName || fallback.displayName,
+  })
 }
 
 const canPlan = computed(() => Boolean(startPoint.value && endPoint.value && !loading.value))
@@ -672,6 +681,8 @@ onUnmounted(() => {
             @focus="handlePointInputFocus('start')"
             @input="searchLocationOptions('start', $event.target.value)"
           />
+          <strong v-if="startPoint">{{ formatPointLabel(startLabel, startPoint) }}</strong>
+          <span v-if="startPoint" class="point-coordinates">{{ formatPointCoordinates(startPoint) }}</span>
           <div v-if="startSuggestions.length" class="point-suggestions">
             <button
               v-for="item in startSuggestions"
@@ -694,6 +705,8 @@ onUnmounted(() => {
             @focus="handlePointInputFocus('end')"
             @input="searchLocationOptions('end', $event.target.value)"
           />
+          <strong v-if="endPoint">{{ formatPointLabel(endLabel, endPoint) }}</strong>
+          <span v-if="endPoint" class="point-coordinates">{{ formatPointCoordinates(endPoint) }}</span>
           <div v-if="endSuggestions.length" class="point-suggestions">
             <button
               v-for="item in endSuggestions"
@@ -895,6 +908,11 @@ h1 {
   color: #213e37;
   font-size: 0.86rem;
   word-break: break-word;
+}
+
+.point-coordinates {
+  color: #5f766d;
+  font-size: 0.74rem;
 }
 
 .point-input {
