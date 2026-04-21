@@ -54,21 +54,22 @@ async function handleSubmit() {
 
 <template>
   <div>
-    <main class="max-w-3xl mx-auto px-4 sm:px-6 py-10 md:py-20">
-      <header class="mb-10 text-center md:text-left">
-        <h1 class="font-display text-5xl sm:text-6xl font-semibold tracking-[-0.015em] text-[#1a3d33] mb-4 text-balance">Submit a Community Hazard Report</h1>
-        <p class="text-on-surface-variant text-base sm:text-lg max-w-xl">
+    <main class="report-page max-w-3xl mx-auto px-4 sm:px-6 py-10 md:py-20">
+      <header class="report-hero mb-8 md:mb-10 text-center md:text-left">
+        <p class="u-kicker mb-4">Community safety signal</p>
+        <h1 class="font-display text-5xl sm:text-6xl font-semibold tracking-[-0.015em] mb-4 text-balance">Submit a Community Hazard Report</h1>
+        <p class="text-base sm:text-lg max-w-xl">
           Your report is saved to the live community database and shown on the Community Reports page.
         </p>
       </header>
 
-      <section class="bg-surface-container-low p-5 sm:p-8 md:p-12 rounded-xl shadow-sm space-y-8">
+      <section class="report-card p-5 sm:p-8 md:p-12 space-y-8">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="space-y-3 md:col-span-2">
             <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Report Title</label>
             <input
               v-model="form.title"
-              class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/20"
+              class="report-input w-full px-4 py-3"
               type="text"
               placeholder="e.g. Fallen tree blocking summit trail"
             />
@@ -79,14 +80,14 @@ async function handleSubmit() {
             <textarea
               v-model="form.description"
               rows="4"
-              class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/20"
+              class="report-input w-full px-4 py-3"
               placeholder="Describe what happened, current risk, and what hikers should do."
             ></textarea>
           </div>
 
           <div class="space-y-3">
             <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Hazard Type</label>
-            <select v-model="form.hazardType" class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-on-surface">
+            <select v-model="form.hazardType" class="report-input w-full px-4 py-3">
               <option value="fire">Fire / Smoke</option>
               <option value="flood">Flood / Water Rise</option>
               <option value="storm">Weather / Mud / Storm</option>
@@ -97,7 +98,7 @@ async function handleSubmit() {
 
           <div class="space-y-3">
             <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Severity</label>
-            <select v-model="form.severity" class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-on-surface">
+            <select v-model="form.severity" class="report-input w-full px-4 py-3">
               <option value="low">Low</option>
               <option value="moderate">Moderate</option>
               <option value="high">High</option>
@@ -109,7 +110,7 @@ async function handleSubmit() {
             <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Location Name</label>
             <input
               v-model="form.locationName"
-              class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/20"
+              class="report-input w-full px-4 py-3"
               type="text"
               placeholder="e.g. Razorback Trail, Alpine National Park"
             />
@@ -117,21 +118,21 @@ async function handleSubmit() {
 
           <div class="space-y-3">
             <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Latitude</label>
-            <input v-model="form.latitude" class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3" type="number" step="0.000001" />
+            <input v-model="form.latitude" class="report-input w-full px-4 py-3" type="number" step="0.000001" />
           </div>
           <div class="space-y-3">
             <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Longitude</label>
-            <input v-model="form.longitude" class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3" type="number" step="0.000001" />
+            <input v-model="form.longitude" class="report-input w-full px-4 py-3" type="number" step="0.000001" />
           </div>
 
           <div class="space-y-3">
             <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Reporter Name (Optional)</label>
-            <input v-model="form.reporterName" class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3" type="text" placeholder="Anonymous Hiker" />
+            <input v-model="form.reporterName" class="report-input w-full px-4 py-3" type="text" placeholder="Anonymous Hiker" />
           </div>
 
           <div class="space-y-3">
             <label class="font-label text-xs uppercase tracking-widest font-bold text-outline">Image URL (Optional)</label>
-            <input v-model="form.imageUrl" class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3" type="url" placeholder="https://..." />
+            <input v-model="form.imageUrl" class="report-input w-full px-4 py-3" type="url" placeholder="https://..." />
           </div>
         </div>
 
@@ -143,7 +144,7 @@ async function handleSubmit() {
         </p>
 
         <button
-          class="w-full primary-gradient text-on-primary font-headline font-bold py-5 px-8 rounded-lg shadow-xl hover:opacity-95 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-60"
+          class="w-full hs-button-primary py-5 px-8 flex disabled:opacity-60"
           :disabled="isSubmitting"
           @click="handleSubmit"
         >
@@ -156,3 +157,43 @@ async function handleSubmit() {
     <SiteFooter />
   </div>
 </template>
+
+<style scoped>
+.report-page {
+  position: relative;
+}
+
+.report-hero {
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1.25rem;
+  background:
+    linear-gradient(110deg, rgba(23, 59, 49, 0.93), rgba(23, 59, 49, 0.56)),
+    var(--hs-hero-image) center/cover;
+  padding: clamp(1.4rem, 4vw, 3rem);
+  color: #fffaf2;
+  box-shadow: var(--hs-shadow-soft);
+}
+
+.report-hero :deep(.u-kicker),
+.report-hero h1 {
+  color: #fffaf2;
+}
+
+.report-hero p {
+  color: rgba(255, 250, 242, 0.76);
+}
+
+.report-card {
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1.25rem;
+  background: rgba(255, 250, 242, 0.92);
+  box-shadow: var(--hs-shadow-soft);
+}
+
+.report-input {
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 0.85rem;
+  background: #ffffff;
+  color: #173b31;
+}
+</style>

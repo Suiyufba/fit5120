@@ -208,44 +208,50 @@ onUnmounted(() => {
   <div>
   <main class="space-y-12 md:space-y-16 pb-16 md:pb-20">
     <!-- Hero Section -->
-    <section class="relative px-4 md:px-8 pt-10 md:pt-24 overflow-hidden">
-      <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-8 md:gap-12 items-center">
-        <div class="w-full md:w-1/2 z-10">
-          <span class="text-xs font-label uppercase tracking-[0.22em] text-primary mb-5 block">
-            <span class="inline-block w-6 h-px align-middle bg-primary/60 mr-2"></span>Official Victorian Safety Guide
+    <section class="home-hero">
+      <div class="home-hero__media">
+        <img
+          alt="Golden mountain trail through Victorian bushland"
+          src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=2200&q=82"
+        />
+      </div>
+      <div class="home-hero__overlay"></div>
+      <div class="home-hero__content">
+        <div class="home-hero__copy">
+          <span class="home-hero__kicker">
+            <span></span>Premium Victorian Safety Guide
           </span>
-          <h1 class="font-display text-[2.65rem] sm:text-6xl md:text-[5.25rem] font-semibold text-on-surface leading-[1.03] tracking-[-0.015em] mb-6 md:mb-8 text-balance">
-            Hike with <span class="gradient-text">Confidence</span> in Victoria.
+          <h1>
+            Hike Victoria with quiet <span>confidence.</span>
           </h1>
-          <div class="flex flex-col sm:flex-row flex-wrap gap-3 md:gap-4">
+          <p>
+            Plan safer routes, read live risk layers, and move through the outdoors with official data and community intelligence in one refined trail companion.
+          </p>
+          <div class="home-hero__actions">
             <button
-              class="primary-gradient text-on-primary px-6 md:px-8 py-4 rounded-lg font-bold flex items-center justify-center gap-2 shadow-xl shadow-primary/20 hover:opacity-90 transition-all"
+              class="hs-button-primary px-6 md:px-8 py-4"
               @click="router.push('/risk-map')"
             >
               <span class="material-symbols-outlined">map</span> Check Risk Map
             </button>
             <button
-              class="bg-surface-container-high text-primary px-6 md:px-8 py-4 rounded-lg font-bold border-2 border-primary/10 hover:bg-surface-container-highest transition-all"
+              class="hs-button-secondary px-6 md:px-8 py-4"
               @click="router.push('/route-planner')"
             >
-              Plan My Route
+              <span class="material-symbols-outlined">route</span> Plan My Route
             </button>
           </div>
         </div>
-        <div class="w-full md:w-1/2 relative">
-          <div class="aspect-[1/1] sm:aspect-square rounded-[1.6rem] md:rounded-[2rem] overflow-hidden bg-surface-container-high rotate-0 md:rotate-3 hover:rotate-0 transition-transform duration-500">
-            <img
-              class="w-full h-full object-cover"
-              alt="Stunning aerial view of the rugged Grampians National Park in Victoria"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmNyB922YneY1cbo22Sttfq74UspbMx6Vrm-cr5xzgB9OfhoGhfly1s-GFQUpk1yLdxJESMHIccLvddetSCEwmU519zR9aV38SFNj_QpO4O-ippvOXQhrAl8K3lAoNTtrTk86KAEKNXoWKZXZZV7tQGlSkwH9C-6eukOcdWi6jW6iooq9zRGM513df6ITqsjlEqL8ucroqiBNahzq-UQCYyukUlfLXUtKQnsW89abQApWV8cs_4I0yWhFWgelNSH3UwMC734-x3vc"
-            />
+        <div class="home-hero__panel">
+          <div>
+            <p>Live safety pulse</p>
+            <strong>{{ previewHazards.length }}</strong>
+            <span>active signals</span>
           </div>
-          <div class="absolute bottom-4 left-4 md:-bottom-6 md:-left-6 bg-glass bg-white/80 p-4 md:p-6 rounded-2xl shadow-2xl backdrop-blur-md max-w-[220px] md:max-w-[240px] border border-white/40">
-            <div class="flex items-center gap-3 mb-2">
-              <span class="w-3 h-3 rounded-full bg-error animate-pulse"></span>
-              <span class="font-bold text-sm">Active Warning</span>
-            </div>
-            <p class="text-xs text-on-surface-variant leading-relaxed">Extreme heat predicted for the High Country trails this weekend. Stay hydrated.</p>
+          <div>
+            <p>Highest category</p>
+            <strong>{{ topPreviewHazards[0]?.severity ? severityMeta[topPreviewHazards[0].severity]?.label : 'Clear' }}</strong>
+            <span>{{ previewUpdatedAt ? `updated ${previewUpdatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'syncing data' }}</span>
           </div>
         </div>
       </div>
@@ -254,7 +260,7 @@ onUnmounted(() => {
     <!-- Risk Map Preview & Hazard Bento -->
     <section class="px-4 md:px-8 max-w-7xl mx-auto">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div class="md:col-span-8 bg-surface-container-low rounded-[2rem] p-4 flex flex-col gap-6 group border border-[#d7e5d8]">
+        <div class="md:col-span-8 hs-card rounded-[1.25rem] p-4 flex flex-col gap-6 group">
           <div class="flex justify-between items-center px-4 pt-2">
             <h2 class="font-display text-[1.7rem] sm:text-[2rem] font-semibold tracking-[-0.012em]">Live Risk Map Preview</h2>
             <div class="flex items-center gap-3">
@@ -264,7 +270,7 @@ onUnmounted(() => {
               <span class="material-symbols-outlined text-primary cursor-pointer" @click="router.push('/risk-map')">open_in_full</span>
             </div>
           </div>
-          <div class="relative w-full h-[320px] sm:h-[380px] md:h-[420px] rounded-[1.5rem] overflow-hidden bg-surface-dim border border-white/60">
+          <div class="relative w-full h-[320px] sm:h-[380px] md:h-[420px] rounded-[1rem] overflow-hidden bg-surface-dim border border-white/60">
             <HomeRiskPreviewMap :hazards="previewHazards" />
             <div class="absolute inset-x-4 bottom-4 bg-white/90 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/70">
               <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-[#31544a] mb-2">Top Active Hazards</p>
@@ -315,7 +321,7 @@ onUnmounted(() => {
 
         <div class="md:col-span-4 flex flex-col gap-4">
           <!-- Dominant hazard tile: Bushfire is the defining risk for Victorian summer hikes -->
-          <article class="relative p-6 rounded-[1.75rem] bg-[#fff4ed] border border-[#f1cdb8] overflow-hidden">
+          <article class="relative p-6 rounded-[1rem] bg-[#fff4ed] border border-[#f1cdb8] overflow-hidden shadow-sm">
             <div class="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-error/10 blur-2xl pointer-events-none"></div>
             <div class="relative flex items-start justify-between gap-3 mb-4">
               <span class="material-symbols-outlined text-[2.75rem] text-error leading-none" style="font-variation-settings: 'FILL' 1">local_fire_department</span>
@@ -328,7 +334,7 @@ onUnmounted(() => {
           </article>
 
           <!-- Quieter row of secondary hazards — no repeated card template -->
-          <ul class="divide-y divide-[#dce7dd] border border-[#dce7dd] rounded-[1.5rem] bg-white overflow-hidden">
+          <ul class="divide-y divide-[#dce7dd] border border-[#dce7dd] rounded-[1rem] bg-white overflow-hidden shadow-sm">
             <li class="flex items-center gap-4 px-5 py-4">
               <span class="material-symbols-outlined text-[1.75rem] text-blue-500 shrink-0" style="font-variation-settings: 'FILL' 1">rainy</span>
               <div class="min-w-0 flex-1">
@@ -497,3 +503,165 @@ onUnmounted(() => {
   <SiteFooter />
   </div>
 </template>
+
+<style scoped>
+.home-hero {
+  position: relative;
+  min-height: clamp(620px, calc(100vh - 72px), 820px);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  isolation: isolate;
+  margin-bottom: 1.5rem;
+}
+
+.home-hero__media,
+.home-hero__overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.home-hero__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.02);
+}
+
+.home-hero__overlay {
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(13, 35, 29, 0.9) 0%, rgba(13, 35, 29, 0.62) 42%, rgba(13, 35, 29, 0.16) 100%),
+    linear-gradient(0deg, rgba(13, 35, 29, 0.72), transparent 44%);
+}
+
+.home-hero__content {
+  position: relative;
+  z-index: 2;
+  width: min(1220px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: clamp(2rem, 5vw, 5rem) 0;
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(280px, 0.34fr);
+  gap: clamp(1.25rem, 4vw, 4rem);
+  align-items: end;
+}
+
+.home-hero__copy {
+  max-width: 48rem;
+  color: #fffaf2;
+}
+
+.home-hero__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 1.3rem;
+  font-size: 0.73rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 250, 242, 0.82);
+}
+
+.home-hero__kicker span {
+  width: 2rem;
+  height: 1px;
+  background: currentColor;
+}
+
+.home-hero h1 {
+  max-width: 46rem;
+  margin: 0;
+  color: #fffaf2;
+  font-size: clamp(3.25rem, 8vw, 7.6rem);
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+}
+
+.home-hero h1 span {
+  color: #d9e8cf;
+}
+
+.home-hero p {
+  max-width: 39rem;
+  margin-top: 1.5rem;
+  color: rgba(255, 250, 242, 0.78);
+  font-size: clamp(1rem, 1.35vw, 1.18rem);
+  line-height: 1.7;
+}
+
+.home-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-top: 2rem;
+}
+
+.home-hero__panel {
+  display: grid;
+  gap: 0.8rem;
+  border: 1px solid rgba(255, 250, 242, 0.28);
+  border-radius: 1.25rem;
+  background: rgba(255, 250, 242, 0.82);
+  padding: 1rem;
+  color: #173b31;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
+}
+
+.home-hero__panel div {
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.64);
+  padding: 1rem;
+}
+
+.home-hero__panel p,
+.home-hero__panel span {
+  margin: 0;
+  color: #687d72;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.home-hero__panel strong {
+  display: block;
+  margin: 0.25rem 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 1;
+  color: #173b31;
+}
+
+@media (max-width: 900px) {
+  .home-hero {
+    min-height: auto;
+  }
+
+  .home-hero__content {
+    grid-template-columns: 1fr;
+    padding-top: 7rem;
+  }
+
+  .home-hero__panel {
+    max-width: 28rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-hero__content {
+    width: min(100% - 1.5rem, 1220px);
+    padding-bottom: 2rem;
+  }
+
+  .home-hero h1 {
+    font-size: clamp(3rem, 17vw, 4.4rem);
+  }
+
+  .home-hero__actions {
+    flex-direction: column;
+  }
+}
+</style>

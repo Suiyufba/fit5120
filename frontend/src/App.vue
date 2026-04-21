@@ -3,7 +3,7 @@ import Navbar from './components/Navbar.vue'
 </script>
 
 <template>
-  <div id="app" class="bg-surface font-body text-on-surface min-h-screen flex flex-col">
+  <div id="app" class="font-body text-on-surface min-h-screen flex flex-col">
     <Navbar />
     <router-view v-slot="{ Component }">
       <transition name="page" mode="out-in">

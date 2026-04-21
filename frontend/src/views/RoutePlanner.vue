@@ -621,7 +621,7 @@ onMounted(() => {
   applyVictoriaMapConstraints(mapInstance)
 
   mapInstance.attributionControl.setPrefix(false)
-  L.control.zoom({ position: 'bottomright' }).addTo(mapInstance)
+  L.control.zoom({ position: 'topright' }).addTo(mapInstance)
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
@@ -852,18 +852,20 @@ onUnmounted(() => {
 <style scoped>
 .planner-layout {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: minmax(370px, 410px) 1fr;
   height: calc(100vh - 72px);
   height: var(--mobile-safe-height);
-  background: linear-gradient(130deg, #f3f8f5 0%, #e6f2ee 45%, #eef4fb 100%);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(143, 174, 131, 0.24), transparent 26rem),
+    linear-gradient(130deg, #fffaf2 0%, #f2eee5 48%, #e7eee4 100%);
   position: relative;
 }
 
 .planner-panel {
   --mobile-sheet-peek: 250px;
-  border-right: 1px solid #d8e3dc;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(7px);
+  border-right: 1px solid rgba(33, 72, 59, 0.14);
+  background: rgba(255, 250, 242, 0.86);
+  backdrop-filter: blur(18px);
   padding: 1.2rem;
   display: flex;
   flex-direction: column;
@@ -883,16 +885,18 @@ onUnmounted(() => {
 
 .planner-kicker {
   font-size: 0.72rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #40695c;
-  font-weight: 700;
+  color: #6f897b;
+  font-weight: 900;
 }
 
 h1 {
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: #1d3932;
+  margin-top: 0.25rem;
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 700;
+  color: #173b31;
 }
 
 .planner-sub {
@@ -907,10 +911,11 @@ h1 {
 }
 
 .point-card {
-  border: 1px solid #dbe5de;
-  border-radius: 0.7rem;
-  padding: 0.7rem;
-  background: #fcfffd;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1rem;
+  padding: 0.82rem;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.012), 0 2px 8px rgba(0,0,0,0.03), 0 10px 24px rgba(25,56,45,0.05);
   display: grid;
   gap: 0.38rem;
   position: relative;
@@ -938,9 +943,9 @@ h1 {
 
 
 .point-input {
-  border: 1px solid #cfded6;
-  border-radius: 0.52rem;
-  padding: 0.42rem 0.5rem;
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 0.8rem;
+  padding: 0.58rem 0.68rem;
   background: #ffffff;
   color: #23443a;
   font-size: 0.82rem;
@@ -978,14 +983,15 @@ h1 {
 .primary-btn,
 .ghost-btn {
   border: 0;
-  border-radius: 0.65rem;
-  padding: 0.72rem 0.82rem;
-  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.82rem 1rem;
+  font-weight: 800;
 }
 
 .primary-btn {
-  background: #2e7d6b;
-  color: #fff;
+  background: linear-gradient(135deg, #173b31, #2f604e 68%, #7f9b75);
+  color: #fffaf2;
+  box-shadow: 0 14px 30px rgba(23, 59, 49, 0.2);
 }
 
 .primary-btn:disabled {
@@ -993,9 +999,9 @@ h1 {
 }
 
 .ghost-btn {
-  border: 1px solid #bfd1c8;
-  background: #fff;
-  color: #2f5448;
+  border: 1px solid rgba(33, 72, 59, 0.16);
+  background: rgba(255, 255, 255, 0.86);
+  color: #21483b;
 }
 
 .planner-error {
@@ -1008,10 +1014,10 @@ h1 {
 }
 
 .history-panel {
-  border: 1px solid #d9e5dd;
-  border-radius: 0.68rem;
-  padding: 0.62rem;
-  background: #fbfffd;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1rem;
+  padding: 0.78rem;
+  background: rgba(255, 255, 255, 0.86);
   display: grid;
   gap: 0.45rem;
 }
@@ -1125,10 +1131,10 @@ h1 {
 }
 
 .hazard-legend {
-  border: 1px solid #d9e5dd;
-  border-radius: 0.68rem;
-  padding: 0.62rem;
-  background: #fbfffd;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1rem;
+  padding: 0.78rem;
+  background: rgba(255, 255, 255, 0.86);
 }
 
 .hazard-legend p {
@@ -1166,12 +1172,13 @@ h1 {
 }
 
 .planner-summary {
-  border: 1px solid #d7e4dc;
-  border-radius: 0.8rem;
-  background: #ffffff;
-  padding: 0.8rem;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.9rem;
   display: grid;
   gap: 0.7rem;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.012), 0 2px 8px rgba(0,0,0,0.03), 0 10px 24px rgba(25,56,45,0.05);
 }
 
 .summary-kicker {
@@ -1189,9 +1196,9 @@ h1 {
 }
 
 .route-option-card {
-  border: 1px solid #d8e6de;
-  border-radius: 0.62rem;
-  background: #f9fdfb;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 0.9rem;
+  background: #fffaf2;
   color: #2f4f45;
   text-align: left;
   padding: 0.5rem;
@@ -1199,9 +1206,9 @@ h1 {
 }
 
 .route-option-card--active {
-  border-color: #2e7d6b;
-  background: #e9f8f2;
-  box-shadow: 0 0 0 2px rgba(46, 125, 107, 0.16);
+  border-color: rgba(33, 72, 59, 0.34);
+  background: #f2f7ee;
+  box-shadow: 0 0 0 3px rgba(46, 125, 107, 0.13);
 }
 
 .route-option-card__title {
@@ -1285,11 +1292,16 @@ h1 {
 
 .planner-map-wrap {
   position: relative;
+  padding: 0.85rem;
+  background: #dfe8dd;
 }
 
 .planner-map {
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  border-radius: 1.15rem;
+  box-shadow: inset 0 0 0 1px rgba(33, 72, 59, 0.08), 0 20px 60px rgba(23, 59, 49, 0.12);
 }
 
 .planner-map :deep(.leaflet-control-attribution) {
@@ -1333,9 +1345,9 @@ h1 {
 
   .planner-panel {
     border-right: 0;
-    border-top: 1px solid #d8e3dc;
+    border-top: 1px solid rgba(33, 72, 59, 0.14);
     padding: 0 1rem 1rem;
-    background: rgba(255, 255, 255, 0.96);
+    background: rgba(255, 250, 242, 0.96);
   }
 
   .planner-mobile-actions {
@@ -1346,6 +1358,10 @@ h1 {
 
   .planner-map-wrap {
     min-height: var(--mobile-safe-height);
+  }
+
+  .planner-map :deep(.leaflet-control-attribution) {
+    display: none;
   }
 
   .route-options {

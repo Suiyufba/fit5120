@@ -903,20 +903,27 @@ onUnmounted(() => {
 <style scoped>
 .detail-layout {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr minmax(380px, 420px);
   height: calc(100vh - 72px);
   height: var(--mobile-safe-height);
-  background: #f0f6f3;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(143, 174, 131, 0.24), transparent 26rem),
+    linear-gradient(130deg, #fffaf2 0%, #f2eee5 48%, #e7eee4 100%);
   position: relative;
 }
 
 .detail-map-wrap {
   position: relative;
+  padding: 0.85rem;
+  background: #dfe8dd;
 }
 
 .detail-map {
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  border-radius: 1.15rem;
+  box-shadow: inset 0 0 0 1px rgba(33, 72, 59, 0.08), 0 20px 60px rgba(23, 59, 49, 0.12);
 }
 
 .map-init-error {
@@ -936,9 +943,9 @@ onUnmounted(() => {
 
 .detail-panel {
   --mobile-sheet-peek: 255px;
-  border-left: 1px solid #d5e1d8;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(7px);
+  border-left: 1px solid rgba(33, 72, 59, 0.14);
+  background: rgba(255, 250, 242, 0.88);
+  backdrop-filter: blur(18px);
   padding: 1rem;
   overflow: auto;
   display: flex;
@@ -958,23 +965,24 @@ onUnmounted(() => {
 
 .detail-kicker {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.18em;
   font-size: 0.7rem;
-  color: #3f6558;
-  font-weight: 700;
+  color: #6f897b;
+  font-weight: 900;
 }
 
 h1 {
-  font-size: 1.5rem;
-  color: #1f3b33;
-  font-weight: 800;
+  font-size: 2rem;
+  line-height: 1;
+  color: #173b31;
+  font-weight: 700;
 }
 
 .route-picker {
-  border: 1px solid #d7e4dc;
-  border-radius: 0.75rem;
-  background: #ffffff;
-  padding: 0.7rem;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.8rem;
   display: grid;
   gap: 0.5rem;
 }
@@ -994,9 +1002,9 @@ h1 {
 }
 
 .route-picker__card {
-  border: 1px solid #d8e6de;
-  border-radius: 0.6rem;
-  background: #f9fdfb;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 0.9rem;
+  background: #fffaf2;
   color: #2f4f45;
   text-align: left;
   padding: 0.48rem;
@@ -1005,9 +1013,9 @@ h1 {
 }
 
 .route-picker__card--active {
-  border-color: #2e7d6b;
-  background: #e9f8f2;
-  box-shadow: 0 0 0 2px rgba(46, 125, 107, 0.16);
+  border-color: rgba(33, 72, 59, 0.34);
+  background: #f2f7ee;
+  box-shadow: 0 0 0 3px rgba(46, 125, 107, 0.13);
 }
 
 .route-picker__title {
@@ -1035,10 +1043,10 @@ h1 {
 }
 
 .metric-grid article {
-  border: 1px solid #dbe6df;
-  border-radius: 0.65rem;
-  background: #fbfefc;
-  padding: 0.55rem;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 0.7rem;
 }
 
 .metric-grid span {
@@ -1086,10 +1094,10 @@ h1 {
 
 .risk-item,
 .tip-item {
-  border: 1px solid #dce6df;
-  border-radius: 0.65rem;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 0.9rem;
   padding: 0.56rem;
-  background: #fff;
+  background: #fffaf2;
   margin-bottom: 0.45rem;
 }
 
@@ -1111,8 +1119,8 @@ h1 {
 
 .back-btn {
   margin-top: 0.5rem;
-  border: 1px solid #bcd0c5;
-  border-radius: 0.65rem;
+  border: 1px solid rgba(33, 72, 59, 0.16);
+  border-radius: 999px;
   background: #fff;
   padding: 0.66rem;
   font-weight: 700;
@@ -1121,9 +1129,9 @@ h1 {
 
 .share-btn {
   border: 0;
-  border-radius: 0.65rem;
-  background: #2e7d6b;
-  color: #fff;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #173b31, #2f604e 68%, #7f9b75);
+  color: #fffaf2;
   padding: 0.66rem;
   font-weight: 700;
 }
@@ -1131,7 +1139,7 @@ h1 {
 .gmaps-btn {
   margin-top: auto;
   border: 1px solid #c2d5cb;
-  border-radius: 0.65rem;
+  border-radius: 999px;
   background: linear-gradient(135deg, #1a73e8 0%, #1967d2 100%);
   color: #fff;
   padding: 0.66rem;
@@ -1183,9 +1191,9 @@ h1 {
 
   .detail-panel {
     border-left: 0;
-    border-top: 1px solid #d5e1d8;
+    border-top: 1px solid rgba(33, 72, 59, 0.14);
     padding: 0 1rem 1rem;
-    background: rgba(255, 255, 255, 0.97);
+    background: rgba(255, 250, 242, 0.97);
   }
 
   .detail-mobile-actions {

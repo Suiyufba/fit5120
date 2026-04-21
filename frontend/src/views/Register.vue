@@ -157,27 +157,27 @@ async function handleSubmit() {
   min-height: calc(100vh - 72px);
   padding: 2rem 1rem;
   background:
-    radial-gradient(circle at 0% 0%, rgba(92, 136, 110, 0.24), transparent 28%),
-    radial-gradient(circle at 100% 100%, rgba(70, 119, 148, 0.22), transparent 32%),
-    #f5f8f3;
+    linear-gradient(110deg, rgba(23, 59, 49, 0.84), rgba(23, 59, 49, 0.2)),
+    var(--hs-hero-image) center/cover fixed;
 }
 
 .register-card {
   max-width: 880px;
   margin: 0 auto;
-  border: 1px solid #d9e4d9;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 1.25rem;
+  background: rgba(255, 250, 242, 0.92);
   padding: 1.5rem;
-  box-shadow: 0 20px 48px rgba(30, 61, 51, 0.12);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
 }
 
 .register-kicker {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.18em;
   color: #47695a;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 900;
 }
 
 h1 {
@@ -224,17 +224,17 @@ input[type="password"],
 input[type="number"],
 select,
 input[type="text"] {
-  border: 1px solid #cfddd1;
-  border-radius: 0.7rem;
-  padding: 0.65rem 0.8rem;
-  background: #fdfffd;
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 0.85rem;
+  padding: 0.78rem 0.9rem;
+  background: #ffffff;
 }
 
 .quiz-panel {
-  border: 1px solid #dce6dc;
-  border-radius: 0.9rem;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1rem;
   padding: 1rem;
-  background: #f8fbf8;
+  background: #f8f6ef;
 }
 
 h2 {
@@ -277,11 +277,11 @@ h2 {
 
 button {
   border: none;
-  border-radius: 0.8rem;
-  padding: 0.75rem 0.9rem;
-  color: #fff;
-  font-weight: 700;
-  background: linear-gradient(135deg, #305d4f 0%, #6d8f43 100%);
+  border-radius: 999px;
+  padding: 0.86rem 1rem;
+  color: #fffaf2;
+  font-weight: 800;
+  background: linear-gradient(135deg, #173b31, #2f604e 68%, #7f9b75);
 }
 
 button:disabled {

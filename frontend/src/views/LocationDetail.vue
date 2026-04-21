@@ -262,7 +262,9 @@ onMounted(() => {
   grid-template-columns: 1fr 440px;
   height: calc(100vh - 72px);
   height: var(--mobile-safe-height);
-  background: linear-gradient(135deg, #eef5f0 0%, #ecf3fa 55%, #f8f5ee 100%);
+  background:
+    linear-gradient(110deg, rgba(23, 59, 49, 0.72), rgba(23, 59, 49, 0.18)),
+    var(--hs-hero-image) center/cover;
 }
 
 .detail-map-hint {
@@ -273,21 +275,22 @@ onMounted(() => {
 }
 
 .detail-map-card {
-  border: 1px solid #cddfd4;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(5px);
-  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 1.25rem;
+  background: rgba(255, 250, 242, 0.84);
+  backdrop-filter: blur(18px);
+  padding: 1.15rem;
   width: min(460px, 90%);
   z-index: 2;
+  box-shadow: var(--hs-shadow);
 }
 
 .detail-map-kicker {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.18em;
   font-size: 0.68rem;
-  font-weight: 700;
-  color: #3c6558;
+  font-weight: 900;
+  color: #6f897b;
 }
 
 .detail-map-card h2 {
@@ -314,9 +317,9 @@ onMounted(() => {
 }
 
 .detail-panel {
-  border-left: 1px solid #d6e1d8;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(7px);
+  border-left: 1px solid rgba(33, 72, 59, 0.14);
+  background: rgba(255, 250, 242, 0.9);
+  backdrop-filter: blur(18px);
   padding: 1rem;
   overflow: auto;
   display: flex;
@@ -333,15 +336,15 @@ onMounted(() => {
 
 .detail-kicker {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.18em;
   font-size: 0.7rem;
   font-weight: 800;
-  color: #3f675a;
+  color: #6f897b;
 }
 
 .back-btn {
-  border: 1px solid #c4d5cb;
-  border-radius: 0.6rem;
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 999px;
   background: #fff;
   color: #2d5146;
   padding: 0.45rem 0.75rem;
@@ -349,10 +352,11 @@ onMounted(() => {
 }
 
 .detail-card {
-  border: 1px solid #dce6df;
-  border-radius: 0.85rem;
-  background: #fff;
-  padding: 0.8rem;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.95rem;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.012), 0 2px 8px rgba(0,0,0,0.03), 0 10px 24px rgba(25,56,45,0.05);
 }
 
 .detail-card h1 {
@@ -433,9 +437,9 @@ onMounted(() => {
 .report-item {
   margin-top: 0.6rem;
   border: 1px solid #dfe7e1;
-  border-radius: 0.72rem;
-  background: #fcfefd;
-  padding: 0.55rem;
+  border-radius: 0.9rem;
+  background: #fffaf2;
+  padding: 0.65rem;
   display: grid;
   grid-template-columns: 72px 1fr;
   gap: 0.55rem;
@@ -502,7 +506,7 @@ onMounted(() => {
 
   .detail-panel {
     border-left: 0;
-    border-top: 1px solid #d6e1d8;
+    border-top: 1px solid rgba(33, 72, 59, 0.14);
   }
 
   .report-item {

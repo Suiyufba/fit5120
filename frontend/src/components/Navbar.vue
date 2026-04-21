@@ -38,56 +38,60 @@ function goAccount() {
 </script>
 
 <template>
-  <header class="bg-white/80 backdrop-blur-xl sticky top-0 z-[3000] shadow-sm bg-surface-container-low">
-    <nav class="flex justify-between items-center px-4 py-3 md:px-8 md:py-4 max-w-full mx-auto">
+  <header class="site-nav">
+    <nav class="site-nav__inner">
       <router-link to="/" class="brand-lockup">
         <img src="/hikeshield-logo.png" alt="HikeShield logo" class="brand-mark" />
-        <span class="brand-wordmark">HikeShield</span>
+        <span class="brand-text">
+          <span class="brand-wordmark">HikeShield</span>
+          <span class="brand-subline">Victoria trail safety</span>
+        </span>
       </router-link>
 
-      <div class="hidden md:flex items-center gap-8 font-headline font-bold tracking-tight text-on-surface">
+      <div class="desktop-nav">
         <router-link
           v-for="item in navItems"
           :key="item.path"
           :to="item.path"
-          class="transition-all duration-300"
+          class="desktop-nav__link"
           :class="isActive(item.path)
-            ? 'text-[#4A6741] border-b-2 border-[#4A6741] pb-1'
-            : 'text-slate-600 hover:text-[#4A6741]'"
+            ? 'desktop-nav__link--active'
+            : ''"
         >
           {{ item.name }}
         </router-link>
       </div>
 
-      <div class="flex items-center gap-2 md:gap-4">
+      <div class="nav-actions">
         <!-- Temporarily hide Sign In entry from navbar for unauthenticated users -->
         <button
           v-if="isAuthenticated"
-          class="inline-flex items-center gap-2 px-2.5 py-2 md:px-3 rounded-full border border-[#d8e4da] bg-white/80 hover:bg-white transition-all active:scale-95 max-w-[58vw] md:max-w-none"
+          class="account-btn"
           @click="goAccount"
         >
-          <span class="material-symbols-outlined text-[#4A6741]">account_circle</span>
-          <span class="text-sm font-semibold text-[#31554a] hidden sm:inline lg:inline truncate">{{ accountLabel }}</span>
+          <span class="material-symbols-outlined">account_circle</span>
+          <span>{{ accountLabel }}</span>
         </button>
         <button
-          class="md:hidden p-2 rounded-full hover:bg-slate-100/50 transition-all"
+          class="menu-btn"
           @click="isMenuOpen = !isMenuOpen"
+          aria-label="Toggle navigation"
         >
-          <span class="material-symbols-outlined text-on-surface">{{ isMenuOpen ? 'close' : 'menu' }}</span>
+          <span class="material-symbols-outlined">{{ isMenuOpen ? 'close' : 'menu' }}</span>
         </button>
       </div>
     </nav>
 
     <transition name="dropdown">
-      <div v-if="isMenuOpen" class="md:hidden px-4 pb-4 flex flex-col gap-2 bg-surface-container-low">
+      <div v-if="isMenuOpen" class="mobile-nav">
         <router-link
           v-for="item in navItems"
           :key="item.path"
           :to="item.path"
-          class="py-3 px-4 rounded-lg font-headline font-bold tracking-tight transition-all"
+          class="mobile-nav__link"
           :class="isActive(item.path)
-            ? 'text-[#4A6741] bg-primary/5'
-            : 'text-slate-600 hover:text-[#4A6741] hover:bg-slate-50'"
+            ? 'mobile-nav__link--active'
+            : ''"
           @click="isMenuOpen = false"
         >
           {{ item.name }}
@@ -98,32 +102,166 @@ function goAccount() {
 </template>
 
 <style scoped>
+.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 3000;
+  border-bottom: 1px solid rgba(33, 72, 59, 0.12);
+  background: rgba(255, 250, 242, 0.82);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: 0 12px 36px rgba(25, 56, 45, 0.08);
+}
+
+.site-nav__inner {
+  width: min(1220px, calc(100% - 2rem));
+  min-height: 72px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
 .brand-lockup {
   display: inline-flex;
   align-items: center;
-  gap: 0.62rem;
+  gap: 0.7rem;
   text-decoration: none;
   min-width: 0;
 }
 
 .brand-mark {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.45rem;
+  height: 2.45rem;
   object-fit: contain;
-  filter: drop-shadow(0 6px 14px rgba(32, 70, 56, 0.22));
+  filter: drop-shadow(0 10px 20px rgba(32, 70, 56, 0.2));
+}
+
+.brand-text {
+  display: grid;
+  gap: 0.08rem;
 }
 
 .brand-wordmark {
   font-family: "Fraunces", "Georgia", serif;
-  font-size: 1.55rem;
+  font-size: 1.46rem;
   font-weight: 700;
   font-variation-settings: "opsz" 48, "SOFT" 50;
   letter-spacing: -0.015em;
-  color: #2f5648;
+  color: #173b31;
   line-height: 1;
 }
 
+.brand-subline {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6e8578;
+}
+
+.desktop-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.52);
+  padding: 0.28rem;
+}
+
+.desktop-nav__link {
+  border-radius: 999px;
+  padding: 0.58rem 0.9rem;
+  color: #4d6259;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.desktop-nav__link:hover,
+.desktop-nav__link--active {
+  background: #173b31;
+  color: #fffaf2;
+  box-shadow: 0 10px 22px rgba(23, 59, 49, 0.18);
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.account-btn,
+.menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.65);
+  color: #21483b;
+  transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.account-btn {
+  max-width: 18rem;
+  padding: 0.55rem 0.72rem;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.account-btn span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-btn {
+  display: none;
+  width: 2.65rem;
+  height: 2.65rem;
+}
+
+.account-btn:hover,
+.menu-btn:hover {
+  background: #ffffff;
+  border-color: rgba(33, 72, 59, 0.26);
+  transform: translateY(-1px);
+}
+
+.mobile-nav {
+  width: min(1220px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 0 0 1rem;
+  display: none;
+}
+
+.mobile-nav__link {
+  display: block;
+  border-radius: 0.9rem;
+  padding: 0.9rem 1rem;
+  color: #405a51;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.mobile-nav__link--active {
+  background: #173b31;
+  color: #fffaf2;
+}
+
 @media (max-width: 640px) {
+  .site-nav__inner {
+    min-height: 66px;
+    width: min(100% - 1.5rem, 1220px);
+  }
+
   .brand-lockup {
     gap: 0.48rem;
   }
@@ -135,6 +273,33 @@ function goAccount() {
 
   .brand-wordmark {
     font-size: 1.18rem;
+  }
+
+  .brand-subline {
+    display: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .desktop-nav {
+    display: none;
+  }
+
+  .menu-btn {
+    display: inline-flex;
+  }
+
+  .mobile-nav {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .account-btn {
+    max-width: 46vw;
+  }
+
+  .account-btn span:last-child {
+    display: none;
   }
 }
 

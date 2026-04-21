@@ -213,18 +213,18 @@ function handleLogout() {
   place-items: center;
   padding: 2rem 1rem;
   background:
-    radial-gradient(circle at 14% 10%, rgba(90, 138, 114, 0.2), transparent 35%),
-    radial-gradient(circle at 88% 90%, rgba(74, 115, 162, 0.2), transparent 38%),
-    #f3f8f6;
+    linear-gradient(110deg, rgba(23, 59, 49, 0.84), rgba(23, 59, 49, 0.22)),
+    var(--hs-hero-image) center/cover fixed;
 }
 
 .profile-card {
   width: min(860px, 100%);
-  border: 1px solid #d8e4db;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.93);
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 1.25rem;
+  background: rgba(255, 250, 242, 0.92);
   padding: 1.4rem;
-  box-shadow: 0 20px 46px rgba(27, 58, 48, 0.12);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
 }
 
 .profile-head {
@@ -237,9 +237,9 @@ function handleLogout() {
 .profile-kicker {
   color: #42685c;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.18em;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 900;
 }
 
 h1 {
@@ -268,9 +268,9 @@ h1 {
 
 .profile-grid article,
 .profile-panel {
-  border: 1px solid #dde7de;
-  border-radius: 0.75rem;
-  background: #fbfefc;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.82);
   padding: 0.95rem;
 }
 
@@ -338,9 +338,9 @@ h1 {
 }
 
 .profile-form input {
-  border: 1px solid #cfddd2;
-  border-radius: 0.75rem;
-  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 0.85rem;
+  padding: 0.78rem 0.9rem;
   background: #fff;
   color: #17352f;
 }
@@ -373,11 +373,11 @@ h1 {
 .primary-btn {
   grid-column: 1 / -1;
   border: none;
-  border-radius: 0.8rem;
-  padding: 0.78rem 0.95rem;
-  color: #fff;
-  font-weight: 700;
-  background: linear-gradient(135deg, #356456 0%, #5f7f3f 100%);
+  border-radius: 999px;
+  padding: 0.86rem 1rem;
+  color: #fffaf2;
+  font-weight: 800;
+  background: linear-gradient(135deg, #173b31, #2f604e 68%, #7f9b75);
 }
 
 .primary-btn:disabled {

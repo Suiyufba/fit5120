@@ -1,34 +1,138 @@
 <template>
-  <footer class="bg-slate-50 w-full py-10 px-4 md:px-8 border-t border-slate-200">
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
-      <div class="space-y-4">
-        <div class="font-display text-slate-900 text-[1.45rem] font-bold tracking-[-0.015em]" style="font-variation-settings: 'opsz' 48, 'SOFT' 50;">
-          HikeShield Victoria
-        </div>
-        <p class="text-slate-500 font-body text-sm max-w-xs leading-relaxed">
-          © 2026 The HikeShield Victoria. Official Victorian Safety Data. Empowering hikers with real-time risk assessments.
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__brand">
+        <div class="site-footer__wordmark">HikeShield Victoria</div>
+        <p>
+          Real-time hiking safety intelligence for Victorian trails, route planning, and community reports.
         </p>
+        <div class="site-footer__status">
+          <span></span>
+          Live safety data ready
+        </div>
       </div>
-      <div class="grid w-full grid-cols-2 md:w-auto md:grid-cols-3 gap-6 md:gap-12">
-        <div class="flex flex-col gap-3 font-body text-sm tracking-wide">
-          <span class="font-bold text-slate-900 uppercase tracking-widest text-[10px]">Safety</span>
-          <a href="#" class="text-slate-500 hover:text-[#4A6741] transition-colors">Emergency: 000</a>
-          <router-link to="/risk-map" class="text-slate-500 hover:text-[#4A6741] transition-colors">Risk Map</router-link>
-          <router-link to="/community-reports" class="text-slate-500 hover:text-[#4A6741] transition-colors">Reports</router-link>
+      <div class="site-footer__links">
+        <div>
+          <span>Safety</span>
+          <a href="#">Emergency: 000</a>
+          <router-link to="/risk-map">Risk Map</router-link>
+          <router-link to="/community-reports">Reports</router-link>
         </div>
-        <div class="flex flex-col gap-3 font-body text-sm tracking-wide">
-          <span class="font-bold text-slate-900 uppercase tracking-widest text-[10px]">Company</span>
-          <a href="#" class="text-slate-500 hover:text-[#4A6741] transition-colors">About Us</a>
-          <a href="#" class="text-slate-500 hover:text-[#4A6741] transition-colors">Privacy Policy</a>
-          <a href="#" class="text-slate-500 hover:text-[#4A6741] transition-colors">Terms of Service</a>
+        <div>
+          <span>Explore</span>
+          <router-link to="/route-planner">Plan Route</router-link>
+          <router-link to="/knowledge-hub">Knowledge Hub</router-link>
+          <router-link to="/report-hazard">Report Hazard</router-link>
         </div>
-        <div class="flex flex-col gap-3 font-body text-sm tracking-wide">
-          <span class="font-bold text-slate-900 uppercase tracking-widest text-[10px]">Resources</span>
-          <a href="#" class="text-slate-500 hover:text-[#4A6741] transition-colors">Data Sources</a>
-          <router-link to="/knowledge-hub" class="text-slate-500 hover:text-[#4A6741] transition-colors">Knowledge Hub</router-link>
-          <a href="#" class="text-slate-500 hover:text-[#4A6741] transition-colors">Victorian Parks</a>
+        <div>
+          <span>Resources</span>
+          <a href="#">Data Sources</a>
+          <a href="#">Victorian Parks</a>
+          <a href="#">Privacy Policy</a>
         </div>
       </div>
     </div>
   </footer>
 </template>
+
+<style scoped>
+.site-footer {
+  border-top: 1px solid rgba(33, 72, 59, 0.12);
+  background:
+    linear-gradient(135deg, rgba(23, 59, 49, 0.96), rgba(38, 76, 62, 0.92)),
+    var(--hs-hero-image) center/cover;
+  color: #fffaf2;
+  padding: clamp(3rem, 6vw, 5rem) 1rem;
+}
+
+.site-footer__inner {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: start;
+}
+
+.site-footer__brand {
+  display: grid;
+  gap: 1rem;
+  max-width: 30rem;
+}
+
+.site-footer__wordmark {
+  font-family: "Fraunces", "Georgia", serif;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 0.98;
+}
+
+.site-footer p {
+  max-width: 27rem;
+  color: rgba(255, 250, 242, 0.72);
+  line-height: 1.7;
+}
+
+.site-footer__status {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid rgba(255, 250, 242, 0.24);
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  color: rgba(255, 250, 242, 0.86);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.site-footer__status span {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: #b8d9a8;
+  box-shadow: 0 0 0 6px rgba(184, 217, 168, 0.14);
+}
+
+.site-footer__links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(8rem, 1fr));
+  gap: 2rem;
+}
+
+.site-footer__links div {
+  display: grid;
+  gap: 0.78rem;
+}
+
+.site-footer__links span {
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 250, 242, 0.92);
+}
+
+.site-footer__links a {
+  color: rgba(255, 250, 242, 0.62);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.site-footer__links a:hover {
+  color: #fffaf2;
+}
+
+@media (max-width: 820px) {
+  .site-footer__inner {
+    grid-template-columns: 1fr;
+  }
+
+  .site-footer__links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+</style>

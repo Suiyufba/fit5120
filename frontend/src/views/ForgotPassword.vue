@@ -85,26 +85,26 @@ async function handleConfirmReset() {
   place-items: center;
   padding: 2rem 1rem;
   background:
-    radial-gradient(circle at 12% 12%, rgba(78, 121, 102, 0.22), transparent 34%),
-    radial-gradient(circle at 84% 90%, rgba(71, 111, 150, 0.2), transparent 35%),
-    #f3f8f5;
+    linear-gradient(110deg, rgba(23, 59, 49, 0.86), rgba(23, 59, 49, 0.28)),
+    var(--hs-hero-image) center/cover;
 }
 
 .forgot-card {
   width: min(520px, 100%);
-  border-radius: 1rem;
-  border: 1px solid #d8e3da;
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  background: rgba(255, 250, 242, 0.9);
   padding: 1.4rem;
-  box-shadow: 0 16px 44px rgba(28, 61, 50, 0.12);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
 }
 
 .forgot-kicker {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.18em;
   color: #42665b;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 900;
 }
 
 h1 {
@@ -139,9 +139,9 @@ span {
 
 input {
   width: 100%;
-  border: 1px solid #cfddd2;
-  border-radius: 0.7rem;
-  padding: 0.68rem 0.8rem;
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 0.85rem;
+  padding: 0.78rem 0.9rem;
 }
 
 @media (max-width: 640px) {
@@ -161,9 +161,9 @@ input {
 
 select {
   width: 100%;
-  border: 1px solid #cfddd2;
-  border-radius: 0.7rem;
-  padding: 0.68rem 0.8rem;
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 0.85rem;
+  padding: 0.78rem 0.9rem;
   background: #fff;
 }
 
@@ -171,11 +171,11 @@ button {
   width: 100%;
   margin-top: 0.2rem;
   border: none;
-  border-radius: 0.8rem;
-  padding: 0.75rem 0.9rem;
-  color: #fff;
-  font-weight: 700;
-  background: linear-gradient(135deg, #345f51 0%, #678642 100%);
+  border-radius: 999px;
+  padding: 0.86rem 1rem;
+  color: #fffaf2;
+  font-weight: 800;
+  background: linear-gradient(135deg, #173b31, #2f604e 68%, #7f9b75);
 }
 
 .forgot-error {

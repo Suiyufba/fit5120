@@ -75,26 +75,26 @@ async function handleSubmit() {
   place-items: center;
   padding: 2rem 1rem;
   background:
-    radial-gradient(circle at 20% 15%, rgba(73, 122, 100, 0.2), transparent 35%),
-    radial-gradient(circle at 90% 80%, rgba(77, 114, 161, 0.18), transparent 40%),
-    #f4f8f5;
+    linear-gradient(110deg, rgba(23, 59, 49, 0.86), rgba(23, 59, 49, 0.28)),
+    var(--hs-hero-image) center/cover;
 }
 
 .auth-card {
   width: min(470px, 100%);
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #d8e5da;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 18px 44px rgba(34, 65, 54, 0.12);
+  background: rgba(255, 250, 242, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 1.25rem;
+  padding: 1.6rem;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
 }
 
 .auth-kicker {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.18em;
   font-size: 0.72rem;
-  font-weight: 700;
-  color: #456c61;
+  font-weight: 900;
+  color: #6f897b;
 }
 
 h1 {
@@ -128,21 +128,21 @@ span {
 }
 
 input {
-  border: 1px solid #cfded2;
-  border-radius: 0.7rem;
-  padding: 0.7rem 0.8rem;
-  background: #fcfffc;
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 0.85rem;
+  padding: 0.78rem 0.9rem;
+  background: #ffffff;
   color: #17352f;
 }
 
 button {
   margin-top: 0.3rem;
   border: none;
-  border-radius: 0.8rem;
-  padding: 0.75rem 0.9rem;
-  color: #fff;
-  font-weight: 700;
-  background: linear-gradient(135deg, #356456 0%, #5f7f3f 100%);
+  border-radius: 999px;
+  padding: 0.86rem 1rem;
+  color: #fffaf2;
+  font-weight: 800;
+  background: linear-gradient(135deg, #173b31, #2f604e 68%, #7f9b75);
 }
 
 button:disabled {

@@ -140,36 +140,46 @@ onUnmounted(() => {
 
 <style scoped>
 .kb-page {
-  max-width: 1120px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 1.4rem 1rem 3rem;
+  padding: clamp(1.5rem, 4vw, 3rem) 1rem 4rem;
 }
 
 .kb-hero {
-  border: 1px solid #d8e4db;
-  border-radius: 1rem;
-  background: linear-gradient(135deg, #f3faf5 0%, #eaf3fb 100%);
-  padding: 1.4rem;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1.25rem;
+  background:
+    linear-gradient(110deg, rgba(23, 59, 49, 0.95), rgba(23, 59, 49, 0.64)),
+    var(--hs-hero-image) center/cover;
+  padding: clamp(2rem, 5vw, 4.5rem);
+  color: #fffaf2;
+  box-shadow: var(--hs-shadow);
 }
 
 .kb-kicker {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.18em;
   font-size: 0.72rem;
-  color: #3c6658;
-  font-weight: 700;
+  color: rgba(255, 250, 242, 0.76);
+  font-weight: 900;
 }
 
 h1 {
   margin-top: 0.3rem;
-  color: #1c3931;
-  font-size: 2rem;
-  font-weight: 800;
+  color: #fffaf2;
+  font-size: clamp(2.8rem, 7vw, 5.7rem);
+  line-height: 0.96;
+  font-weight: 700;
+  max-width: 760px;
 }
 
 .kb-hero p {
-  color: #4a625c;
+  color: rgba(255, 250, 242, 0.74);
   max-width: 700px;
+  font-size: 1.03rem;
+  line-height: 1.7;
 }
 
 .kb-filters {
@@ -180,18 +190,18 @@ h1 {
 }
 
 .kb-filter-btn {
-  border: 1px solid #d4e0d8;
+  border: 1px solid rgba(33, 72, 59, 0.14);
   border-radius: 999px;
-  padding: 0.45rem 0.8rem;
-  background: #fff;
-  color: #3c5f53;
-  font-weight: 700;
+  padding: 0.55rem 0.9rem;
+  background: rgba(255, 250, 242, 0.88);
+  color: #21483b;
+  font-weight: 800;
 }
 
 .kb-filter-btn--active {
-  background: #2f6755;
-  color: #fff;
-  border-color: #2f6755;
+  background: #173b31;
+  color: #fffaf2;
+  border-color: #173b31;
 }
 
 .kb-state {
@@ -210,11 +220,12 @@ h1 {
 }
 
 .kb-featured {
-  margin-top: 1rem;
-  border: 1px solid #d8e4db;
-  border-radius: 1rem;
+  margin-top: 1.25rem;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1.25rem;
   overflow: hidden;
-  background: #fff;
+  background: #ffffff;
+  box-shadow: var(--hs-shadow-soft);
 }
 
 .kb-featured-image {
@@ -224,7 +235,7 @@ h1 {
 }
 
 .kb-featured-body {
-  padding: 1rem;
+  padding: clamp(1rem, 3vw, 1.6rem);
 }
 
 .kb-chip {
@@ -239,8 +250,8 @@ h1 {
 
 h2, h3 {
   margin-top: 0.45rem;
-  color: #1f3a33;
-  font-weight: 800;
+  color: #173b31;
+  font-weight: 700;
 }
 
 .kb-summary {
@@ -272,10 +283,11 @@ h2, h3 {
 }
 
 .kb-card {
-  border: 1px solid #dae6de;
-  border-radius: 0.9rem;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1rem;
   overflow: hidden;
   background: #fff;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.012), 0 2px 8px rgba(0,0,0,0.03), 0 10px 24px rgba(25,56,45,0.05);
 }
 
 .kb-card-image {

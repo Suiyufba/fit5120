@@ -750,20 +750,22 @@ onUnmounted(() => {
   grid-template-columns: 410px 1fr;
   height: calc(100vh - 72px);
   height: var(--mobile-safe-height);
-  background: linear-gradient(130deg, #f3f8f5 0%, #e6f2ee 45%, #eef4fb 100%);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(143, 174, 131, 0.24), transparent 26rem),
+    linear-gradient(130deg, #fffaf2 0%, #f2eee5 48%, #e7eee4 100%);
   position: relative;
 }
 
 .community-panel {
   --mobile-sheet-peek: 168px;
-  border-right: 1px solid rgba(31, 111, 87, 0.15);
+  border-right: 1px solid rgba(33, 72, 59, 0.14);
   padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
   overflow: auto;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 250, 242, 0.86);
+  backdrop-filter: blur(18px);
 }
 
 .community-panel__body {
@@ -783,17 +785,18 @@ onUnmounted(() => {
 
 .community-kicker {
   font-size: 0.72rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  font-weight: 700;
-  color: #1f6e57;
+  font-weight: 900;
+  color: #6f897b;
 }
 
 h1 {
   margin: 0.25rem 0;
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #123b3e;
+  font-size: 2.1rem;
+  line-height: 1;
+  font-weight: 700;
+  color: #173b31;
 }
 
 .community-sub {
@@ -805,16 +808,17 @@ h1 {
 .community-form,
 .summary-card,
 .feed-card {
-  background: #fff;
-  border: 1px solid rgba(15, 40, 45, 0.08);
-  border-radius: 14px;
-  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1rem;
+  padding: 0.95rem;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.012), 0 2px 8px rgba(0,0,0,0.03), 0 10px 24px rgba(25,56,45,0.05);
 }
 
 .location-picker {
-  background: linear-gradient(180deg, #f4fbf6 0%, #eef6f1 100%);
-  border: 1px solid rgba(31, 111, 87, 0.18);
-  border-radius: 12px;
+  background: linear-gradient(180deg, #fffaf2 0%, #f3f8ee 100%);
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 1rem;
   padding: 0.8rem 0.85rem 0.9rem;
   margin-bottom: 0.75rem;
   display: flex;
@@ -850,10 +854,10 @@ h1 {
   align-items: center;
   gap: 0.35rem;
   padding: 0.55rem 0.75rem;
-  border-radius: 10px;
-  border: 1px solid rgba(31, 111, 87, 0.35);
+  border-radius: 999px;
+  border: 1px solid rgba(33, 72, 59, 0.22);
   background: #fff;
-  color: #1f6e57;
+  color: #21483b;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
@@ -944,8 +948,9 @@ h1 {
 }
 
 .point-card {
-  background: #eef4fb;
-  border-radius: 10px;
+  background: #f3f8ee;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 0.9rem;
   padding: 0.6rem 0.75rem;
   margin-bottom: 0.7rem;
 }
@@ -963,12 +968,12 @@ h1 {
 
 .field-input {
   width: 100%;
-  border: 1px solid #d8e5e8;
-  border-radius: 10px;
-  padding: 0.62rem 0.7rem;
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 0.85rem;
+  padding: 0.68rem 0.78rem;
   font-size: 0.85rem;
   margin-bottom: 0.55rem;
-  background: #fbfdfd;
+  background: #fffaf2;
 }
 
 .field-row {
@@ -981,11 +986,12 @@ h1 {
   width: 100%;
   margin-top: 0.2rem;
   border: none;
-  border-radius: 10px;
-  padding: 0.7rem 0.9rem;
-  font-weight: 700;
-  color: #fff;
-  background: linear-gradient(135deg, #334f2b 0%, #4a6741 100%);
+  border-radius: 999px;
+  padding: 0.82rem 1rem;
+  font-weight: 800;
+  color: #fffaf2;
+  background: linear-gradient(135deg, #173b31 0%, #2f604e 68%, #7f9b75 100%);
+  box-shadow: 0 14px 30px rgba(23, 59, 49, 0.2);
   cursor: pointer;
 }
 
@@ -1010,9 +1016,11 @@ h1 {
 }
 
 .feed-item {
-  border-top: 1px solid #edf4f5;
-  padding-top: 0.5rem;
+  border: 1px solid rgba(33, 72, 59, 0.1);
+  border-radius: 0.85rem;
+  padding: 0.65rem;
   margin-top: 0.5rem;
+  background: #fffaf2;
 }
 
 .feed-title-row {
@@ -1049,11 +1057,16 @@ h1 {
 .community-map-wrap {
   position: relative;
   min-height: 0;
+  padding: 0.85rem;
+  background: #dfe8dd;
 }
 
 .community-map {
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  border-radius: 1.15rem;
+  box-shadow: inset 0 0 0 1px rgba(33, 72, 59, 0.08), 0 20px 60px rgba(23, 59, 49, 0.12);
 }
 
 .legend-overlay {
@@ -1061,11 +1074,11 @@ h1 {
   left: 14px;
   top: 14px;
   z-index: 500;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(15, 45, 49, 0.08);
-  border-radius: 12px;
+  background: rgba(255, 250, 242, 0.94);
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  border-radius: 1rem;
   padding: 0.7rem;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 14px 30px rgba(23, 59, 49, 0.14);
 }
 
 .legend-overlay p {
@@ -1142,9 +1155,9 @@ h1 {
 
   .community-panel {
     border-right: 0;
-    border-top: 1px solid rgba(31, 111, 87, 0.15);
+    border-top: 1px solid rgba(33, 72, 59, 0.14);
     padding: 0 1rem 1rem;
-    background: rgba(255, 255, 255, 0.97);
+    background: rgba(255, 250, 242, 0.97);
   }
 
   .community-mobile-actions {
