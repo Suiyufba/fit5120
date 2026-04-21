@@ -571,12 +571,12 @@ onUnmounted(() => {
 }
 
 .home-hero h1 {
-  max-width: 46rem;
+  max-width: 54rem;
   margin: 0;
   color: #fffaf2;
-  font-size: clamp(3.25rem, 8vw, 7.6rem);
-  line-height: 0.92;
-  letter-spacing: -0.04em;
+  font-size: clamp(3.1rem, 6.8vw, 6.55rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
 }
 
 .home-hero h1 span {
@@ -658,6 +658,7 @@ onUnmounted(() => {
 
   .home-hero h1 {
     font-size: clamp(3rem, 17vw, 4.4rem);
+    line-height: 1.03;
   }
 
   .home-hero__actions {
