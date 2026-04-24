@@ -36,8 +36,12 @@ async function requestWithFallback(path, options = {}, { signal } = {}) {
         signal,
       })
 
-      if (response.status === 404) {
-        lastError = new Error('Community reports request failed (404)')
+      // Only fall through to the next candidate base URL when the current one
+      // clearly cannot serve the route (404 or 405 from a static/frontend host).
+      // All other responses (including 4xx validation errors from the real
+      // backend) must surface to the caller so the error message is preserved.
+      if (response.status === 404 || response.status === 405) {
+        lastError = new Error('Community reports request failed (' + response.status + ')')
         continue
       }
 
@@ -102,40 +106,26 @@ function deserializeCommunityReportsPayload(rawPayload) {
 
 async function requestCommunityReports({ limit = 50, signal } = {}) {
   const params = new URLSearchParams({ limit: String(limit) })
-  const bases = buildCandidateBaseUrls()
-  let lastError
 
-  for (const baseUrl of bases) {
-    try {
-      const response = await requestWithFallback('/community-reports?' + params.toString(), {
-        method: 'GET',
-        headers: { Accept: 'application/json' },
-      }, { signal })
-      const payload = await parseJson(response)
+  const response = await requestWithFallback('/community-reports?' + params.toString(), {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  }, { signal })
+  const payload = await parseJson(response)
 
-      if (!response.ok) {
-        lastError = new Error(payload?.error || 'Community reports request failed (' + response.status + ')')
-        continue
-      }
-
-      if (!Array.isArray(payload?.reports)) {
-        lastError = new Error('Community reports request failed (invalid response)')
-        continue
-      }
-
-      const reports = payload.reports.map(normalizeReport)
-      return {
-        reports,
-        storage: payload?.storage || 'unknown',
-        fetchedAt: payload?.fetchedAt ? new Date(payload.fetchedAt) : new Date(),
-      }
-    } catch (error) {
-      if (error?.name === 'AbortError') throw error
-      lastError = error
-    }
+  if (!response.ok) {
+    throw new Error(payload?.error || 'Community reports request failed (' + response.status + ')')
   }
 
-  throw lastError || new Error('Community reports request failed')
+  if (!Array.isArray(payload?.reports)) {
+    throw new Error('Community reports request failed (invalid response)')
+  }
+
+  return {
+    reports: payload.reports.map(normalizeReport),
+    storage: payload?.storage || 'unknown',
+    fetchedAt: payload?.fetchedAt ? new Date(payload.fetchedAt) : new Date(),
+  }
 }
 
 export async function fetchCommunityReports({ limit = 50, signal, preferCache = false, onUpdate } = {}) {
@@ -162,55 +152,40 @@ export async function fetchCommunityReports({ limit = 50, signal, preferCache = 
 }
 
 export async function submitCommunityReport(input, { signal } = {}) {
-  const bases = buildCandidateBaseUrls()
-  let lastError
+  const response = await requestWithFallback('/community-reports', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...(input?.token ? { Authorization: `Bearer ${input.token}` } : {}),
+    },
+    body: JSON.stringify({
+      title: input?.title,
+      description: input?.description,
+      locationName: input?.locationName,
+      hazardType: input?.hazardType,
+      severity: input?.severity,
+      latitude: input?.latitude,
+      longitude: input?.longitude,
+      reporterName: input?.reporterName,
+      imageUrl: input?.imageUrl,
+    }),
+  }, { signal })
+  const payload = await parseJson(response)
 
-  for (const baseUrl of bases) {
-    try {
-      const response = await fetch(baseUrl + '/community-reports', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(input?.token ? { Authorization: `Bearer ${input.token}` } : {}),
-        },
-        body: JSON.stringify({
-          title: input?.title,
-          description: input?.description,
-          locationName: input?.locationName,
-          hazardType: input?.hazardType,
-          severity: input?.severity,
-          latitude: input?.latitude,
-          longitude: input?.longitude,
-          reporterName: input?.reporterName,
-          imageUrl: input?.imageUrl,
-        }),
-        signal,
-      })
-      const payload = await parseJson(response)
-
-      if (!response.ok) {
-        lastError = new Error(payload?.error || 'Submit report failed (' + response.status + ')')
-        continue
-      }
-
-      if (!payload?.report || !payload?.report?.id) {
-        lastError = new Error('Submit report failed (invalid response)')
-        continue
-      }
-
-      invalidateCommunityReportsCache()
-      return {
-        report: normalizeReport(payload?.report || {}),
-        storage: payload?.storage || 'unknown',
-      }
-    } catch (error) {
-      if (error?.name === 'AbortError') throw error
-      lastError = error
-    }
+  if (!response.ok) {
+    throw new Error(payload?.error || 'Submit report failed (' + response.status + ')')
   }
 
-  throw lastError || new Error('Submit report failed')
+  if (!payload?.report || !payload?.report?.id) {
+    throw new Error('Submit report failed (invalid response)')
+  }
+
+  invalidateCommunityReportsCache()
+  return {
+    report: normalizeReport(payload?.report || {}),
+    storage: payload?.storage || 'unknown',
+  }
 }
 
 export function invalidateCommunityReportsCache() {
