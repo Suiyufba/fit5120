@@ -7,6 +7,7 @@ import { buildDetourWaypointCandidates, buildSuggestedPrep, scoreRouteCandidate 
 import { estimateHikingDurationMin } from '../domain/routeTiming.js';
 import { getRouteGeographyProfileForRoute } from './routeGeographyService.js';
 import { config } from '../../../config/index.js';
+import { generateRouteIntroduction } from './routeNarrationService.js';
 
 const MAX_CANDIDATES = 6;
 
@@ -118,11 +119,39 @@ function toRoutePayload(route) {
     riskScore: route.riskScore,
     riskLevel: route.riskLevel,
     goNoGo: route.goNoGo,
+    intro: route.intro || '',
     explanation: route.explanation,
     keyRisks: route.keyRisks,
     zoneSummary: route.zoneSummary,
     suggestedPrep: route.suggestedPrep,
     geographyProfile: route.geographyProfile,
+  };
+}
+
+async function attachRouteIntroductions(payload) {
+  const byId = new Map();
+  const allRoutes = [
+    payload.recommendedRoute,
+    ...(payload.alternatives || []),
+    ...(payload.routeOptions || []),
+  ].filter(Boolean);
+
+  await Promise.all(
+    allRoutes.map(async (route) => {
+      if (!route?.id || byId.has(route.id)) return;
+      byId.set(route.id, await generateRouteIntroduction(route));
+    }),
+  );
+
+  const decorate = (route) => {
+    if (!route) return route;
+    return { ...route, intro: byId.get(route.id) || route.intro || '' };
+  };
+
+  return {
+    recommendedRoute: decorate(payload.recommendedRoute),
+    alternatives: (payload.alternatives || []).map(decorate),
+    routeOptions: (payload.routeOptions || []).map(decorate),
   };
 }
 
@@ -247,11 +276,17 @@ export async function planSaferRoute({ userId, start, end, now = new Date() }) {
   const scoredByRisk = [...scored].sort((a, b) => a.riskScore - b.riskScore);
   const routeOptions = pickDifficultyRouteOptions(scoredByRisk, { userLevel, userProfile, now });
 
-  return {
+  const payload = {
     userLevel,
     recommendedRoute: toRoutePayload(recommendedRoute),
     alternatives,
     routeOptions,
     scoringBreakdown: recommendedRoute.scoringBreakdown,
+  };
+
+  const withIntroductions = await attachRouteIntroductions(payload);
+  return {
+    ...payload,
+    ...withIntroductions,
   };
 }

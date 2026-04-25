@@ -856,7 +856,7 @@ onUnmounted(() => {
         <div class="status-tag" :class="{ 'status-tag--danger': recommendedIsDangerous }">
           {{ recommendedGoNoGoLabel }}
         </div>
-        <p class="detail-explain">{{ recommended.explanation }}</p>
+        <p class="detail-explain">{{ recommended.intro || recommended.explanation }}</p>
 
         <section v-if="geography" class="risk-block">
           <h2>Geography Profile</h2>

@@ -27,6 +27,7 @@ function normalizeRoute(route) {
     riskScore: Number(route?.riskScore || 0),
     riskLevel: route?.riskLevel || 'Low',
     goNoGo: route?.goNoGo || 'Go',
+    intro: route?.intro || '',
     explanation: route?.explanation || '',
     keyRisks: Array.isArray(route?.keyRisks) ? route.keyRisks : [],
     geographyProfile: route?.geographyProfile || {

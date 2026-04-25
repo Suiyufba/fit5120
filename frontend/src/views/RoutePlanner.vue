@@ -313,7 +313,7 @@ const summary = computed(() => {
     goNoGo: route.goNoGo,
     goNoGoLabel: formatGoNoGoLabel(route.goNoGo),
     isDangerous: isDangerousGoNoGo(route.goNoGo),
-    explanation: route.explanation,
+    intro: route.intro || route.explanation,
     zoneSummary: route.zoneSummary || { level1Count: 0, level2Count: 0, level3Count: 0 },
   }
 })
@@ -778,7 +778,7 @@ onUnmounted(() => {
         <div class="go-tag" :class="{ 'go-tag--danger': summary.isDangerous }">
           {{ summary.goNoGoLabel }}
         </div>
-        <p class="summary-explain">{{ summary.explanation }}</p>
+        <p class="summary-explain">{{ summary.intro }}</p>
         <button class="primary-btn" @click="goToDetails">View Route Details</button>
       </section>
 
