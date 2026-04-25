@@ -20,4 +20,5 @@ End-to-end features that involve both frontend and backend changes.
 - [route-geography-profile-cache-refresh-2026-04-17.md](./route-geography-profile-cache-refresh-2026-04-17.md)
 - [route-geography-elevation-fallback-2026-04-18.md](./route-geography-elevation-fallback-2026-04-18.md)
 - [route-risk-nogo-score-alignment-2026-04-18.md](./route-risk-nogo-score-alignment-2026-04-18.md)
+- [route-intro-timeout-and-ui-dedup-2026-04-25.md](./route-intro-timeout-and-ui-dedup-2026-04-25.md)
 - [profile-editing-feature.md](./profile-editing-feature.md)

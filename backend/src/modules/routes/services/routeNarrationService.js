@@ -3,6 +3,7 @@ function getNarrationConfig() {
     apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '',
     apiUrl: process.env.GEMINI_API_URL || 'https://generativelanguage.googleapis.com/v1beta',
     model: process.env.GEMINI_ROUTE_NARRATION_MODEL || 'gemini-2.5-flash-lite',
+    timeoutMs: Number(process.env.GEMINI_ROUTE_NARRATION_TIMEOUT_MS || 4500),
   };
 }
 
@@ -175,23 +176,35 @@ export function extractGeminiText(payload) {
 async function generateRouteIntroductionWithGemini(route = {}) {
   const narrationConfig = getNarrationConfig();
   const apiUrl = `${String(narrationConfig.apiUrl).replace(/\/$/, '')}/models/${encodeURIComponent(narrationConfig.model)}:generateContent`;
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': narrationConfig.apiKey,
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: buildPrompt(route) },
-          ],
-        },
-      ],
-    }),
-  });
+  const timeoutMs = Number.isFinite(narrationConfig.timeoutMs) && narrationConfig.timeoutMs > 0
+    ? narrationConfig.timeoutMs
+    : 4500;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response;
+  try {
+    response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': narrationConfig.apiKey,
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: buildPrompt(route) },
+            ],
+          },
+        ],
+      }),
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!response.ok) {
     throw new Error(`Gemini narration request failed with ${response.status}`);
