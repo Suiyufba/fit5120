@@ -11,6 +11,8 @@
   ],
   "scripts": {
     "start": "npm --prefix backend start",
+    "start:ai-service": "npm --workspace ai-service start",
+    "dev:ai-service": "npm --workspace ai-service run dev",
     "build": "rm -rf frontend/node_modules frontend/package-lock.json && npm --prefix frontend install --include=dev --include=optional && npm --prefix frontend run build && rm -rf dist && cp -R frontend/dist dist",
     "dev:frontend": "npm --workspace frontend run dev",
     "build:frontend": "npm --workspace frontend run build",

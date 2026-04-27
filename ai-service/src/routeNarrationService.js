@@ -1,4 +1,11 @@
-import { config } from '../../../config/index.js';
+function getNarrationConfig() {
+  return {
+    apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '',
+    apiUrl: process.env.GEMINI_API_URL || 'https://generativelanguage.googleapis.com/v1beta',
+    model: process.env.GEMINI_ROUTE_NARRATION_MODEL || 'gemini-2.5-flash-lite',
+    timeoutMs: Number(process.env.GEMINI_ROUTE_NARRATION_TIMEOUT_MS || 4500),
+  };
+}
 
 function formatDistance(distanceKm) {
   const value = Number(distanceKm || 0);
@@ -46,9 +53,7 @@ function describeTerrain(geographyProfile = {}) {
     trail.includes('good') ? 'on generally well-formed trail' :
     '';
 
-  const climbNote = totalAscent >= 500
-    ? `Expect around ${totalAscent} m of climbing`
-    : '';
+  const climbNote = totalAscent >= 500 ? `Expect around ${totalAscent} m of climbing` : '';
 
   return [terrainNote, slopeNote, surfaceNote, trailNote, climbNote]
     .filter(Boolean)
@@ -106,16 +111,54 @@ export function buildRouteIntroductionFallback(route = {}) {
   return `This track offers a ${difficulty} walk over approximately ${formatDistance(route.distanceKm)}, typically taking around ${formatDuration(route.durationMin)} to complete. The route features ${describeTerrain(route.geographyProfile)}, making it suitable for ${describeAudience(route)}. Hikers should be aware of ${describeRiskHighlights(route)}${alertSummary ? `, with ${alertSummary} in nearby zones` : ''}. ${riskSentence} It is a good option for enjoying ${describeHighlight(route)}.`;
 }
 
-export function extractAiServiceIntro(payload) {
-  const intro = String(payload?.intro || '').trim();
-  return intro;
+function buildPrompt(route = {}) {
+  const keyRisks = Array.isArray(route.keyRisks) ? route.keyRisks.slice(0, 3) : [];
+  const facts = {
+    distanceKm: Number(route.distanceKm || 0).toFixed(1),
+    durationMin: Math.round(Number(route.durationMin || 0)),
+    difficulty: route.difficulty || 'Moderate',
+    riskLevel: route.riskLevel || 'Low',
+    goNoGo: route.goNoGo || 'Go',
+    geographyProfile: route.geographyProfile || {},
+    zoneSummary: route.zoneSummary || {},
+    keyRisks: keyRisks.map((risk) => ({
+      title: risk.title,
+      type: risk.type,
+      severity: risk.severity,
+      distanceKm: risk.distanceKm,
+      advice: risk.advice,
+    })),
+  };
+
+  return [
+    'Write one short user-friendly introduction paragraph for a hiking route in Victoria, Australia.',
+    'Use only the facts provided. Do not invent scenery, facilities, track names, or conditions.',
+    'Mention difficulty, distance, duration, likely terrain feel, who the route suits, and the most important nearby risks or alerts.',
+    'Keep it to 80-120 words in plain English. No markdown, no bullet points, and no quotation marks.',
+    JSON.stringify(facts),
+  ].join('\n');
 }
 
-async function generateRouteIntroductionFromAiService(route = {}) {
-  const baseUrl = String(config.aiServiceUrl || '').trim().replace(/\/$/, '');
-  if (!baseUrl) return '';
-  const apiUrl = `${baseUrl}/v1/route-introduction`;
-  const timeoutMs = Number(config.aiServiceRequestTimeoutMs) > 0 ? Number(config.aiServiceRequestTimeoutMs) : 5000;
+export function extractGeminiText(payload) {
+  const candidates = Array.isArray(payload?.candidates) ? payload.candidates : [];
+  for (const candidate of candidates) {
+    const parts = Array.isArray(candidate?.content?.parts) ? candidate.content.parts : [];
+    const text = parts
+      .map((part) => (typeof part?.text === 'string' ? part.text.trim() : ''))
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    if (text) return text;
+  }
+  return '';
+}
+
+async function generateRouteIntroductionWithGemini(route = {}) {
+  const narrationConfig = getNarrationConfig();
+  const apiUrl = `${String(narrationConfig.apiUrl).replace(/\/$/, '')}/models/${encodeURIComponent(narrationConfig.model)}:generateContent`;
+  const timeoutMs = Number.isFinite(narrationConfig.timeoutMs) && narrationConfig.timeoutMs > 0
+    ? narrationConfig.timeoutMs
+    : 4500;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -125,11 +168,18 @@ async function generateRouteIntroductionFromAiService(route = {}) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(config.aiServiceAuthToken ? { 'x-ai-service-token': config.aiServiceAuthToken } : {}),
+        'x-goog-api-key': narrationConfig.apiKey,
       },
       signal: controller.signal,
       body: JSON.stringify({
-        route,
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: buildPrompt(route) },
+            ],
+          },
+        ],
       }),
     });
   } finally {
@@ -137,20 +187,25 @@ async function generateRouteIntroductionFromAiService(route = {}) {
   }
 
   if (!response.ok) {
-    throw new Error(`AI service narration request failed with ${response.status}`);
+    throw new Error(`Gemini narration request failed with ${response.status}`);
   }
 
   const payload = await response.json();
-  return extractAiServiceIntro(payload);
+  return extractGeminiText(payload);
 }
 
 export async function generateRouteIntroduction(route = {}) {
+  const narrationConfig = getNarrationConfig();
   const fallback = buildRouteIntroductionFallback(route);
+  if (!narrationConfig.apiKey) {
+    return fallback;
+  }
+
   try {
-    const generated = await generateRouteIntroductionFromAiService(route);
+    const generated = await generateRouteIntroductionWithGemini(route);
     return generated || fallback;
   } catch (error) {
-    console.warn('Falling back to rule-based route introduction (ai-service unavailable):', error.message);
+    console.warn('Falling back to rule-based route introduction:', error.message);
     return fallback;
   }
 }
