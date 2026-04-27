@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRouteIntroductionFallback, extractGeminiText, extractResponseText } from './routeNarrationService.js';
+import { buildRouteIntroductionFallback, extractAiServiceIntro } from './routeNarrationService.js';
 
 const sampleRoute = {
   distanceKm: 12.4,
@@ -30,35 +30,12 @@ test('fallback route introduction includes the main route facts', () => {
   assert.match(intro, /nearby/i);
 });
 
-test('response parser prefers output_text when present', () => {
-  const text = extractResponseText({ output_text: 'Short route intro.' });
+test('ai-service parser extracts intro field', () => {
+  const text = extractAiServiceIntro({ intro: 'Short route intro.' });
   assert.equal(text, 'Short route intro.');
 });
 
-test('response parser falls back to nested content blocks', () => {
-  const text = extractResponseText({
-    output: [
-      {
-        content: [
-          { type: 'output_text', text: 'Nested route intro.' },
-        ],
-      },
-    ],
-  });
-  assert.equal(text, 'Nested route intro.');
-});
-
-test('gemini parser extracts text from candidate parts', () => {
-  const text = extractGeminiText({
-    candidates: [
-      {
-        content: {
-          parts: [
-            { text: 'Friendly track intro.' },
-          ],
-        },
-      },
-    ],
-  });
-  assert.equal(text, 'Friendly track intro.');
+test('ai-service parser returns empty string when intro is missing', () => {
+  const text = extractAiServiceIntro({ data: 'none' });
+  assert.equal(text, '');
 });
