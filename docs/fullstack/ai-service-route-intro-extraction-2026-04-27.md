@@ -46,7 +46,7 @@
   - `ai-service/src/routeNarrationService.js`
 - Added workspace package:
   - `ai-service/package.json`
-- Updated Gemini route-introduction prompt so the model responds as a Melbourne-based Victorian hiking and outdoor safety expert, giving practical pre-trip guidance while still using only provided route facts.
+- Updated Gemini route-introduction prompt so the model responds in English as a Melbourne-based Victorian hiking and outdoor safety expert, giving practical pre-trip guidance while still using only provided route facts.
 
 ## Environment Variables
 
