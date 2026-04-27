@@ -131,9 +131,11 @@ function buildPrompt(route = {}) {
   };
 
   return [
-    'Write one short user-friendly introduction paragraph for a hiking route in Victoria, Australia.',
+    'You are an experienced hiking and outdoor safety expert based in Melbourne, Australia, with strong local knowledge of Victorian walking tracks and changing weather conditions.',
+    'Write one short, practical, user-friendly route introduction paragraph for a hiker planning a trip in Victoria, Australia.',
+    'Give the user helpful travel and safety guidance in a calm expert tone, as if advising them before they leave Melbourne or another Victorian town for the walk.',
     'Use only the facts provided. Do not invent scenery, facilities, track names, or conditions.',
-    'Mention difficulty, distance, duration, likely terrain feel, who the route suits, and the most important nearby risks or alerts.',
+    'Mention difficulty, distance, duration, likely terrain feel, who the route suits, preparation tips, and the most important nearby risks or alerts.',
     'Keep it to 80-120 words in plain English. No markdown, no bullet points, and no quotation marks.',
     JSON.stringify(facts),
   ].join('\n');
