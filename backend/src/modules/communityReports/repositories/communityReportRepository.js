@@ -108,6 +108,13 @@ function normalizeImageUrl(value) {
     if (!['http:', 'https:'].includes(parsed.protocol)) {
       throw new Error('Invalid image protocol');
     }
+    // Always accept our own managed image-asset URLs so that a thumbnail
+    // uploaded via POST /api/community-reports/images can be referenced
+    // without being rejected by the public-host allowlist (this matters in
+    // local/dev where the backend host is localhost).
+    if (parsed.pathname.startsWith('/api/community-reports/images/')) {
+      return parsed.toString();
+    }
     if (isBlockedHostname(parsed.hostname)) {
       throw new Error('Image host is not allowed');
     }

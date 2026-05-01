@@ -3,7 +3,11 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { fetchRealtimeHazards } from '../services/hazardApi'
-import { fetchCommunityReports, submitCommunityReport } from '../services/communityReportApi'
+import {
+  fetchCommunityReports,
+  submitCommunityReport,
+  uploadCommunityReportImage,
+} from '../services/communityReportApi'
 import { reverseLocation, searchLocations } from '../services/locationApi'
 import {
   applyVictoriaMapConstraints,
@@ -34,8 +38,15 @@ const addressQuery = ref('')
 const addressSuggestions = ref([])
 const locatingMe = ref(false)
 const searchingAddress = ref(false)
+const showEmergencyModal = ref(false)
+const imageUploading = ref(false)
+const imagePreviewUrl = ref('')
+const imageError = ref('')
+const imageFileInput = ref(null)
 let addressSearchController = null
 let reverseLookupController = null
+
+const EMERGENCY_DISMISSED_KEY = 'hikeshield_emergency_modal_ack_v1'
 
 const form = reactive({
   title: '',
@@ -46,6 +57,11 @@ const form = reactive({
   reporterName: '',
   imageUrl: '',
 })
+
+const THUMBNAIL_MAX_DIMENSION = 480
+const THUMBNAIL_MIME = 'image/jpeg'
+const THUMBNAIL_QUALITY = 0.78
+const THUMBNAIL_MAX_FILE_BYTES = 8 * 1024 * 1024
 
 const hazardMeta = {
   fire: { label: 'Bushfire', color: '#D84727', icon: 'local_fire_department' },
@@ -106,6 +122,76 @@ function requestCurrentPosition(options) {
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function loadImageFromBlob(blob) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(blob)
+    const image = new Image()
+    image.onload = () => resolve({ image, objectUrl })
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('Could not read selected image'))
+    }
+    image.src = objectUrl
+  })
+}
+
+async function fileToThumbnail(file) {
+  if (!file) throw new Error('No file selected')
+  if (!file.type?.startsWith('image/')) {
+    throw new Error('File must be an image')
+  }
+  if (file.size > THUMBNAIL_MAX_FILE_BYTES) {
+    throw new Error('Image is too large. Pick a file under 8MB.')
+  }
+
+  const { image, objectUrl } = await loadImageFromBlob(file)
+  try {
+    const ratio = Math.min(
+      1,
+      THUMBNAIL_MAX_DIMENSION / Math.max(image.naturalWidth, image.naturalHeight)
+    )
+    const targetWidth = Math.max(1, Math.round(image.naturalWidth * ratio))
+    const targetHeight = Math.max(1, Math.round(image.naturalHeight * ratio))
+
+    const canvas = document.createElement('canvas')
+    canvas.width = targetWidth
+    canvas.height = targetHeight
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas is not supported in this browser')
+    ctx.drawImage(image, 0, 0, targetWidth, targetHeight)
+
+    const dataUrl = canvas.toDataURL(THUMBNAIL_MIME, THUMBNAIL_QUALITY)
+    return { dataUrl, width: targetWidth, height: targetHeight }
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
+}
+
+function dismissEmergencyModal() {
+  showEmergencyModal.value = false
+  try {
+    sessionStorage.setItem(EMERGENCY_DISMISSED_KEY, '1')
+  } catch (_error) {
+    /* sessionStorage may be unavailable */
+  }
+}
+
+function confirmEmergencyAndCall() {
+  dismissEmergencyModal()
+  if (typeof window !== 'undefined') {
+    window.location.href = 'tel:000'
+  }
+}
+
+function maybeShowEmergencyModal() {
+  try {
+    if (sessionStorage.getItem(EMERGENCY_DISMISSED_KEY) === '1') return
+  } catch (_error) {
+    /* ignore */
+  }
+  showEmergencyModal.value = true
 }
 
 function syncViewportMode() {
@@ -495,6 +581,35 @@ function validateForm() {
   return ''
 }
 
+async function onImageFileSelected(event) {
+  const target = event?.target
+  const file = target?.files?.[0]
+  if (!file) return
+
+  imageError.value = ''
+  imageUploading.value = true
+  try {
+    const { dataUrl, width, height } = await fileToThumbnail(file)
+    imagePreviewUrl.value = dataUrl
+    const uploaded = await uploadCommunityReportImage({ dataUrl, width, height })
+    form.imageUrl = uploaded.url
+  } catch (error) {
+    imageError.value = error?.message || 'Failed to upload image'
+    imagePreviewUrl.value = ''
+    form.imageUrl = ''
+  } finally {
+    imageUploading.value = false
+    if (target) target.value = ''
+  }
+}
+
+function clearImageAttachment() {
+  imageError.value = ''
+  imagePreviewUrl.value = ''
+  form.imageUrl = ''
+  if (imageFileInput.value) imageFileInput.value.value = ''
+}
+
 async function handleSubmit() {
   submitError.value = ''
   submitSuccess.value = ''
@@ -527,6 +642,9 @@ async function handleSubmit() {
     form.locationName = ''
     form.reporterName = ''
     form.imageUrl = ''
+    imagePreviewUrl.value = ''
+    imageError.value = ''
+    if (imageFileInput.value) imageFileInput.value.value = ''
     await loadReports()
   } catch (nextError) {
     submitError.value = nextError?.message || 'Failed to submit report'
@@ -542,6 +660,7 @@ function toggleSheet() {
 onMounted(async () => {
   syncViewportMode()
   window.addEventListener('resize', syncViewportMode)
+  maybeShowEmergencyModal()
 
   mapInstance = L.map(mapElement.value, {
     zoomControl: false,
@@ -600,6 +719,35 @@ onUnmounted(() => {
 
 <template>
   <main class="community-layout">
+    <div
+      v-if="showEmergencyModal"
+      class="emergency-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="emergency-modal-title"
+    >
+      <div class="emergency-modal__backdrop" @click="dismissEmergencyModal"></div>
+      <div class="emergency-modal__card">
+        <span class="material-symbols-outlined emergency-modal__icon">emergency</span>
+        <h2 id="emergency-modal-title">Is this an emergency?</h2>
+        <p class="emergency-modal__body">
+          If life or property is in immediate danger, please call <strong>000</strong> right now.
+          Otherwise you can continue and submit a community report.
+        </p>
+        <div class="emergency-modal__actions">
+          <button type="button" class="emergency-modal__call" @click="confirmEmergencyAndCall">
+            Yes — call 000
+          </button>
+          <button type="button" class="emergency-modal__continue" @click="dismissEmergencyModal">
+            No — continue reporting
+          </button>
+        </div>
+        <p class="emergency-modal__footnote">
+          000 is Australia's national emergency number for police, fire, and ambulance.
+        </p>
+      </div>
+    </div>
+
     <aside class="community-panel mobile-sheet" :class="{ 'mobile-sheet--expanded': isSheetExpanded }">
       <div class="mobile-sheet__handle"></div>
       <div class="community-mobile-actions">
@@ -730,7 +878,37 @@ onUnmounted(() => {
 
         <div class="field-row">
           <input v-model="form.reporterName" class="field-input" type="text" placeholder="Reporter name (optional)" />
-          <input v-model="form.imageUrl" class="field-input" type="url" placeholder="Image URL (optional)" />
+        </div>
+
+        <div class="image-upload">
+          <p class="image-upload__title">Photo (optional)</p>
+          <p class="image-upload__hint">
+            We resize your image to a small thumbnail before upload — no full-size photos leave your device.
+          </p>
+          <div class="image-upload__row">
+            <input
+              ref="imageFileInput"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              class="image-upload__input"
+              :disabled="imageUploading"
+              @change="onImageFileSelected"
+            />
+            <button
+              v-if="imagePreviewUrl || form.imageUrl"
+              type="button"
+              class="image-upload__clear"
+              :disabled="imageUploading"
+              @click="clearImageAttachment"
+            >
+              Remove
+            </button>
+          </div>
+          <p v-if="imageUploading" class="image-upload__status">Uploading thumbnail...</p>
+          <p v-if="imageError" class="error-text">{{ imageError }}</p>
+          <div v-if="imagePreviewUrl" class="image-upload__preview">
+            <img :src="imagePreviewUrl" alt="Selected report photo preview" />
+          </div>
         </div>
 
         <button class="primary-btn" :disabled="submitLoading" @click="handleSubmit">
@@ -1087,6 +1265,178 @@ h1 {
   margin: 0.35rem 0 0;
   font-size: 0.76rem;
   color: #0f7b6c;
+}
+
+.image-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.85rem;
+  border: 1px dashed rgba(33, 72, 59, 0.22);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.image-upload__title {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #1f6e57;
+}
+
+.image-upload__hint {
+  margin: 0;
+  font-size: 0.74rem;
+  color: #4c6b63;
+  line-height: 1.4;
+}
+
+.image-upload__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.image-upload__input {
+  flex: 1 1 auto;
+  font-size: 0.78rem;
+  color: #173b31;
+}
+
+.image-upload__clear {
+  border: 1px solid rgba(33, 72, 59, 0.18);
+  background: rgba(255, 255, 255, 0.9);
+  color: #173b31;
+  font-size: 0.74rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.image-upload__clear:hover:not([disabled]) {
+  background: #fff;
+}
+
+.image-upload__status {
+  margin: 0.1rem 0 0;
+  font-size: 0.74rem;
+  color: #6f897b;
+}
+
+.image-upload__preview {
+  margin-top: 0.3rem;
+  border-radius: 0.6rem;
+  overflow: hidden;
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  max-width: 220px;
+}
+
+.image-upload__preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.emergency-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.emergency-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 28, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.emergency-modal__card {
+  position: relative;
+  z-index: 1;
+  max-width: 420px;
+  width: 100%;
+  background: #fffaf2;
+  border-radius: 1.1rem;
+  padding: 1.4rem 1.3rem 1.2rem;
+  box-shadow: 0 24px 60px rgba(15, 23, 28, 0.35);
+  border: 1px solid rgba(216, 71, 39, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  text-align: left;
+}
+
+.emergency-modal__icon {
+  font-size: 2rem !important;
+  color: #d84727;
+}
+
+.emergency-modal__card h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #173b31;
+}
+
+.emergency-modal__body {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: #3b5358;
+}
+
+.emergency-modal__body strong {
+  color: #d84727;
+}
+
+.emergency-modal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.emergency-modal__call,
+.emergency-modal__continue {
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border-radius: 0.65rem;
+  cursor: pointer;
+}
+
+.emergency-modal__call {
+  background: #d84727;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(216, 71, 39, 0.32);
+}
+
+.emergency-modal__call:hover {
+  background: #b8391e;
+}
+
+.emergency-modal__continue {
+  background: rgba(33, 72, 59, 0.08);
+  color: #173b31;
+}
+
+.emergency-modal__continue:hover {
+  background: rgba(33, 72, 59, 0.16);
+}
+
+.emergency-modal__footnote {
+  margin: 0.2rem 0 0;
+  font-size: 0.72rem;
+  color: #6f897b;
+  line-height: 1.4;
 }
 
 .community-map-wrap {

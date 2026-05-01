@@ -191,3 +191,37 @@ export async function submitCommunityReport(input, { signal } = {}) {
 export function invalidateCommunityReportsCache() {
   removeJsonCacheByPrefix(COMMUNITY_REPORTS_CACHE_PREFIX)
 }
+
+export async function uploadCommunityReportImage({ dataUrl, width, height, signal } = {}) {
+  if (!dataUrl) throw new Error('dataUrl is required')
+
+  const response = await requestWithFallback('/community-reports/images', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      dataUrl,
+      width: Number.isFinite(width) ? Math.round(width) : undefined,
+      height: Number.isFinite(height) ? Math.round(height) : undefined,
+    }),
+  }, { signal })
+
+  const payload = await parseJson(response)
+
+  if (!response.ok) {
+    throw new Error(payload?.error || 'Image upload failed (' + response.status + ')')
+  }
+
+  if (!payload?.url || !payload?.id) {
+    throw new Error('Image upload failed (invalid response)')
+  }
+
+  return {
+    id: String(payload.id),
+    url: String(payload.url),
+    byteSize: Number(payload.byteSize) || 0,
+    storage: payload?.storage || 'unknown',
+  }
+}

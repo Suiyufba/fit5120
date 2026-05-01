@@ -11,6 +11,7 @@ import {
   initCommunityReportStore,
   purgeExpiredCommunityReports,
 } from './modules/communityReports/repositories/communityReportRepository.js';
+import { initCommunityReportImageStore } from './modules/communityReports/repositories/communityReportImageRepository.js';
 import { initManualHazardStore } from './modules/hazards/repositories/manualHazardRepository.js';
 import { initRouteGeographyStore } from './modules/routes/repositories/routeGeographyRepository.js';
 import { initRoutePlanHistoryStore } from './modules/routes/repositories/routePlanHistoryRepository.js';
@@ -75,7 +76,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '2mb' }));
 app.use('/api', apiRouter);
 
 app.use((error, _req, res, _next) => {
@@ -89,6 +90,7 @@ async function boot() {
     const userStoreReady = await initUserStore();
     const knowledgeReady = await initKnowledgeArticleStore();
     const communityReportStoreReady = await initCommunityReportStore();
+    const communityReportImageStoreReady = await initCommunityReportImageStore();
     const manualHazardStoreReady = await initManualHazardStore();
     const routeGeographyStoreReady = await initRouteGeographyStore();
     const routePlanHistoryStoreReady = await initRoutePlanHistoryStore();
@@ -108,6 +110,11 @@ async function boot() {
       console.log('Community report store ready');
     } else {
       console.warn('DATABASE_URL is not set, community reports fallback to in-memory');
+    }
+    if (communityReportImageStoreReady) {
+      console.log('Community report image store ready');
+    } else {
+      console.warn('DATABASE_URL is not set, community report images fallback to in-memory');
     }
     if (manualHazardStoreReady) {
       console.log('Manual hazard store ready');
