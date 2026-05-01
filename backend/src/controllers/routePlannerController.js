@@ -46,7 +46,7 @@ export async function postPlanRoute(req, res) {
         ? 400
         : error.message?.includes('User not found')
           ? 404
-          : error.message?.includes('OSRM')
+          : error.message?.includes('OpenRouteService')
             ? 503
             : 500;
 

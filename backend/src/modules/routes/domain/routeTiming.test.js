@@ -86,7 +86,7 @@ test('rough terrain adds time vs compacted path', () => {
   assert.ok(rocky > compacted, `rocky ${rocky} should exceed compacted ${compacted}`);
 });
 
-test('estimate always respects the provided floor (e.g. OSRM raw duration)', () => {
+test('estimate always respects the provided route-provider duration floor', () => {
   const t = estimateHikingDurationMin({
     distanceKm: 5,
     userLevel: 'advanced',

@@ -117,7 +117,7 @@ function deriveAvgSlopeFromProfile(geographyProfile, distanceKm) {
  * @param {object} [opts.geographyProfile] Optional elevation/terrain profile.
  * @param {string} [opts.userLevel='newcomer'] User experience label.
  * @param {number} [opts.fallbackSpeedKmh=4.5] Used when no geography is known.
- * @param {number} [opts.floorMin=0] Optional minimum duration (e.g. OSRM raw).
+ * @param {number} [opts.floorMin=0] Optional minimum duration from the route provider.
  * @returns {number} Estimated duration in minutes, rounded to 1 decimal.
  */
 export function estimateHikingDurationMin({

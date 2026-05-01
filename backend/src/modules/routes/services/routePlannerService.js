@@ -1,6 +1,6 @@
 import { getLatestHazardSnapshot } from '../../../infrastructure/db/hazardSnapshotRepository.js';
 import { getRouteContextByUserId } from '../../auth/services/authService.js';
-import { fetchOsrmRoutes } from '../adapters/osrmAdapter.js';
+import { fetchOpenRouteServiceRoutes } from '../adapters/openRouteServiceAdapter.js';
 import { listCommunityReports } from '../../communityReports/repositories/communityReportRepository.js';
 import { listManualHazards } from '../../hazards/repositories/manualHazardRepository.js';
 import { buildDetourWaypointCandidates, buildSuggestedPrep, scoreRouteCandidate } from '../domain/routeRisk.js';
@@ -69,14 +69,14 @@ function dedupeRoutes(routes) {
 }
 
 async function buildCandidateRoutes(start, end) {
-  const baseRoutes = await fetchOsrmRoutes([start, end], { alternatives: true });
+  const baseRoutes = await fetchOpenRouteServiceRoutes([start, end], { alternatives: true });
   const candidates = [...baseRoutes];
 
   if (candidates.length < 3) {
     const detours = buildDetourWaypointCandidates(start, end);
     const detourRoutes = await Promise.all(
       detours.map((waypoint) =>
-        fetchOsrmRoutes([start, waypoint, end], { alternatives: false }).catch(() => []),
+        fetchOpenRouteServiceRoutes([start, waypoint, end], { alternatives: false }).catch(() => []),
       ),
     );
     detourRoutes.flat().forEach((route) => candidates.push(route));
@@ -208,7 +208,7 @@ function burdenRatio(route, fastestRoute) {
 
 function compositeSelectionScore(route, fastestRoute) {
   // Prefer routes with low risk AND that don't balloon the trip compared to
-  // the fastest OSRM option. A 0-20 point tax per 100% extra burden keeps the
+  // the fastest routing option. A 0-20 point tax per 100% extra burden keeps the
   // tie-breaker mild — hazard avoidance still dominates.
   const ratio = burdenRatio(route, fastestRoute);
   const burdenPenalty = Math.min(20, ratio * 20);
@@ -224,7 +224,7 @@ export async function planSaferRoute({ userId, start, end, now = new Date() }) {
 
   const candidates = await buildCandidateRoutes(normalizedStart, normalizedEnd);
   if (!candidates.length) {
-    throw new Error('OSRM route service unavailable for the selected points');
+    throw new Error('OpenRouteService route service unavailable for the selected points');
   }
 
   const hazards = await loadLatestHazards();

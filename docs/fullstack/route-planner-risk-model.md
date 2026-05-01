@@ -6,10 +6,10 @@ Route planning was recalibrated to use hiking semantics instead of effectively s
 
 ## What Changed
 
-- OSRM route generation now defaults to the `foot` profile
+- Route generation uses OpenRouteService and defaults to the `foot-hiking` profile
 - Route duration now uses hiking-oriented time estimation
-  - keeps OSRM geometry
-  - compares OSRM travel time with distance-based hiking time
+  - keeps provider route geometry
+  - compares provider travel time with distance-based hiking time
   - returns the larger value as `durationMin`
 - Risk scoring now combines:
   - hazard proximity impact
@@ -37,7 +37,7 @@ Route planning was recalibrated to use hiking semantics instead of effectively s
 ## Backend Files
 
 - `backend/src/config/index.js`
-- `backend/src/modules/routes/adapters/osrmAdapter.js`
+- `backend/src/modules/routes/adapters/openRouteServiceAdapter.js`
 - `backend/src/modules/routes/repositories/routeGeographyRepository.js`
 - `backend/src/modules/routes/domain/routeRisk.js`
 - `backend/src/modules/routes/domain/routeRisk.test.js`

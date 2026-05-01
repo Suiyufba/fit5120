@@ -1,5 +1,7 @@
 # Route Planner OSRM Resilience Update - 2026-05-01
 
+Superseded by [route-planner-openrouteservice-migration-2026-05-01.md](./route-planner-openrouteservice-migration-2026-05-01.md). This note is kept as incident context for the original public OSRM outage.
+
 ## Background
 
 `POST /api/routes/plan` intermittently failed when OSRM public endpoint returned transient upstream errors such as:

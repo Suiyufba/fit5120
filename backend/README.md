@@ -111,8 +111,10 @@ npm run dev
 - `VICROADS_API_KEY=...`（Transport Victoria Open Data Portal 账号生成）
 - `OPENWEATHER_API_KEY=...`（OpenWeather API Key）
 - `OPENWEATHER_API_URL=https://api.openweathermap.org/data/2.5/weather`
-- `OSRM_API_BASE_URL=https://router.project-osrm.org`
-- `OSRM_ROUTE_PROFILE=foot`
+- `OPENROUTESERVICE_API_BASE_URL=https://api.openrouteservice.org`
+- `OPENROUTESERVICE_API_KEY=...`（OpenRouteService API Key，路线规划必需）
+- `OPENROUTESERVICE_PROFILE=foot-hiking`
+- `OPENROUTESERVICE_SNAP_RADIUS_M=1000`（允许 ORS 将起终点吸附到附近可路由路径）
 - `HIKING_BASE_SPEED_KMH=4.5`
 - `OPENTOPO_DATA_API_URL=https://api.opentopodata.org/`
 - `OPENTOPO_DATA_DATASET=aster30m`
@@ -220,7 +222,7 @@ Header: `Authorization: Bearer <token>`
 - `scoringBreakdown`：`hazardScore / weatherScore / zoneExposureScore / difficultyScore / geographyScore / feasibilityScore / weightedTotal`
 
 说明：
-- 路线几何仍由 OSRM 生成，但默认 profile 改为 `foot`
+- 路线几何由 OpenRouteService Directions API 生成，默认 profile 为 `foot-hiking`
 - `durationMin` 现在按徒步语义输出，不再直接沿用驾车时间
 - 风险输入源现在会合并官方 hazard、manual hazard、community report
 - 地理特征会按 route geometry hash 缓存在 PostgreSQL，避免重复抓 elevation / OSM 约束
