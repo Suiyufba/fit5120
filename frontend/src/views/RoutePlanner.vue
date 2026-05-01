@@ -249,7 +249,9 @@ function isDangerousGoNoGo(value) {
 }
 
 function formatGoNoGoLabel(value) {
-  return value === 'No-Go' ? 'Dangerous' : value
+  if (value === 'No-Go') return 'Dangerous'
+  if (value === 'Go') return 'Safe'
+  return value
 }
 
 function buildRouteChoices(planPayload) {
@@ -309,7 +311,7 @@ const summary = computed(() => {
     distance: `${route.distanceKm.toFixed(1)} km`,
     duration: formatDuration(route.durationMin),
     difficulty: route.slotDifficulty || route.difficulty,
-    risk: `${route.riskLevel} (${route.riskScore.toFixed(1)})`,
+    risk: route.riskLevel,
     goNoGo: route.goNoGo,
     goNoGoLabel: formatGoNoGoLabel(route.goNoGo),
     isDangerous: isDangerousGoNoGo(route.goNoGo),
@@ -765,7 +767,7 @@ onUnmounted(() => {
               {{ option.distanceKm.toFixed(1) }} km · {{ formatDuration(option.durationMin) }}
             </p>
             <p class="route-option-card__meta">Difficulty: {{ option.slotDifficulty || option.difficulty }}</p>
-            <p class="route-option-card__risk">{{ option.riskLevel }} ({{ option.riskScore.toFixed(1) }})</p>
+            <p class="route-option-card__risk">{{ option.riskLevel }}</p>
           </button>
         </div>
         <div class="summary-grid">
@@ -814,7 +816,6 @@ onUnmounted(() => {
               </strong>
               <span>
                 {{ item.planPayload?.recommendedRoute?.riskLevel || 'Low' }}
-                ({{ Number(item.planPayload?.recommendedRoute?.riskScore || 0).toFixed(1) }})
               </span>
               <small>{{ new Date(item.createdAt).toLocaleString() }}</small>
             </button>
@@ -977,6 +978,7 @@ h1 {
 
 .planner-actions {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
@@ -986,6 +988,8 @@ h1 {
   border-radius: 999px;
   padding: 0.82rem 1rem;
   font-weight: 800;
+  min-height: 3rem;
+  line-height: 1.1;
 }
 
 .primary-btn {
@@ -1366,6 +1370,10 @@ h1 {
 
   .route-options {
     grid-template-columns: 1fr;
+  }
+
+  .planner-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>
