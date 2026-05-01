@@ -90,18 +90,22 @@ function getGeolocationErrorMessage(error) {
     return 'Location permission denied. Enable location access or use address search.'
   }
   if (error?.code === 2) {
-    return 'Your device could not determine its location right now. Check macOS/Chrome Location Services, then try again or use address search.'
+    return 'Your device could not determine its location. Open System Settings → Privacy & Security → Location Services, ensure Chrome is allowed, then retry — or pick a spot via address search or by clicking the map.'
   }
   if (error?.code === 3) {
-    return 'Location lookup timed out. Try again near a window or use address search.'
+    return 'Location lookup timed out. Try again near a window, or use address search / click the map.'
   }
-  return 'Could not determine your location. Try address search or map click instead.'
+  return 'Could not determine your location. Try address search or click on the map instead.'
 }
 
 function requestCurrentPosition(options) {
   return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(resolve, reject, options)
   })
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 function syncViewportMode() {
@@ -401,23 +405,29 @@ async function useMyLocation() {
     return
   }
 
+  const attempts = [
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
+    { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 },
+    { enableHighAccuracy: false, timeout: 15000, maximumAge: Infinity },
+  ]
+
   locatingMe.value = true
+  let lastError = null
   try {
-    let position
-    try {
-      position = await requestCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000,
-      })
-    } catch (firstError) {
-      if (firstError?.code === 1) throw firstError
-      position = await requestCurrentPosition({
-        enableHighAccuracy: false,
-        timeout: 15000,
-        maximumAge: 300000,
-      })
+    let position = null
+    for (let i = 0; i < attempts.length; i += 1) {
+      try {
+        position = await requestCurrentPosition(attempts[i])
+        break
+      } catch (err) {
+        lastError = err
+        if (err?.code === 1) throw err
+        if (i < attempts.length - 1) {
+          await delay(600)
+        }
+      }
     }
+    if (!position) throw lastError || new Error('geolocation_failed')
     const { latitude, longitude } = position.coords
     const applied = applyPickedLocation({ lat: latitude, lng: longitude, flyZoom: 14 })
     if (applied) {
