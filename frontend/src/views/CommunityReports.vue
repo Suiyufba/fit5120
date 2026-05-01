@@ -85,6 +85,25 @@ let inflightReportController
 let inflightHazardController
 let refreshTimer
 
+function getGeolocationErrorMessage(error) {
+  if (error?.code === 1) {
+    return 'Location permission denied. Enable location access or use address search.'
+  }
+  if (error?.code === 2) {
+    return 'Your device could not determine its location right now. Check macOS/Chrome Location Services, then try again or use address search.'
+  }
+  if (error?.code === 3) {
+    return 'Location lookup timed out. Try again near a window or use address search.'
+  }
+  return 'Could not determine your location. Try address search or map click instead.'
+}
+
+function requestCurrentPosition(options) {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, options)
+  })
+}
+
 function syncViewportMode() {
   if (typeof window === 'undefined') return
   isMobileViewport.value = window.innerWidth <= 1000
@@ -384,22 +403,28 @@ async function useMyLocation() {
 
   locatingMe.value = true
   try {
-    const position = await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
+    let position
+    try {
+      position = await requestCurrentPosition({
         enableHighAccuracy: true,
         timeout: 10000,
         maximumAge: 60000,
       })
-    })
+    } catch (firstError) {
+      if (firstError?.code === 1) throw firstError
+      position = await requestCurrentPosition({
+        enableHighAccuracy: false,
+        timeout: 15000,
+        maximumAge: 300000,
+      })
+    }
     const { latitude, longitude } = position.coords
     const applied = applyPickedLocation({ lat: latitude, lng: longitude, flyZoom: 14 })
     if (applied) {
       await reverseFillLocationName({ lat: latitude, lng: longitude })
     }
   } catch (error) {
-    submitError.value = error?.code === 1
-      ? 'Location permission denied. Enable location access or use address search.'
-      : 'Could not determine your location. Try address search or map click instead.'
+    submitError.value = getGeolocationErrorMessage(error)
   } finally {
     locatingMe.value = false
   }
