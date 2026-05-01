@@ -169,8 +169,7 @@ async function fileToThumbnail(file) {
   }
 }
 
-function dismissEmergencyModal() {
-  showEmergencyModal.value = false
+function rememberEmergencyAck() {
   try {
     sessionStorage.setItem(EMERGENCY_DISMISSED_KEY, '1')
   } catch (_error) {
@@ -178,21 +177,35 @@ function dismissEmergencyModal() {
   }
 }
 
+function emergencyAlreadyAcked() {
+  try {
+    return sessionStorage.getItem(EMERGENCY_DISMISSED_KEY) === '1'
+  } catch (_error) {
+    return false
+  }
+}
+
+function dismissEmergencyModal() {
+  showEmergencyModal.value = false
+  rememberEmergencyAck()
+  // After the user confirms "No, continue reporting", run the real submit.
+  if (typeof pendingSubmitAfterEmergency === 'function') {
+    const next = pendingSubmitAfterEmergency
+    pendingSubmitAfterEmergency = null
+    next()
+  }
+}
+
 function confirmEmergencyAndCall() {
-  dismissEmergencyModal()
+  showEmergencyModal.value = false
+  rememberEmergencyAck()
+  pendingSubmitAfterEmergency = null
   if (typeof window !== 'undefined') {
     window.location.href = 'tel:000'
   }
 }
 
-function maybeShowEmergencyModal() {
-  try {
-    if (sessionStorage.getItem(EMERGENCY_DISMISSED_KEY) === '1') return
-  } catch (_error) {
-    /* ignore */
-  }
-  showEmergencyModal.value = true
-}
+let pendingSubmitAfterEmergency = null
 
 function syncViewportMode() {
   if (typeof window === 'undefined') return
@@ -619,6 +632,21 @@ async function handleSubmit() {
     return
   }
 
+  // First time submitting in this session, ask whether the situation is an
+  // emergency before posting the report. If the user picks "No", the modal's
+  // dismiss handler runs the actual submission.
+  if (!emergencyAlreadyAcked()) {
+    pendingSubmitAfterEmergency = performSubmit
+    showEmergencyModal.value = true
+    return
+  }
+
+  await performSubmit()
+}
+
+async function performSubmit() {
+  submitError.value = ''
+  submitSuccess.value = ''
   submitLoading.value = true
 
   try {
@@ -660,7 +688,6 @@ function toggleSheet() {
 onMounted(async () => {
   syncViewportMode()
   window.addEventListener('resize', syncViewportMode)
-  maybeShowEmergencyModal()
 
   mapInstance = L.map(mapElement.value, {
     zoomControl: false,
