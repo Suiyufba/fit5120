@@ -77,7 +77,10 @@ cp .env.example .env
 
 ```env
 VITE_HAZARD_API_BASE_URL=http://localhost:8080/api
+VITE_SITE_ACCESS_PASSWORD=gkd
 ```
+
+`VITE_SITE_ACCESS_PASSWORD` controls the outer site access gate. If omitted, the app defaults to `gkd`.
 
 3. 前端会自动轮询：
 - `GET /hazards/realtime`
