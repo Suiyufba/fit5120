@@ -7,6 +7,7 @@ UI/UX, map behavior, rendering, form/layout fixes, and client-side data handling
 - [site-access-password-gate-2026-05-01.md](./site-access-password-gate-2026-05-01.md)
 - [community-reports-geolocation-fallback-2026-05-01.md](./community-reports-geolocation-fallback-2026-05-01.md)
 - [route-planner-result-display-cleanup-2026-05-01.md](./route-planner-result-display-cleanup-2026-05-01.md)
+- [route-planner-result-auto-scroll-2026-05-02.md](./route-planner-result-auto-scroll-2026-05-02.md)
 - [homepage-live-data.md](./homepage-live-data.md)
 - [home-risk-preview-category-alignment-2026-04-16.md](./home-risk-preview-category-alignment-2026-04-16.md)
 - [home-risk-preview-popup-detail-alignment-2026-04-16.md](./home-risk-preview-popup-detail-alignment-2026-04-16.md)

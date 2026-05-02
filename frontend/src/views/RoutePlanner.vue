@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -25,6 +25,9 @@ import {
 const router = useRouter()
 const { state: authState } = useAuthState()
 const mapElement = ref(null)
+const plannerPanel = ref(null)
+const plannerPanelBody = ref(null)
+const plannerSummary = ref(null)
 const loading = ref(false)
 const loadingHistory = ref(false)
 const clearingHistory = ref(false)
@@ -320,6 +323,33 @@ const summary = computed(() => {
   }
 })
 
+function getPlannerScrollContainer() {
+  if (plannerPanelBody.value?.scrollHeight > plannerPanelBody.value?.clientHeight) {
+    return plannerPanelBody.value
+  }
+  if (plannerPanel.value?.scrollHeight > plannerPanel.value?.clientHeight) {
+    return plannerPanel.value
+  }
+  return null
+}
+
+async function scrollToPlanResult() {
+  await nextTick()
+  plannerSummary.value?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start',
+  })
+}
+
+function scrollToPlannerTop() {
+  const scrollContainer = getPlannerScrollContainer()
+  if (scrollContainer) {
+    scrollContainer.scrollTo({ top: 0, behavior: 'smooth' })
+    return
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 function renderMarkers() {
   if (!markerLayer) return
   markerLayer.clearLayers()
@@ -497,6 +527,7 @@ function applyHistoryPlan(item) {
   })
   renderMarkers()
   drawRoutes()
+  void scrollToPlanResult()
 }
 
 async function loadHistory() {
@@ -584,6 +615,7 @@ async function handlePlanRoute() {
 
     isSheetExpanded.value = true
     drawRoutes()
+    await scrollToPlanResult()
     await loadHistory()
   } catch (nextError) {
     if (nextError?.name === 'AbortError') return
@@ -678,7 +710,7 @@ onUnmounted(() => {
 
 <template>
   <main class="planner-layout">
-    <aside class="planner-panel mobile-sheet" :class="{ 'mobile-sheet--expanded': isSheetExpanded }">
+    <aside ref="plannerPanel" class="planner-panel mobile-sheet" :class="{ 'mobile-sheet--expanded': isSheetExpanded }">
       <div class="mobile-sheet__handle"></div>
       <div class="planner-mobile-actions">
         <button class="mobile-sheet-toggle" @click="toggleSheet">
@@ -686,7 +718,7 @@ onUnmounted(() => {
           {{ isSheetExpanded ? 'Show Less' : 'Route Panel' }}
         </button>
       </div>
-      <div class="mobile-sheet__body planner-panel__body">
+      <div ref="plannerPanelBody" class="mobile-sheet__body planner-panel__body">
       <div>
         <p class="planner-kicker">Pre-Hike Safety Planner</p>
         <h1>Plan Route</h1>
@@ -751,7 +783,7 @@ onUnmounted(() => {
         <button class="ghost-btn" @click="resetSelection">Reset Points</button>
       </div>
 
-      <section v-if="summary" class="planner-summary">
+      <section v-if="summary" ref="plannerSummary" class="planner-summary">
         <p class="summary-kicker">Choose One Route</p>
         <div class="route-options">
           <button
@@ -841,6 +873,17 @@ onUnmounted(() => {
       </div>
 
       <p v-if="error" class="planner-error">{{ error }}</p>
+
+      <button
+        v-if="summary"
+        class="planner-back-top"
+        type="button"
+        aria-label="Back to top"
+        title="Back to top"
+        @click="scrollToPlannerTop"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">keyboard_arrow_up</span>
+      </button>
       </div>
     </aside>
 
@@ -872,12 +915,15 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 0.9rem;
   overflow: auto;
+  position: relative;
+  scroll-behavior: smooth;
 }
 
 .planner-panel__body {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
+  scroll-behavior: smooth;
 }
 
 .planner-mobile-actions {
@@ -1282,6 +1328,36 @@ h1 {
   color: #3f5a54;
   font-size: 0.84rem;
   line-height: 1.45;
+}
+
+.planner-back-top {
+  border: 1px solid rgba(33, 72, 59, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 250, 242, 0.96);
+  color: #21483b;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  align-self: flex-end;
+  position: sticky;
+  bottom: 0.35rem;
+  margin-top: -0.25rem;
+  box-shadow: 0 14px 28px rgba(23, 59, 49, 0.16);
+  backdrop-filter: blur(10px);
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  z-index: 5;
+}
+
+.planner-back-top:hover {
+  background: #ffffff;
+  border-color: rgba(33, 72, 59, 0.3);
+  transform: translateY(-2px);
+}
+
+.planner-back-top .material-symbols-outlined {
+  font-size: 1.65rem;
+  line-height: 1;
 }
 
 .zone-inline {
