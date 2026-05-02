@@ -8,6 +8,8 @@
   - `/route-planner`
   - `/community-reports`
 - Updated `frontend/src/App.vue` so stable map pages use a fade-only route transition.
+- Updated shared Victoria map constraints in `frontend/src/utils/victoriaMap.js` to avoid Leaflet's animated `_panInsideMaxBounds` initialization path.
+- Disabled Leaflet zoom/fade animations during initial map setup on the three map pages.
 
 ## Interfaces
 
@@ -17,4 +19,5 @@
 ## User Impact
 
 - Switching between Risk Map, Plan Route, and Community Reports no longer moves the whole map up/down during page transitions.
+- Leaflet's internal map pane now initializes at its final position instead of animating vertically after route changes.
 - Regular non-map pages keep the existing page transition.

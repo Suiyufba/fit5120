@@ -651,7 +651,10 @@ onMounted(() => {
   mapInstance = L.map(mapElement.value, {
     zoomControl: false,
     attributionControl: true,
-  }).setView(VICTORIA_VIEW.center, VICTORIA_VIEW.zoom)
+    fadeAnimation: false,
+    markerZoomAnimation: false,
+    zoomAnimation: false,
+  }).setView(VICTORIA_VIEW.center, VICTORIA_VIEW.zoom, { animate: false })
   applyVictoriaMapConstraints(mapInstance)
 
   mapInstance.attributionControl.setPrefix(false)

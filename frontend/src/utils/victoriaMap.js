@@ -117,13 +117,13 @@ export function applyVictoriaMapConstraints(mapInstance) {
 
   const lockedZoom = mapInstance.getBoundsZoom(VICTORIA_BOUNDS, false, [24, 24])
 
-  mapInstance.setMaxBounds(VICTORIA_BOUNDS)
+  mapInstance.options.maxBounds = VICTORIA_BOUNDS
   mapInstance.options.maxBoundsViscosity = 1
   mapInstance.setMinZoom(lockedZoom)
   mapInstance.setMaxZoom(18)
-  mapInstance.fitBounds(VICTORIA_BOUNDS, {
+  mapInstance.setView(VICTORIA_BOUNDS.getCenter(), lockedZoom, {
     animate: false,
-    padding: [24, 24],
+    reset: true,
   })
 
   mapInstance.boxZoom.disable()
