@@ -119,9 +119,6 @@ onUnmounted(() => {
               <span>{{ featuredArticle.readMinutes }} min read</span>
               <span>{{ formatDate(featuredArticle.publishedAt) }}</span>
             </div>
-            <a v-if="featuredArticle.sourceUrl" :href="featuredArticle.sourceUrl" target="_blank" rel="noreferrer" class="kb-source">
-              Source Link
-            </a>
           </div>
         </section>
 
@@ -148,9 +145,6 @@ onUnmounted(() => {
                 <span>{{ item.readMinutes }} min read</span>
                 <span>{{ formatDate(item.publishedAt) }}</span>
               </div>
-              <a v-if="item.sourceUrl" :href="item.sourceUrl" target="_blank" rel="noreferrer" class="kb-source">
-                Source Link
-              </a>
             </div>
           </article>
         </section>
@@ -341,13 +335,6 @@ h2, h3 {
 
 .kb-card-body {
   padding: 0.85rem;
-}
-
-.kb-source {
-  margin-top: 0.55rem;
-  display: inline-block;
-  color: #2b6b56;
-  font-weight: 700;
 }
 
 @media (max-width: 900px) {

@@ -5,6 +5,7 @@
 - Updated `frontend/src/views/KnowledgeHub.vue`.
 - Knowledge Hub featured and regular article titles now link to each article's `sourceUrl` when one is available.
 - Added hover and keyboard focus styling for title links while preserving the existing title typography.
+- Removed the separate `Source Link` below each article because the title now carries that action.
 
 ## Interfaces
 
@@ -13,4 +14,4 @@
 
 ## User Impact
 
-- Users can open an article directly from its title instead of only using the separate source link.
+- Users can open an article directly from its title without a duplicate source link below the article text.
