@@ -101,7 +101,18 @@ onUnmounted(() => {
           />
           <div class="kb-featured-body">
             <span class="kb-chip">{{ featuredArticle.topic }}</span>
-            <h2>{{ featuredArticle.title }}</h2>
+            <h2>
+              <a
+                v-if="featuredArticle.sourceUrl"
+                :href="featuredArticle.sourceUrl"
+                target="_blank"
+                rel="noreferrer"
+                class="kb-title-link"
+              >
+                {{ featuredArticle.title }}
+              </a>
+              <span v-else>{{ featuredArticle.title }}</span>
+            </h2>
             <p class="kb-summary">{{ featuredArticle.summary }}</p>
             <p class="kb-content">{{ featuredArticle.content }}</p>
             <div class="kb-meta">
@@ -119,7 +130,18 @@ onUnmounted(() => {
             <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.title" class="kb-card-image" />
             <div class="kb-card-body">
               <span class="kb-chip">{{ item.topic }}</span>
-              <h3>{{ item.title }}</h3>
+              <h3>
+                <a
+                  v-if="item.sourceUrl"
+                  :href="item.sourceUrl"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="kb-title-link"
+                >
+                  {{ item.title }}
+                </a>
+                <span v-else>{{ item.title }}</span>
+              </h3>
               <p class="kb-summary">{{ item.summary }}</p>
               <p class="kb-content">{{ item.content }}</p>
               <div class="kb-meta">
@@ -252,6 +274,27 @@ h2, h3 {
   margin-top: 0.45rem;
   color: #173b31;
   font-weight: 700;
+}
+
+.kb-title-link {
+  color: inherit;
+  text-decoration: none;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+  transition: color 0.18s ease, text-decoration-color 0.18s ease;
+}
+
+.kb-title-link:hover,
+.kb-title-link:focus-visible {
+  color: #2b6b56;
+  text-decoration: underline;
+  text-decoration-color: rgba(43, 107, 86, 0.42);
+}
+
+.kb-title-link:focus-visible {
+  outline: 3px solid rgba(47, 96, 78, 0.2);
+  outline-offset: 0.18rem;
+  border-radius: 0.2rem;
 }
 
 .kb-summary {
