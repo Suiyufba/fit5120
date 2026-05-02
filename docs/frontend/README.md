@@ -9,6 +9,7 @@ UI/UX, map behavior, rendering, form/layout fixes, and client-side data handling
 - [route-planner-result-display-cleanup-2026-05-01.md](./route-planner-result-display-cleanup-2026-05-01.md)
 - [route-planner-result-auto-scroll-2026-05-02.md](./route-planner-result-auto-scroll-2026-05-02.md)
 - [knowledge-hub-title-links-2026-05-02.md](./knowledge-hub-title-links-2026-05-02.md)
+- [map-page-transition-stability-2026-05-02.md](./map-page-transition-stability-2026-05-02.md)
 - [homepage-live-data.md](./homepage-live-data.md)
 - [home-risk-preview-category-alignment-2026-04-16.md](./home-risk-preview-category-alignment-2026-04-16.md)
 - [home-risk-preview-popup-detail-alignment-2026-04-16.md](./home-risk-preview-popup-detail-alignment-2026-04-16.md)

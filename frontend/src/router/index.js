@@ -16,12 +16,14 @@ const router = createRouter({
     {
       path: '/risk-map',
       name: 'risk-map',
-      component: () => import('../views/RiskMap.vue')
+      component: () => import('../views/RiskMap.vue'),
+      meta: { stableMapView: true }
     },
     {
       path: '/route-planner',
       name: 'route-planner',
-      component: () => import('../views/RoutePlanner.vue')
+      component: () => import('../views/RoutePlanner.vue'),
+      meta: { stableMapView: true }
     },
     {
       path: '/route-detail',
@@ -31,7 +33,8 @@ const router = createRouter({
     {
       path: '/community-reports',
       name: 'community-reports',
-      component: () => import('../views/CommunityReports.vue')
+      component: () => import('../views/CommunityReports.vue'),
+      meta: { stableMapView: true }
     },
     {
       path: '/knowledge-hub',
