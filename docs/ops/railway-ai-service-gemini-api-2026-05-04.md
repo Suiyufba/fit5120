@@ -19,7 +19,7 @@ Set on the Railway `ai-service` production environment:
 
 ```env
 GEMINI_API_KEY=<Google Gemini API key stored in Railway>
-GEMINI_ROUTE_NARRATION_MODEL=gemini-2.5-flash-lite
+GEMINI_ROUTE_NARRATION_MODEL=gemini-2.5-flash
 ```
 
 Do not commit the real Gemini API key to the repository. Keep the secret only in Railway environment variables.
@@ -28,7 +28,7 @@ Do not commit the real Gemini API key to the repository. Keep the secret only in
 
 - Endpoint using Gemini: `POST /v1/route-introduction`
 - If `AI_SERVICE_AUTH_TOKEN` is configured, callers must include `x-ai-service-token`.
-- The service uses `gemini-2.5-flash-lite` for the route-introduction prompt.
+- The service uses `gemini-2.5-flash` for the route-introduction prompt.
 - The service keeps the existing rule-based fallback for missing keys, empty Gemini responses, request failures, and timeouts.
 
 ## Verification
