@@ -4,6 +4,7 @@ UI/UX, map behavior, rendering, form/layout fixes, and client-side data handling
 
 ## Docs
 
+- [route-planner-ai-assistant-reminder-2026-05-04.md](./route-planner-ai-assistant-reminder-2026-05-04.md)
 - [site-access-password-gate-2026-05-01.md](./site-access-password-gate-2026-05-01.md)
 - [community-reports-geolocation-fallback-2026-05-01.md](./community-reports-geolocation-fallback-2026-05-01.md)
 - [route-planner-result-display-cleanup-2026-05-01.md](./route-planner-result-display-cleanup-2026-05-01.md)

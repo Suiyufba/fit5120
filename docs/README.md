@@ -22,6 +22,7 @@ Project documentation has been reorganized by domain for easier maintenance.
 ## Timeline (All Domains)
 
 ### 2026-05-04
+- [frontend/route-planner-ai-assistant-reminder-2026-05-04.md](./frontend/route-planner-ai-assistant-reminder-2026-05-04.md)
 - [ops/railway-ai-service-gemini-api-2026-05-04.md](./ops/railway-ai-service-gemini-api-2026-05-04.md)
 
 ### 2026-04-16

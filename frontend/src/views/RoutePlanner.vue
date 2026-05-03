@@ -815,7 +815,16 @@ onUnmounted(() => {
         <div class="go-tag" :class="{ 'go-tag--danger': summary.isDangerous }">
           {{ summary.goNoGoLabel }}
         </div>
-        <p class="summary-explain">{{ summary.intro }}</p>
+        <aside class="ai-reminder-window" aria-label="AI assistant route reminder">
+          <div class="ai-reminder-window__head">
+            <span class="ai-reminder-window__badge">AI</span>
+            <div>
+              <p class="ai-reminder-window__title">AI Assistant Reminder</p>
+              <p class="ai-reminder-window__meta">Generated from the latest route planning data</p>
+            </div>
+          </div>
+          <p class="ai-reminder-window__body">{{ summary.intro }}</p>
+        </aside>
         <button class="primary-btn" @click="goToDetails">View Route Details</button>
       </section>
 
@@ -1327,10 +1336,57 @@ h1 {
   box-shadow: 0 0 0 2px rgba(214, 31, 31, 0.16);
 }
 
-.summary-explain {
-  color: #3f5a54;
+.ai-reminder-window {
+  border: 1px solid rgba(30, 91, 72, 0.18);
+  border-left: 4px solid #2f7d60;
+  border-radius: 0.75rem;
+  background:
+    linear-gradient(135deg, rgba(246, 252, 247, 0.98), rgba(255, 250, 242, 0.96));
+  padding: 0.7rem 0.75rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82), 0 8px 18px rgba(31, 57, 49, 0.06);
+}
+
+.ai-reminder-window__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.ai-reminder-window__badge {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: #21483b;
+  color: #fffaf2;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  box-shadow: 0 0 0 3px rgba(47, 125, 96, 0.12);
+}
+
+.ai-reminder-window__title {
+  color: #1f3931;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.ai-reminder-window__meta {
+  margin-top: 0.12rem;
+  color: #5c746b;
+  font-size: 0.68rem;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.ai-reminder-window__body {
+  margin-top: 0.55rem;
+  color: #34534a;
   font-size: 0.84rem;
-  line-height: 1.45;
+  line-height: 1.48;
 }
 
 .planner-back-top {
