@@ -504,11 +504,16 @@ async function reverseFillLocationName({ lat, lng }) {
     const result = await reverseLocation(lat, lng, {
       signal: reverseLookupController.signal,
     })
-    if (result?.displayName && !form.locationName.trim()) {
-      form.locationName = result.displayName
+    if (result?.displayName) {
+      addressQuery.value = result.displayName
+      addressSuggestions.value = []
+      if (!form.locationName.trim()) {
+        form.locationName = result.displayName
+      }
     }
   } catch (_error) {
-    /* silent — reverse lookup is best-effort */
+    addressQuery.value = `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`
+    addressSuggestions.value = []
   }
 }
 
@@ -1121,7 +1126,7 @@ h1 {
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s ease, border-color 0.15s ease;
-  justify-self: end;
+  justify-self: start;
 }
 
 .locate-btn:hover:not(:disabled) {
