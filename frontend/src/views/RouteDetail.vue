@@ -120,11 +120,12 @@ function selectRoute(routeId) {
 const prepTips = computed(() => recommended.value?.suggestedPrep || [])
 const geography = computed(() => recommended.value?.geographyProfile || null)
 const recommendedGoNoGoLabel = computed(() => {
-  const value = recommended.value?.goNoGo || ''
-  return value === 'No-Go' ? 'Dangerous' : value
+  const value = recommended.value?.safetyStatus || recommended.value?.goNoGo || ''
+  if (value === 'No-Go' || value === 'Dangerous') return 'Dangerous'
+  return 'Safe'
 })
 const recommendedIsDangerous = computed(() => {
-  const value = recommended.value?.goNoGo
+  const value = recommended.value?.safetyStatus || recommended.value?.goNoGo
   return value === 'No-Go' || value === 'Dangerous'
 })
 

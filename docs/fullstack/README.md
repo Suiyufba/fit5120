@@ -4,6 +4,7 @@ End-to-end features that involve both frontend and backend changes.
 
 ## Feature Docs
 
+- [route-safety-status-and-gemini-context-2026-05-04.md](./route-safety-status-and-gemini-context-2026-05-04.md)
 - [community-report-feature.md](./community-report-feature.md)
 - [admin-dashboard-feature.md](./admin-dashboard-feature.md)
 - [route-planner-risk-model.md](./route-planner-risk-model.md)

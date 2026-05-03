@@ -251,10 +251,9 @@ function isDangerousGoNoGo(value) {
   return value === 'No-Go' || value === 'Dangerous'
 }
 
-function formatGoNoGoLabel(value) {
-  if (value === 'No-Go') return 'Dangerous'
-  if (value === 'Go') return 'Safe'
-  return value
+function formatSafetyStatus(route) {
+  if (route?.safetyStatus === 'Dangerous' || route?.goNoGo === 'No-Go' || route?.goNoGo === 'Dangerous') return 'Dangerous'
+  return 'Safe'
 }
 
 function buildRouteChoices(planPayload) {
@@ -316,8 +315,8 @@ const summary = computed(() => {
     difficulty: route.slotDifficulty || route.difficulty,
     risk: route.riskLevel,
     goNoGo: route.goNoGo,
-    goNoGoLabel: formatGoNoGoLabel(route.goNoGo),
-    isDangerous: isDangerousGoNoGo(route.goNoGo),
+    safetyStatus: formatSafetyStatus(route),
+    isDangerous: isDangerousGoNoGo(route.safetyStatus || route.goNoGo),
     intro: route.intro || route.explanation,
     zoneSummary: route.zoneSummary || { level1Count: 0, level2Count: 0, level3Count: 0 },
   }
@@ -813,7 +812,7 @@ onUnmounted(() => {
         </div>
 
         <div class="go-tag" :class="{ 'go-tag--danger': summary.isDangerous }">
-          {{ summary.goNoGoLabel }}
+          {{ summary.safetyStatus }}
         </div>
         <aside class="ai-reminder-window" aria-label="AI assistant route reminder">
           <div class="ai-reminder-window__head">

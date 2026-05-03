@@ -119,12 +119,15 @@ function toRoutePayload(route) {
     riskScore: route.riskScore,
     riskLevel: route.riskLevel,
     goNoGo: route.goNoGo,
+    safetyStatus: route.safetyStatus || (route.goNoGo === 'No-Go' ? 'Dangerous' : 'Safe'),
+    noGoReasons: route.noGoReasons || {},
     intro: route.intro || '',
     explanation: route.explanation,
     keyRisks: route.keyRisks,
     zoneSummary: route.zoneSummary,
     suggestedPrep: route.suggestedPrep,
     geographyProfile: route.geographyProfile,
+    scoringBreakdown: route.scoringBreakdown || {},
   };
 }
 
@@ -139,7 +142,10 @@ async function attachRouteIntroductions(payload) {
   await Promise.all(
     allRoutes.map(async (route) => {
       if (!route?.id || byId.has(route.id)) return;
-      byId.set(route.id, await generateRouteIntroduction(route));
+      byId.set(route.id, await generateRouteIntroduction({
+        ...route,
+        hikerExperienceLevel: payload.userLevel,
+      }));
     }),
   );
 

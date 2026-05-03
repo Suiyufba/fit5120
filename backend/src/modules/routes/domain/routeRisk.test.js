@@ -65,6 +65,8 @@ test('newcomer becomes No-Go when extreme hazard is close', () => {
   });
 
   assert.equal(scored.goNoGo, 'No-Go');
+  assert.equal(scored.safetyStatus, 'Dangerous');
+  assert.equal(scored.noGoReasons.hasExtremeTooClose, true);
   assert.ok(scored.keyRisks[0]?.advice);
   assert.equal(scored.keyRisks[0]?.zoneLevel, 1);
   assert.equal(typeof scored.zoneSummary.level1Count, 'number');
@@ -90,6 +92,7 @@ test('advanced user gets Go for low exposure route', () => {
   });
 
   assert.equal(scored.goNoGo, 'Go');
+  assert.equal(scored.safetyStatus, 'Safe');
   assert.ok(scored.riskScore < 80);
 });
 

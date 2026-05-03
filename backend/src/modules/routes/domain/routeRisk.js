@@ -681,6 +681,8 @@ export function scoreRouteCandidate({
     riskScore: Number(adjustedWeightedTotal.toFixed(1)),
     riskLevel,
     goNoGo,
+    safetyStatus: goNoGo === 'No-Go' ? 'Dangerous' : 'Safe',
+    noGoReasons: goNoGoResult.noGoReasons,
     explanation,
     keyRisks,
     geographyProfile,

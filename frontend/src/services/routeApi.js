@@ -18,6 +18,8 @@ export function getOrCreatePlanSessionId() {
 }
 
 function normalizeRoute(route) {
+  const safetyStatus =
+    route?.safetyStatus || (route?.goNoGo === 'No-Go' || route?.goNoGo === 'Dangerous' ? 'Dangerous' : 'Safe')
   return {
     id: route?.id || '',
     geometry: Array.isArray(route?.geometry) ? route.geometry : [],
@@ -26,7 +28,8 @@ function normalizeRoute(route) {
     difficulty: route?.difficulty || 'Easy',
     riskScore: Number(route?.riskScore || 0),
     riskLevel: route?.riskLevel || 'Low',
-    goNoGo: route?.goNoGo || 'Go',
+    goNoGo: route?.goNoGo || (safetyStatus === 'Dangerous' ? 'No-Go' : 'Go'),
+    safetyStatus,
     intro: route?.intro || '',
     explanation: route?.explanation || '',
     keyRisks: Array.isArray(route?.keyRisks) ? route.keyRisks : [],
@@ -44,6 +47,8 @@ function normalizeRoute(route) {
     },
     zoneSummary: route?.zoneSummary || { level1Count: 0, level2Count: 0, level3Count: 0 },
     suggestedPrep: Array.isArray(route?.suggestedPrep) ? route.suggestedPrep : [],
+    noGoReasons: route?.noGoReasons || {},
+    scoringBreakdown: route?.scoringBreakdown || {},
   }
 }
 

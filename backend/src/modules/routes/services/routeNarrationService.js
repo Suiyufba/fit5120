@@ -98,7 +98,7 @@ function describeHighlight(route = {}) {
 
 export function buildRouteIntroductionFallback(route = {}) {
   const difficulty = String(route.difficulty || 'moderate').toLowerCase();
-  const riskSentence = route.goNoGo === 'No-Go'
+  const riskSentence = route.safetyStatus === 'Dangerous' || route.goNoGo === 'No-Go'
     ? 'Current conditions suggest this route needs extra caution and may be better postponed unless the alerts clear.'
     : 'With sensible preparation, it can still be an enjoyable and manageable outing.';
   const alertSummary = zoneAlertSummary(route.zoneSummary);

@@ -103,7 +103,7 @@ function describeHighlight(route = {}) {
 
 export function buildRouteIntroductionFallback(route = {}) {
   const difficulty = String(route.difficulty || 'moderate').toLowerCase();
-  const riskSentence = route.goNoGo === 'No-Go'
+  const riskSentence = route.safetyStatus === 'Dangerous' || route.goNoGo === 'No-Go'
     ? 'Current conditions suggest this route needs extra caution and may be better postponed unless the alerts clear.'
     : 'With sensible preparation, it can still be an enjoyable and manageable outing.';
   const alertSummary = zoneAlertSummary(route.zoneSummary);
@@ -113,21 +113,31 @@ export function buildRouteIntroductionFallback(route = {}) {
 
 function buildPrompt(route = {}) {
   const keyRisks = Array.isArray(route.keyRisks) ? route.keyRisks.slice(0, 3) : [];
+  const suggestedPrep = Array.isArray(route.suggestedPrep) ? route.suggestedPrep.slice(0, 4) : [];
+  const safetyStatus = route.safetyStatus || (route.goNoGo === 'No-Go' ? 'Dangerous' : 'Safe');
   const facts = {
     distanceKm: Number(route.distanceKm || 0).toFixed(1),
     durationMin: Math.round(Number(route.durationMin || 0)),
     difficulty: route.difficulty || 'Moderate',
+    hikerExperienceLevel: route.hikerExperienceLevel || 'newcomer',
+    safetyStatus,
+    riskScore: Number(route.riskScore || 0),
     riskLevel: route.riskLevel || 'Low',
-    goNoGo: route.goNoGo || 'Go',
     geographyProfile: route.geographyProfile || {},
     zoneSummary: route.zoneSummary || {},
+    noGoReasons: route.noGoReasons || {},
     keyRisks: keyRisks.map((risk) => ({
       title: risk.title,
       type: risk.type,
       severity: risk.severity,
       distanceKm: risk.distanceKm,
+      source: risk.source,
+      zoneLevel: risk.zoneLevel,
+      zoneLabel: risk.zoneLabel,
       advice: risk.advice,
     })),
+    suggestedPrep,
+    scoringBreakdown: route.scoringBreakdown || {},
   };
 
   return [
@@ -135,7 +145,8 @@ function buildPrompt(route = {}) {
     'Write one short, practical, user-friendly route introduction paragraph for a hiker planning a trip in Victoria, Australia.',
     'Give the user helpful travel and safety guidance in a calm expert tone, as if advising them before they leave Melbourne or another Victorian town for the walk.',
     'Use only the facts provided. Do not invent scenery, facilities, track names, or conditions.',
-    'Mention difficulty, distance, duration, likely terrain feel, who the route suits, preparation tips, and the most important nearby risks or alerts.',
+    'Mention safetyStatus as Safe or Dangerous, difficulty, distance, duration, likely terrain feel, who the route suits, preparation tips, and the most important nearby risks or alerts.',
+    'If safetyStatus is Dangerous, make the warning clear and recommend postponing or choosing another route; if Safe, still include sensible preparation and monitoring advice.',
     'Always return the paragraph in English. Keep it to 80-120 words in plain English. No markdown, no bullet points, and no quotation marks.',
     JSON.stringify(facts),
   ].join('\n');
