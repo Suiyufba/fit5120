@@ -20,6 +20,22 @@ const app = express();
 
 app.set('trust proxy', 1);
 
+const allowedOrigins = new Set(config.corsOrigins);
+
+function applyCorsHeaders(req, res) {
+  const origin = req.get('origin');
+  if (!origin || !allowedOrigins.has(origin)) return;
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Plan-Session-Id');
+}
+
+app.use((req, res, next) => {
+  applyCorsHeaders(req, res);
+  next();
+});
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -46,7 +62,6 @@ app.use((req, res, next) => {
   next();
 });
 
-const allowedOrigins = new Set(config.corsOrigins);
 app.use(cors({
   origin(origin, callback) {
     if (!origin || allowedOrigins.has(origin)) {

@@ -65,17 +65,23 @@ function normalizeRouteOption(option) {
 
 export async function planSafeRoute({ start, end, token, signal }) {
   const sessionId = getOrCreatePlanSessionId()
-  const response = await fetch(`${DEFAULT_BASE_URL}/routes/plan`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      'X-Plan-Session-Id': sessionId,
-    },
-    body: JSON.stringify({ start, end }),
-    signal,
-  })
+  let response
+  try {
+    response = await fetch(`${DEFAULT_BASE_URL}/routes/plan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'X-Plan-Session-Id': sessionId,
+      },
+      body: JSON.stringify({ start, end }),
+      signal,
+    })
+  } catch (error) {
+    if (error?.name === 'AbortError') throw error
+    throw new Error('The route service connection was interrupted. Please try Plan Safe Route again in a moment.')
+  }
 
   const payload = await response.json().catch(() => ({}))
   if (!response.ok) {
