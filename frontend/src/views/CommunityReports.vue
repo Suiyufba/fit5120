@@ -287,6 +287,23 @@ function getMarkerRadius(severity) {
   return 6
 }
 
+function buildReportPopup(report, meta) {
+  const imageUrl = String(report.imageUrl || '').trim()
+  const imageMarkup = imageUrl
+    ? `<img class="community-report-popup__thumb" src="${escapeHtml(imageUrl)}" alt="Report photo thumbnail" loading="lazy" />`
+    : ''
+
+  return `
+    <article class="community-report-popup">
+      ${imageMarkup}
+      <strong class="community-report-popup__title">${escapeHtml(report.title)}</strong>
+      <p class="community-report-popup__meta">${escapeHtml(meta.label)} · ${escapeHtml(severityLabel(report.severity))}</p>
+      <p class="community-report-popup__location">${escapeHtml(report.locationName)}</p>
+      <p class="community-report-popup__description">${escapeHtml(report.description)}</p>
+    </article>
+  `
+}
+
 function zoneOpacitiesBySeverity(severity) {
   if (severity === 'extreme') return { l1: 0.3, l2: 0.18, l3: 0.1 }
   if (severity === 'high') return { l1: 0.24, l2: 0.14, l3: 0.08 }
@@ -387,9 +404,7 @@ function drawReports() {
     })
 
     reportMarker
-      .bindPopup(
-        `<strong>${report.title}</strong><br/>${meta.label} · ${severityLabel(report.severity)}<br/>${report.locationName}<br/>${report.description}`
-      )
+      .bindPopup(buildReportPopup(report, meta), { className: 'community-report-popup-shell' })
       .addTo(reportLayer)
 
     reportMarker.on('click', (event) => {
@@ -1548,6 +1563,51 @@ h1 {
   border-radius: 999px;
   border: 2px solid #fff;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+}
+
+:deep(.community-report-popup-shell .leaflet-popup-content) {
+  margin: 0;
+  min-width: 230px;
+}
+
+:deep(.community-report-popup) {
+  display: grid;
+  gap: 0.34rem;
+  padding: 0.85rem;
+  color: #243a35;
+}
+
+:deep(.community-report-popup__thumb) {
+  width: 100%;
+  height: 128px;
+  object-fit: cover;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(33, 72, 59, 0.12);
+  background: #edf2ec;
+}
+
+:deep(.community-report-popup__title) {
+  font-size: 0.96rem;
+  line-height: 1.2;
+}
+
+:deep(.community-report-popup__meta) {
+  margin: 0;
+  color: #1f6e57;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+:deep(.community-report-popup__location),
+:deep(.community-report-popup__description) {
+  margin: 0;
+  color: #334b45;
+  font-size: 0.83rem;
+  line-height: 1.35;
+}
+
+:deep(.community-report-popup__description) {
+  white-space: pre-wrap;
 }
 
 @media (max-width: 1000px) {

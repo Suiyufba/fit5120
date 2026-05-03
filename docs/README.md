@@ -25,6 +25,7 @@ Project documentation has been reorganized by domain for easier maintenance.
 - [fullstack/route-safety-status-and-gemini-context-2026-05-04.md](./fullstack/route-safety-status-and-gemini-context-2026-05-04.md)
 - [fullstack/route-planner-long-distance-validation-2026-05-04.md](./fullstack/route-planner-long-distance-validation-2026-05-04.md)
 - [fullstack/route-planner-cors-network-resilience-2026-05-04.md](./fullstack/route-planner-cors-network-resilience-2026-05-04.md)
+- [frontend/community-report-map-popup-thumbnail-2026-05-04.md](./frontend/community-report-map-popup-thumbnail-2026-05-04.md)
 - [frontend/community-report-mobile-camera-photo-2026-05-04.md](./frontend/community-report-mobile-camera-photo-2026-05-04.md)
 - [frontend/route-planner-error-position-autoscroll-2026-05-04.md](./frontend/route-planner-error-position-autoscroll-2026-05-04.md)
 - [frontend/route-planner-ai-assistant-reminder-2026-05-04.md](./frontend/route-planner-ai-assistant-reminder-2026-05-04.md)
