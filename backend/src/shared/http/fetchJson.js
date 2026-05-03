@@ -18,7 +18,18 @@ export async function fetchJson(url, options = {}) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status} from ${url}`);
+      let details = '';
+      if (typeof response.text === 'function') {
+        details = await response.text().catch(() => '');
+      } else if (typeof response.json === 'function') {
+        const payload = await response.json().catch(() => null);
+        details = payload ? JSON.stringify(payload) : '';
+      }
+      const suffix = details ? `: ${details.slice(0, 500)}` : '';
+      const error = new Error(`HTTP ${response.status} from ${url}${suffix}`);
+      error.status = response.status;
+      error.responseBody = details;
+      throw error;
     }
 
     return await response.json();

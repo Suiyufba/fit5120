@@ -79,7 +79,14 @@ export async function planSafeRoute({ start, end, token, signal }) {
 
   const payload = await response.json().catch(() => ({}))
   if (!response.ok) {
-    throw new Error(payload?.error || `Route planning failed (${response.status})`)
+    const message = payload?.error || `Route planning failed (${response.status})`
+    if (message.includes('too far apart')) {
+      throw new Error('Start and destination are too far apart for a hiking route. Choose two closer points, ideally on the same trail area or within 80 km.')
+    }
+    if (message.includes('OpenRouteService')) {
+      throw new Error('No routable trail or road route was found for those two points. Move both points closer to a mapped road or walking track, then try again.')
+    }
+    throw new Error(message)
   }
 
   return {

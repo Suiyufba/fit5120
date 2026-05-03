@@ -23,6 +23,7 @@ Project documentation has been reorganized by domain for easier maintenance.
 
 ### 2026-05-04
 - [fullstack/route-safety-status-and-gemini-context-2026-05-04.md](./fullstack/route-safety-status-and-gemini-context-2026-05-04.md)
+- [fullstack/route-planner-long-distance-validation-2026-05-04.md](./fullstack/route-planner-long-distance-validation-2026-05-04.md)
 - [frontend/route-planner-ai-assistant-reminder-2026-05-04.md](./frontend/route-planner-ai-assistant-reminder-2026-05-04.md)
 - [ops/railway-ai-service-gemini-model-update-2026-05-04.md](./ops/railway-ai-service-gemini-model-update-2026-05-04.md)
 - [ops/railway-ai-service-gemini-api-2026-05-04.md](./ops/railway-ai-service-gemini-api-2026-05-04.md)

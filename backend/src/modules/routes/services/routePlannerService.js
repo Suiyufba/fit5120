@@ -10,6 +10,21 @@ import { config } from '../../../config/index.js';
 import { generateRouteIntroduction } from './routeNarrationService.js';
 
 const MAX_CANDIDATES = 6;
+const MAX_ROUTE_DIRECT_DISTANCE_KM = 80;
+
+function toRad(degrees) {
+  return (degrees * Math.PI) / 180;
+}
+
+function directDistanceKm(start, end) {
+  const earthRadiusKm = 6371;
+  const dLat = toRad(end.lat - start.lat);
+  const dLng = toRad(end.lng - start.lng);
+  const a =
+    Math.sin(dLat / 2) ** 2
+    + Math.cos(toRad(start.lat)) * Math.cos(toRad(end.lat)) * Math.sin(dLng / 2) ** 2;
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 function assertCoordinate(point, fieldName) {
   const lat = Number(point?.lat);
@@ -21,6 +36,13 @@ function assertCoordinate(point, fieldName) {
     throw new Error(`${fieldName} coordinate is out of range`);
   }
   return { lat, lng };
+}
+
+function assertRouteDistance(start, end) {
+  const distanceKm = directDistanceKm(start, end);
+  if (distanceKm > MAX_ROUTE_DIRECT_DISTANCE_KM) {
+    throw new Error(`Start and destination are too far apart for hiking route planning. Choose two points within ${MAX_ROUTE_DIRECT_DISTANCE_KM} km of each other.`);
+  }
 }
 
 async function loadLatestHazards() {
@@ -224,6 +246,7 @@ function compositeSelectionScore(route, fastestRoute) {
 export async function planSaferRoute({ userId, start, end, now = new Date() }) {
   const normalizedStart = assertCoordinate(start, 'start');
   const normalizedEnd = assertCoordinate(end, 'end');
+  assertRouteDistance(normalizedStart, normalizedEnd);
 
   const userProfile = userId ? await getRouteContextByUserId(userId) : null;
   const userLevel = userProfile?.experienceLevel || 'newcomer';

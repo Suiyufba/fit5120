@@ -43,6 +43,7 @@ export async function postPlanRoute(req, res) {
     const statusCode =
       error.message?.includes('must include numeric')
       || error.message?.includes('out of range')
+      || error.message?.includes('too far apart')
         ? 400
         : error.message?.includes('User not found')
           ? 404
