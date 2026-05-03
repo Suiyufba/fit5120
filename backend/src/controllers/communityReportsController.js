@@ -75,6 +75,7 @@ export async function getCommunityReportImage(req, res) {
 
     res.set('Content-Type', record.mime || 'application/octet-stream');
     res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
     res.send(record.buffer);
   } catch (error) {
     console.error('Community report image fetch failed:', error.message);

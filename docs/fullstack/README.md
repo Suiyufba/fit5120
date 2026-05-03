@@ -7,6 +7,7 @@ End-to-end features that involve both frontend and backend changes.
 - [route-safety-status-and-gemini-context-2026-05-04.md](./route-safety-status-and-gemini-context-2026-05-04.md)
 - [route-planner-long-distance-validation-2026-05-04.md](./route-planner-long-distance-validation-2026-05-04.md)
 - [route-planner-cors-network-resilience-2026-05-04.md](./route-planner-cors-network-resilience-2026-05-04.md)
+- [community-report-image-cross-origin-fix-2026-05-04.md](./community-report-image-cross-origin-fix-2026-05-04.md)
 - [community-report-feature.md](./community-report-feature.md)
 - [admin-dashboard-feature.md](./admin-dashboard-feature.md)
 - [route-planner-risk-model.md](./route-planner-risk-model.md)
