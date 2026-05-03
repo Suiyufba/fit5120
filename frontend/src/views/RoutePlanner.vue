@@ -28,6 +28,7 @@ const mapElement = ref(null)
 const plannerPanel = ref(null)
 const plannerPanelBody = ref(null)
 const plannerSummary = ref(null)
+const plannerError = ref(null)
 const loading = ref(false)
 const loadingHistory = ref(false)
 const clearingHistory = ref(false)
@@ -340,6 +341,19 @@ async function scrollToPlanResult() {
   })
 }
 
+async function scrollToPlannerError() {
+  await nextTick()
+  plannerError.value?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'center',
+  })
+}
+
+async function showPlannerError(message) {
+  error.value = message || 'Failed to generate a safe route'
+  await scrollToPlannerError()
+}
+
 function scrollToPlannerTop() {
   const scrollContainer = getPlannerScrollContainer()
   if (scrollContainer) {
@@ -562,7 +576,7 @@ async function clearAllHistory() {
     historyItems.value = []
   } catch (nextError) {
     if (nextError?.name !== 'AbortError') {
-      error.value = nextError.message || 'Failed to clear route history'
+      void showPlannerError(nextError.message || 'Failed to clear route history')
     }
   } finally {
     clearingHistory.value = false
@@ -579,7 +593,7 @@ async function clearHistoryItem(itemId) {
     })
     historyItems.value = historyItems.value.filter((item) => String(item.id) !== String(itemId))
   } catch (nextError) {
-    error.value = nextError.message || 'Failed to clear route history item'
+    void showPlannerError(nextError.message || 'Failed to clear route history item')
   } finally {
     deletingHistoryId.value = ''
   }
@@ -618,7 +632,7 @@ async function handlePlanRoute() {
     await loadHistory()
   } catch (nextError) {
     if (nextError?.name === 'AbortError') return
-    error.value = nextError.message || 'Failed to generate a safe route'
+    await showPlannerError(nextError.message || 'Failed to generate a safe route')
   } finally {
     loading.value = false
   }
@@ -674,7 +688,7 @@ onMounted(() => {
 
   mapInstance.on('click', async (event) => {
     if (!isLatLngInVictoria(event.latlng)) {
-      error.value = 'Start and destination points must be selected within Victoria.'
+      void showPlannerError('Start and destination points must be selected within Victoria.')
       return
     }
 
@@ -685,7 +699,7 @@ onMounted(() => {
 
     error.value = ''
     if (startPoint.value && endPoint.value) {
-      error.value = 'Start and destination are locked. Use Reset Points to choose a new route.'
+      void showPlannerError('Start and destination are locked. Use Reset Points to choose a new route.')
       return
     }
 
@@ -785,6 +799,8 @@ onUnmounted(() => {
         <button class="ghost-btn" @click="resetSelection">Reset Points</button>
       </div>
 
+      <p v-if="error" ref="plannerError" class="planner-error" role="alert">{{ error }}</p>
+
       <section v-if="summary" ref="plannerSummary" class="planner-summary">
         <p class="summary-kicker">Choose One Route</p>
         <div class="route-options">
@@ -882,9 +898,6 @@ onUnmounted(() => {
           </span>
         </div>
       </div>
-
-      <p v-if="error" class="planner-error">{{ error }}</p>
-
       <button
         v-if="summary"
         class="planner-back-top"
