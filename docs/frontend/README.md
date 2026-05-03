@@ -4,6 +4,7 @@ UI/UX, map behavior, rendering, form/layout fixes, and client-side data handling
 
 ## Docs
 
+- [community-report-mobile-camera-photo-2026-05-04.md](./community-report-mobile-camera-photo-2026-05-04.md)
 - [route-planner-error-position-autoscroll-2026-05-04.md](./route-planner-error-position-autoscroll-2026-05-04.md)
 - [route-planner-ai-assistant-reminder-2026-05-04.md](./route-planner-ai-assistant-reminder-2026-05-04.md)
 - [site-access-password-gate-2026-05-01.md](./site-access-password-gate-2026-05-01.md)

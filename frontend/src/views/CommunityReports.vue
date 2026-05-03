@@ -913,13 +913,14 @@ onUnmounted(() => {
         <div class="image-upload">
           <p class="image-upload__title">Photo (optional)</p>
           <p class="image-upload__hint">
-            We resize your image to a small thumbnail before upload — no full-size photos leave your device.
+            Attach a photo or take one on mobile.
           </p>
           <div class="image-upload__row">
             <input
               ref="imageFileInput"
               type="file"
-              accept="image/png,image/jpeg,image/webp"
+              accept="image/*"
+              capture="environment"
               class="image-upload__input"
               :disabled="imageUploading"
               @change="onImageFileSelected"
