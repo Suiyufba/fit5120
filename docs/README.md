@@ -21,6 +21,9 @@ Project documentation has been reorganized by domain for easier maintenance.
 
 ## Timeline (All Domains)
 
+### 2026-05-04
+- [ops/railway-ai-service-gemini-api-2026-05-04.md](./ops/railway-ai-service-gemini-api-2026-05-04.md)
+
 ### 2026-04-16
 - [fullstack/public-route-planner-community-access-2026-04-16.md](./fullstack/public-route-planner-community-access-2026-04-16.md)
 - [frontend/frontend-swr-local-cache-2026-04-16.md](./frontend/frontend-swr-local-cache-2026-04-16.md)
