@@ -26,6 +26,7 @@ Project documentation has been reorganized by domain for easier maintenance.
 - [fullstack/route-planner-long-distance-validation-2026-05-04.md](./fullstack/route-planner-long-distance-validation-2026-05-04.md)
 - [fullstack/route-planner-cors-network-resilience-2026-05-04.md](./fullstack/route-planner-cors-network-resilience-2026-05-04.md)
 - [fullstack/community-report-image-cross-origin-fix-2026-05-04.md](./fullstack/community-report-image-cross-origin-fix-2026-05-04.md)
+- [frontend/community-report-location-picker-layout-2026-05-04.md](./frontend/community-report-location-picker-layout-2026-05-04.md)
 - [frontend/community-report-map-popup-thumbnail-2026-05-04.md](./frontend/community-report-map-popup-thumbnail-2026-05-04.md)
 - [frontend/community-report-mobile-camera-photo-2026-05-04.md](./frontend/community-report-mobile-camera-photo-2026-05-04.md)
 - [frontend/route-planner-error-position-autoscroll-2026-05-04.md](./frontend/route-planner-error-position-autoscroll-2026-05-04.md)

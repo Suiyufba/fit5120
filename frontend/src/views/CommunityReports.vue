@@ -848,16 +848,6 @@ onUnmounted(() => {
           </p>
 
           <div class="location-picker__row">
-            <button
-              type="button"
-              class="locate-btn"
-              :disabled="locatingMe"
-              @click="useMyLocation"
-            >
-              <span class="material-symbols-outlined text-[18px]">my_location</span>
-              {{ locatingMe ? 'Locating...' : 'Use My Location' }}
-            </button>
-
             <div class="address-field">
               <input
                 class="field-input"
@@ -893,6 +883,15 @@ onUnmounted(() => {
                 </button>
               </div>
             </div>
+            <button
+              type="button"
+              class="locate-btn"
+              :disabled="locatingMe"
+              @click="useMyLocation"
+            >
+              <span class="material-symbols-outlined text-[18px]">my_location</span>
+              {{ locatingMe ? 'Locating...' : 'Use My Location' }}
+            </button>
           </div>
         </div>
 
@@ -1103,7 +1102,7 @@ h1 {
 
 .location-picker__row {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 1fr;
   gap: 0.55rem;
   align-items: start;
 }
@@ -1122,6 +1121,7 @@ h1 {
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s ease, border-color 0.15s ease;
+  justify-self: end;
 }
 
 .locate-btn:hover:not(:disabled) {
