@@ -14,7 +14,7 @@
   - Second click returns to the full Victoria map view.
   - All upgraded maps use the same icon, label, and location marker treatment.
 - Added compact map status pills:
-  - Risk Map shows a fixed statewide hazard count loaded from the Victoria bbox, while the feed and rendered markers still follow the current map viewport.
+  - Risk Map shows a fixed hazard count loaded from the Victoria bbox, while the feed and rendered markers still follow the current map viewport.
   - Route Planner shows the next point-selection state.
 - Refined hazard popups with a softer glass panel style.
 - Split Risk Map hazard loading into separate statewide and visible-map requests so zooming/panning no longer changes the headline count.

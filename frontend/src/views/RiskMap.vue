@@ -400,9 +400,9 @@ watch(filteredHazards, () => {
       </div>
 
       <div class="risk-map-summary">
-        <p class="risk-map-block-title">Statewide Summary</p>
+        <p class="risk-map-block-title">Current Summary</p>
         <p class="risk-map-subline">
-          {{ statewideHazards.length }} events across Victoria
+          {{ statewideHazards.length }} hazards
         </p>
         <p class="risk-map-subline">
           Extreme {{ statewideStats.extreme }} · High {{ statewideStats.high }} · Moderate {{ statewideStats.moderate }} · Low {{ statewideStats.low }}
@@ -440,7 +440,7 @@ watch(filteredHazards, () => {
       <div class="risk-map-map-status">
         <span class="material-symbols-outlined" aria-hidden="true">radar</span>
         <strong>{{ statewideHazards.length }}</strong>
-        <span>statewide hazards</span>
+        <span>hazards</span>
       </div>
       <div class="risk-map-map-controls">
         <button class="risk-map-control-btn" type="button" aria-label="Zoom in" title="Zoom in" @click="mapInstance?.zoomIn()">
