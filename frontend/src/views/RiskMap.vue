@@ -7,6 +7,7 @@ import { fetchRealtimeHazards } from '../services/hazardApi'
 import {
   applyVictoriaMapConstraints,
   getMapBboxWithinVictoria,
+  getVictoriaBbox,
   isLatLngInVictoria,
   VICTORIA_BOUNDS,
   VICTORIA_VIEW,
@@ -32,6 +33,7 @@ const layerMeta = {
 const mapElement = ref(null)
 const selectedHazardId = ref('')
 const hazards = ref([])
+const statewideHazards = ref([])
 const loading = ref(false)
 const lastUpdatedAt = ref(null)
 const isSheetExpanded = ref(false)
@@ -47,9 +49,9 @@ const filteredHazards = computed(() => {
     .sort((a, b) => (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0))
 })
 
-const mapStats = computed(() => {
+const statewideStats = computed(() => {
   const stats = { extreme: 0, high: 0, moderate: 0, low: 0 }
-  filteredHazards.value.forEach((hazard) => {
+  statewideHazards.value.forEach((hazard) => {
     if (stats[hazard.severity] !== undefined) stats[hazard.severity] += 1
   })
   return stats
@@ -61,6 +63,7 @@ let baseTileLayer
 let userLocationLayer
 let refreshTimer
 let inflightController
+let statewideInflightController
 
 function escapeHtml(value = '') {
   return String(value)
@@ -192,6 +195,30 @@ async function loadHazards() {
   }
 }
 
+async function loadStatewideHazards() {
+  if (statewideInflightController) statewideInflightController.abort()
+  statewideInflightController = new AbortController()
+
+  try {
+    const nextPayload = await fetchRealtimeHazards({
+      bbox: getVictoriaBbox(),
+      layers: ['fire', 'flood', 'storm', 'heat', 'trail', 'other'],
+      signal: statewideInflightController.signal,
+      preferCache: true,
+      onUpdate: (freshPayload) => {
+        statewideHazards.value = freshPayload.hazards
+        lastUpdatedAt.value = freshPayload.fetchedAt || freshPayload.cachedAt || new Date()
+      },
+    })
+
+    statewideHazards.value = nextPayload.hazards
+    lastUpdatedAt.value = nextPayload.fetchedAt || nextPayload.cachedAt || new Date()
+  } catch (error) {
+    if (error?.name === 'AbortError') return
+    console.error('Failed to load statewide realtime hazards:', error)
+  }
+}
+
 function selectHazard(hazard) {
   selectedHazardId.value = hazard.id
   isSheetExpanded.value = true
@@ -316,14 +343,18 @@ onMounted(async () => {
   markersLayer = L.layerGroup().addTo(mapInstance)
   userLocationLayer = L.layerGroup().addTo(mapInstance)
 
-  await loadHazards()
-  refreshTimer = window.setInterval(loadHazards, REFRESH_EVERY_MS)
+  await Promise.all([loadHazards(), loadStatewideHazards()])
+  refreshTimer = window.setInterval(() => {
+    loadHazards()
+    loadStatewideHazards()
+  }, REFRESH_EVERY_MS)
   mapInstance.on('moveend', loadHazards)
 })
 
 onUnmounted(() => {
   if (refreshTimer) window.clearInterval(refreshTimer)
   if (inflightController) inflightController.abort()
+  if (statewideInflightController) statewideInflightController.abort()
   if (mapInstance) {
     mapInstance.remove()
     mapInstance = null
@@ -369,12 +400,15 @@ watch(filteredHazards, () => {
       </div>
 
       <div class="risk-map-summary">
-        <p class="risk-map-block-title">Visible Summary</p>
+        <p class="risk-map-block-title">Statewide Summary</p>
         <p class="risk-map-subline">
-          {{ filteredHazards.length }} events in current map view
+          {{ statewideHazards.length }} events across Victoria
         </p>
         <p class="risk-map-subline">
-          Extreme {{ mapStats.extreme }} · High {{ mapStats.high }} · Moderate {{ mapStats.moderate }} · Low {{ mapStats.low }}
+          Extreme {{ statewideStats.extreme }} · High {{ statewideStats.high }} · Moderate {{ statewideStats.moderate }} · Low {{ statewideStats.low }}
+        </p>
+        <p class="risk-map-subline">
+          Visible on map: {{ filteredHazards.length }}
         </p>
         
         <p class="risk-map-subline">
@@ -405,8 +439,8 @@ watch(filteredHazards, () => {
       <div ref="mapElement" class="risk-map-canvas"></div>
       <div class="risk-map-map-status">
         <span class="material-symbols-outlined" aria-hidden="true">radar</span>
-        <strong>{{ filteredHazards.length }}</strong>
-        <span>visible hazards</span>
+        <strong>{{ statewideHazards.length }}</strong>
+        <span>statewide hazards</span>
       </div>
       <div class="risk-map-map-controls">
         <button class="risk-map-control-btn" type="button" aria-label="Zoom in" title="Zoom in" @click="mapInstance?.zoomIn()">
