@@ -10,6 +10,11 @@ import {
   VICTORIA_BOUNDS,
   VICTORIA_VIEW,
 } from '../utils/victoriaMap'
+import {
+  createLeafletBaseLayer,
+  DEFAULT_MAP_VISUAL_STYLE,
+  MAP_VISUAL_STYLES,
+} from '../utils/mapVisualStyles'
 
 const REFRESH_EVERY_MS = 60_000
 const router = useRouter()
@@ -29,6 +34,7 @@ const hazards = ref([])
 const loading = ref(false)
 const lastUpdatedAt = ref(null)
 const isSheetExpanded = ref(false)
+const selectedMapStyle = ref(DEFAULT_MAP_VISUAL_STYLE)
 
 const severityOrder = { extreme: 4, high: 3, moderate: 2, low: 1 }
 const severityLabel = { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }
@@ -48,6 +54,7 @@ const mapStats = computed(() => {
 
 let mapInstance
 let markersLayer
+let baseTileLayer
 let refreshTimer
 let inflightController
 
@@ -146,7 +153,8 @@ function renderMarkers() {
           Source: ${escapeHtml(hazard.source)}
         </div>
       </div>
-      `
+      `,
+      { className: 'hs-map-popup' }
     )
 
     marker.addTo(markersLayer)
@@ -211,6 +219,18 @@ function toggleSheet() {
   isSheetExpanded.value = !isSheetExpanded.value
 }
 
+function switchMapStyle(styleId) {
+  if (!mapInstance || !MAP_VISUAL_STYLES[styleId] || selectedMapStyle.value === styleId) return
+  selectedMapStyle.value = styleId
+  if (baseTileLayer) mapInstance.removeLayer(baseTileLayer)
+  baseTileLayer = createLeafletBaseLayer(L, styleId).addTo(mapInstance)
+  if (markersLayer) markersLayer.bringToFront()
+}
+
+function recenterMap() {
+  mapInstance?.flyTo(VICTORIA_VIEW.center, VICTORIA_VIEW.zoom, { duration: 0.55 })
+}
+
 onMounted(async () => {
   mapInstance = L.map(mapElement.value, {
     zoomControl: false,
@@ -223,10 +243,7 @@ onMounted(async () => {
 
   mapInstance.attributionControl.setPrefix(false)
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-    attribution: '&copy; OpenStreetMap contributors',
-  }).addTo(mapInstance)
+  baseTileLayer = createLeafletBaseLayer(L, selectedMapStyle.value).addTo(mapInstance)
 
   markersLayer = L.layerGroup().addTo(mapInstance)
 
@@ -317,9 +334,33 @@ watch(filteredHazards, () => {
 
     <main class="risk-map-canvas-wrap">
       <div ref="mapElement" class="risk-map-canvas"></div>
+      <div class="risk-map-map-status">
+        <span class="material-symbols-outlined" aria-hidden="true">radar</span>
+        <strong>{{ filteredHazards.length }}</strong>
+        <span>live hazards</span>
+      </div>
       <div class="risk-map-map-controls">
-        <button class="risk-map-control-btn" @click="mapInstance?.zoomIn()">+</button>
-        <button class="risk-map-control-btn" @click="mapInstance?.zoomOut()">−</button>
+        <button class="risk-map-control-btn" type="button" aria-label="Zoom in" title="Zoom in" @click="mapInstance?.zoomIn()">
+          <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        </button>
+        <button class="risk-map-control-btn" type="button" aria-label="Zoom out" title="Zoom out" @click="mapInstance?.zoomOut()">
+          <span class="material-symbols-outlined" aria-hidden="true">remove</span>
+        </button>
+        <button class="risk-map-control-btn" type="button" aria-label="Recenter Victoria" title="Recenter Victoria" @click="recenterMap">
+          <span class="material-symbols-outlined" aria-hidden="true">explore</span>
+        </button>
+      </div>
+      <div class="risk-map-style-switcher" aria-label="Map style">
+        <button
+          v-for="(style, styleId) in MAP_VISUAL_STYLES"
+          :key="styleId"
+          type="button"
+          class="risk-map-style-btn"
+          :class="{ 'risk-map-style-btn--active': selectedMapStyle === styleId }"
+          @click="switchMapStyle(styleId)"
+        >
+          {{ style.shortLabel }}
+        </button>
       </div>
     </main>
   </div>
@@ -548,8 +589,10 @@ watch(filteredHazards, () => {
   overflow: hidden;
   height: 100%;
   min-height: 0;
-  padding: 0.85rem;
-  background: #dfe8dd;
+  padding: 0.9rem;
+  background:
+    linear-gradient(135deg, rgba(23, 59, 49, 0.18), rgba(143, 174, 131, 0.12)),
+    #dfe8dd;
 }
 
 .risk-map-canvas {
@@ -557,28 +600,109 @@ watch(filteredHazards, () => {
   width: 100%;
   overflow: hidden;
   border-radius: 1.15rem;
-  box-shadow: inset 0 0 0 1px rgba(33, 72, 59, 0.08), 0 20px 60px rgba(23, 59, 49, 0.12);
+  background: #dfe8dd;
+  box-shadow: inset 0 0 0 1px rgba(33, 72, 59, 0.1), 0 24px 70px rgba(23, 59, 49, 0.18);
+}
+
+.risk-map-canvas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 250, 242, 0.45);
+}
+
+.risk-map-map-status {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  border: 1px solid rgba(33, 72, 59, 0.16);
+  border-radius: 999px;
+  padding: 0.5rem 0.72rem;
+  background: rgba(255, 250, 242, 0.9);
+  color: #173b31;
+  box-shadow: 0 14px 34px rgba(23, 59, 49, 0.14);
+  backdrop-filter: blur(14px);
+}
+
+.risk-map-map-status .material-symbols-outlined {
+  font-size: 1.05rem;
+  color: #2f604e;
+}
+
+.risk-map-map-status strong,
+.risk-map-map-status span:last-child {
+  font-size: 0.78rem;
+  font-weight: 850;
 }
 
 .risk-map-map-controls {
   position: absolute;
-  right: 1rem;
-  bottom: 1rem;
+  right: 1.25rem;
+  top: 1.25rem;
   display: grid;
-  gap: 0.4rem;
+  gap: 0.45rem;
   z-index: 500;
 }
 
 .risk-map-control-btn {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.45rem;
+  height: 2.45rem;
   border-radius: 999px;
   border: 1px solid rgba(33, 72, 59, 0.14);
   background: rgba(255, 250, 242, 0.94);
   color: #173b31;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 12px 26px rgba(24, 63, 50, 0.15);
+  backdrop-filter: blur(12px);
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.risk-map-control-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(33, 72, 59, 0.28);
+  background: #fffaf2;
+}
+
+.risk-map-control-btn .material-symbols-outlined {
   font-size: 1.2rem;
-  font-weight: 800;
-  box-shadow: 0 10px 24px rgba(24, 63, 50, 0.14);
+}
+
+.risk-map-style-switcher {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 500;
+  display: inline-flex;
+  gap: 0.3rem;
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 999px;
+  padding: 0.25rem;
+  background: rgba(255, 250, 242, 0.92);
+  box-shadow: 0 14px 34px rgba(24, 63, 50, 0.14);
+  backdrop-filter: blur(14px);
+}
+
+.risk-map-style-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.42rem 0.68rem;
+  background: transparent;
+  color: #405a51;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.risk-map-style-btn--active {
+  background: #173b31;
+  color: #fffaf2;
+  box-shadow: 0 8px 18px rgba(23, 59, 49, 0.22);
 }
 
 .risk-map-canvas :deep(.leaflet-control-attribution) {
@@ -601,6 +725,23 @@ watch(filteredHazards, () => {
   color: inherit;
 }
 
+.risk-map-canvas :deep(.hs-map-popup .leaflet-popup-content-wrapper) {
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 0.9rem;
+  background: rgba(255, 250, 242, 0.96);
+  color: #173b31;
+  box-shadow: 0 18px 44px rgba(23, 59, 49, 0.18);
+  backdrop-filter: blur(14px);
+}
+
+.risk-map-canvas :deep(.hs-map-popup .leaflet-popup-content) {
+  margin: 0.85rem;
+}
+
+.risk-map-canvas :deep(.hs-map-popup .leaflet-popup-tip) {
+  background: rgba(255, 250, 242, 0.96);
+}
+
 @media (max-width: 1024px) {
   .risk-map-page {
     grid-template-columns: 1fr;
@@ -621,6 +762,17 @@ watch(filteredHazards, () => {
   .risk-map-canvas-wrap {
     height: 100%;
     min-height: var(--mobile-safe-height);
+  }
+
+  .risk-map-map-status {
+    top: 1.15rem;
+    left: 1.15rem;
+    max-width: calc(100% - 6rem);
+  }
+
+  .risk-map-style-switcher {
+    right: 1.15rem;
+    bottom: calc(var(--mobile-sheet-peek, 240px) + 1rem);
   }
 
   .risk-map-mobile-actions {
