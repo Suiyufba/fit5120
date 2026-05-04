@@ -16,6 +16,11 @@ import {
   VICTORIA_BOUNDS,
   VICTORIA_VIEW,
 } from '../utils/victoriaMap'
+import {
+  createLeafletBaseLayer,
+  DEFAULT_MAP_VISUAL_STYLE,
+  MAP_VISUAL_STYLES,
+} from '../utils/mapVisualStyles'
 
 const mapElement = ref(null)
 
@@ -33,6 +38,9 @@ const selectedPoint = ref(null)
 const isSheetExpanded = ref(false)
 const activeMobileTab = ref('submit')
 const isMobileViewport = ref(false)
+const selectedMapStyle = ref(DEFAULT_MAP_VISUAL_STYLE)
+const isMapLocatingUser = ref(false)
+const isViewingUserLocation = ref(false)
 
 const addressQuery = ref('')
 const addressSuggestions = ref([])
@@ -94,9 +102,11 @@ const selectedPointLabel = computed(() => {
 })
 
 let mapInstance
+let baseTileLayer
 let hazardLayer
 let reportLayer
 let selectedPointLayer
+let userLocationLayer
 let inflightReportController
 let inflightHazardController
 let refreshTimer
@@ -413,6 +423,84 @@ function drawReports() {
   })
 }
 
+function switchMapStyle(styleId) {
+  if (!mapInstance || !MAP_VISUAL_STYLES[styleId] || selectedMapStyle.value === styleId) return
+  selectedMapStyle.value = styleId
+  if (baseTileLayer) mapInstance.removeLayer(baseTileLayer)
+  baseTileLayer = createLeafletBaseLayer(L, styleId).addTo(mapInstance)
+  hazardLayer?.bringToFront()
+  reportLayer?.bringToFront()
+  selectedPointLayer?.bringToFront()
+  userLocationLayer?.bringToFront()
+}
+
+function recenterCommunityMap() {
+  isViewingUserLocation.value = false
+  mapInstance?.flyTo(VICTORIA_VIEW.center, VICTORIA_VIEW.zoom, { duration: 0.55 })
+}
+
+function renderMapUserLocation(point) {
+  if (!userLocationLayer) return
+  userLocationLayer.clearLayers()
+
+  L.circleMarker([point.lat, point.lng], {
+    radius: 8,
+    color: '#ffffff',
+    fillColor: '#173b31',
+    fillOpacity: 1,
+    weight: 3,
+  }).bindPopup('Your current location', { className: 'community-report-popup-shell' }).addTo(userLocationLayer)
+
+  L.circle([point.lat, point.lng], {
+    radius: Math.max(point.accuracy || 0, 80),
+    color: '#173b31',
+    fillColor: '#173b31',
+    fillOpacity: 0.08,
+    opacity: 0.24,
+    weight: 1,
+    interactive: false,
+  }).addTo(userLocationLayer)
+}
+
+function locateMapUser() {
+  if (isViewingUserLocation.value) {
+    recenterCommunityMap()
+    return
+  }
+
+  if (!navigator.geolocation || isMapLocatingUser.value) return
+  isMapLocatingUser.value = true
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      isMapLocatingUser.value = false
+      const point = {
+        lat: Number(position.coords.latitude.toFixed(6)),
+        lng: Number(position.coords.longitude.toFixed(6)),
+        accuracy: position.coords.accuracy,
+      }
+
+      if (!isLatLngInVictoria({ lat: point.lat, lng: point.lng })) {
+        window.alert('Your current location is outside Victoria, so it cannot be shown on this map.')
+        return
+      }
+
+      renderMapUserLocation(point)
+      isViewingUserLocation.value = true
+      mapInstance?.flyTo([point.lat, point.lng], Math.max(mapInstance.getZoom(), 13), { duration: 0.65 })
+    },
+    () => {
+      isMapLocatingUser.value = false
+      window.alert('Unable to access your current location. Please allow location access in your browser.')
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 60000,
+    }
+  )
+}
+
 async function loadHazards() {
   if (!mapInstance) return
   if (inflightHazardController) inflightHazardController.abort()
@@ -719,16 +807,12 @@ onMounted(async () => {
   applyVictoriaMapConstraints(mapInstance)
 
   mapInstance.attributionControl.setPrefix(false)
-  L.control.zoom({ position: isMobileViewport.value ? 'topright' : 'bottomright' }).addTo(mapInstance)
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-    attribution: '&copy; OpenStreetMap contributors',
-  }).addTo(mapInstance)
+  baseTileLayer = createLeafletBaseLayer(L, selectedMapStyle.value).addTo(mapInstance)
 
   hazardLayer = L.layerGroup().addTo(mapInstance)
   reportLayer = L.layerGroup().addTo(mapInstance)
   selectedPointLayer = L.layerGroup().addTo(mapInstance)
+  userLocationLayer = L.layerGroup().addTo(mapInstance)
 
   mapInstance.on('click', async (event) => {
     const applied = applyPickedLocation({
@@ -992,6 +1076,41 @@ onUnmounted(() => {
 
     <section class="community-map-wrap">
       <div ref="mapElement" class="community-map"></div>
+      <div class="community-map-status">
+        <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+        <strong>{{ stats.total }}</strong>
+        <span>reports</span>
+      </div>
+      <div class="community-map-controls">
+        <button class="community-map-control-btn" type="button" aria-label="Zoom in" title="Zoom in" @click="mapInstance?.zoomIn()">
+          <span class="material-symbols-outlined" aria-hidden="true">add</span>
+        </button>
+        <button class="community-map-control-btn" type="button" aria-label="Zoom out" title="Zoom out" @click="mapInstance?.zoomOut()">
+          <span class="material-symbols-outlined" aria-hidden="true">remove</span>
+        </button>
+        <button
+          class="community-map-control-btn"
+          type="button"
+          :aria-label="isViewingUserLocation ? 'Return to Victoria map' : 'Go to my location'"
+          :title="isViewingUserLocation ? 'Return to Victoria map' : 'Go to my location'"
+          :disabled="isMapLocatingUser"
+          @click="locateMapUser"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">{{ isViewingUserLocation ? 'public' : 'my_location' }}</span>
+        </button>
+      </div>
+      <div class="community-map-style-switcher" aria-label="Map style">
+        <button
+          v-for="(style, styleId) in MAP_VISUAL_STYLES"
+          :key="styleId"
+          type="button"
+          class="community-map-style-btn"
+          :class="{ 'community-map-style-btn--active': selectedMapStyle === styleId }"
+          @click="switchMapStyle(styleId)"
+        >
+          {{ style.shortLabel }}
+        </button>
+      </div>
       <div class="legend-overlay">
         <p>Map Layers</p>
         <div class="legend-grid">
@@ -1494,7 +1613,9 @@ h1 {
   position: relative;
   min-height: 0;
   padding: 0.85rem;
-  background: #dfe8dd;
+  background:
+    linear-gradient(135deg, rgba(23, 59, 49, 0.16), rgba(143, 174, 131, 0.14)),
+    #dfe8dd;
 }
 
 .community-map {
@@ -1502,13 +1623,111 @@ h1 {
   height: 100%;
   overflow: hidden;
   border-radius: 1.15rem;
-  box-shadow: inset 0 0 0 1px rgba(33, 72, 59, 0.08), 0 20px 60px rgba(23, 59, 49, 0.12);
+  background: #dfe8dd;
+  box-shadow: inset 0 0 0 1px rgba(33, 72, 59, 0.1), 0 24px 70px rgba(23, 59, 49, 0.18);
+}
+
+.community-map-status {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  border: 1px solid rgba(33, 72, 59, 0.16);
+  border-radius: 999px;
+  padding: 0.5rem 0.72rem;
+  background: rgba(255, 250, 242, 0.9);
+  color: #173b31;
+  box-shadow: 0 14px 34px rgba(23, 59, 49, 0.14);
+  backdrop-filter: blur(14px);
+}
+
+.community-map-status .material-symbols-outlined {
+  font-size: 1.05rem;
+  color: #2f604e;
+}
+
+.community-map-status strong,
+.community-map-status span:last-child {
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.community-map-controls {
+  position: absolute;
+  right: 1.25rem;
+  top: 1.25rem;
+  z-index: 500;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.community-map-control-btn {
+  width: 2.45rem;
+  height: 2.45rem;
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 250, 242, 0.94);
+  color: #173b31;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 12px 26px rgba(24, 63, 50, 0.15);
+  backdrop-filter: blur(12px);
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.community-map-control-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(33, 72, 59, 0.28);
+  background: #fffaf2;
+}
+
+.community-map-control-btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.community-map-control-btn .material-symbols-outlined {
+  font-size: 1.2rem;
+}
+
+.community-map-style-switcher {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 500;
+  display: inline-flex;
+  gap: 0.3rem;
+  border: 1px solid rgba(33, 72, 59, 0.14);
+  border-radius: 999px;
+  padding: 0.25rem;
+  background: rgba(255, 250, 242, 0.92);
+  box-shadow: 0 14px 34px rgba(24, 63, 50, 0.14);
+  backdrop-filter: blur(14px);
+}
+
+.community-map-style-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.42rem 0.68rem;
+  background: transparent;
+  color: #405a51;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.community-map-style-btn--active {
+  background: #173b31;
+  color: #fffaf2;
+  box-shadow: 0 8px 18px rgba(23, 59, 49, 0.22);
 }
 
 .legend-overlay {
   position: absolute;
-  left: 14px;
-  top: 14px;
+  left: 1.25rem;
+  bottom: 1.25rem;
   z-index: 500;
   background: rgba(255, 250, 242, 0.94);
   border: 1px solid rgba(33, 72, 59, 0.12);
@@ -1632,6 +1851,21 @@ h1 {
 
   .community-map-wrap {
     min-height: var(--mobile-safe-height);
+  }
+
+  .community-map-status {
+    top: 1.15rem;
+    left: 1.15rem;
+    max-width: calc(100% - 6rem);
+  }
+
+  .community-map-style-switcher {
+    right: 1.15rem;
+    bottom: calc(var(--mobile-sheet-peek, 168px) + 1rem);
+  }
+
+  .legend-overlay {
+    display: none;
   }
 
   .community-panel {
