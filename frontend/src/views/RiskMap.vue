@@ -369,9 +369,9 @@ watch(filteredHazards, () => {
       </div>
 
       <div class="risk-map-summary">
-        <p class="risk-map-block-title">Current Summary</p>
+        <p class="risk-map-block-title">Visible Summary</p>
         <p class="risk-map-subline">
-          {{ filteredHazards.length }} events
+          {{ filteredHazards.length }} events in current map view
         </p>
         <p class="risk-map-subline">
           Extreme {{ mapStats.extreme }} · High {{ mapStats.high }} · Moderate {{ mapStats.moderate }} · Low {{ mapStats.low }}
@@ -383,7 +383,7 @@ watch(filteredHazards, () => {
       </div>
 
       <div class="risk-map-feed">
-        <p class="risk-map-block-title">Live Feed</p>
+        <p class="risk-map-block-title">Visible Feed</p>
         <div class="risk-map-feed-list">
           <button
             v-for="hazard in filteredHazards"
@@ -406,7 +406,7 @@ watch(filteredHazards, () => {
       <div class="risk-map-map-status">
         <span class="material-symbols-outlined" aria-hidden="true">radar</span>
         <strong>{{ filteredHazards.length }}</strong>
-        <span>live hazards</span>
+        <span>visible hazards</span>
       </div>
       <div class="risk-map-map-controls">
         <button class="risk-map-control-btn" type="button" aria-label="Zoom in" title="Zoom in" @click="mapInstance?.zoomIn()">

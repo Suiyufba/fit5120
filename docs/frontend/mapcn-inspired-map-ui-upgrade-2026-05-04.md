@@ -14,9 +14,10 @@
   - Second click returns to the full Victoria map view.
   - All upgraded maps use the same icon, label, and location marker treatment.
 - Added compact map status pills:
-  - Risk Map shows the live hazard count.
+  - Risk Map shows the visible hazard count for the current map viewport.
   - Route Planner shows the next point-selection state.
 - Refined hazard popups with a softer glass panel style.
+- Clarified Risk Map copy from "live" to "visible" because hazard data is fetched by the current map bounding box and changes as users pan or zoom.
 
 ## Updated Files
 
