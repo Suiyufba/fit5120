@@ -53,12 +53,15 @@ const endSuggestions = ref([])
 const startLabel = ref('')
 const endLabel = ref('')
 const selectedMapStyle = ref(DEFAULT_MAP_VISUAL_STYLE)
+const isLocatingUser = ref(false)
+const isViewingUserLocation = ref(false)
 
 let mapInstance
 let baseTileLayer
 let markerLayer
 let routeLayer
 let hazardLayer
+let userLocationLayer
 let inflightController
 let hazardInflightController
 let hazardRefreshTimer
@@ -676,22 +679,74 @@ function switchMapStyle(styleId) {
   hazardLayer?.bringToFront()
   routeLayer?.bringToFront()
   markerLayer?.bringToFront()
+  userLocationLayer?.bringToFront()
 }
 
 function recenterPlannerMap() {
-  if (selectedRoute.value?.geometry?.length) {
-    const bounds = clampBoundsToVictoria(L.latLngBounds(selectedRoute.value.geometry))
-    mapInstance?.fitBounds(bounds.pad(0.2))
-    return
-  }
-  if (startPoint.value || endPoint.value) {
-    const points = [startPoint.value, endPoint.value]
-      .filter(Boolean)
-      .map((point) => [point.lat, point.lng])
-    mapInstance?.fitBounds(clampBoundsToVictoria(L.latLngBounds(points)).pad(0.32))
-    return
-  }
+  isViewingUserLocation.value = false
   mapInstance?.flyTo(VICTORIA_VIEW.center, VICTORIA_VIEW.zoom, { duration: 0.55 })
+}
+
+function renderPlannerUserLocation(point) {
+  if (!userLocationLayer) return
+  userLocationLayer.clearLayers()
+
+  L.circleMarker([point.lat, point.lng], {
+    radius: 8,
+    color: '#ffffff',
+    fillColor: '#173b31',
+    fillOpacity: 1,
+    weight: 3,
+  }).bindPopup('Your current location', { className: 'hs-map-popup' }).addTo(userLocationLayer)
+
+  L.circle([point.lat, point.lng], {
+    radius: Math.max(point.accuracy || 0, 80),
+    color: '#173b31',
+    fillColor: '#173b31',
+    fillOpacity: 0.08,
+    opacity: 0.24,
+    weight: 1,
+    interactive: false,
+  }).addTo(userLocationLayer)
+}
+
+function locatePlannerUser() {
+  if (isViewingUserLocation.value) {
+    recenterPlannerMap()
+    return
+  }
+
+  if (!navigator.geolocation || isLocatingUser.value) return
+  isLocatingUser.value = true
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      isLocatingUser.value = false
+      const point = {
+        lat: Number(position.coords.latitude.toFixed(6)),
+        lng: Number(position.coords.longitude.toFixed(6)),
+        accuracy: position.coords.accuracy,
+      }
+
+      if (!isLatLngInVictoria(L.latLng(point.lat, point.lng))) {
+        window.alert('Your current location is outside Victoria, so it cannot be shown on this map.')
+        return
+      }
+
+      renderPlannerUserLocation(point)
+      isViewingUserLocation.value = true
+      mapInstance?.flyTo([point.lat, point.lng], Math.max(mapInstance.getZoom(), 13), { duration: 0.65 })
+    },
+    () => {
+      isLocatingUser.value = false
+      window.alert('Unable to access your current location. Please allow location access in your browser.')
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 60000,
+    }
+  )
 }
 
 onMounted(() => {
@@ -710,6 +765,7 @@ onMounted(() => {
   markerLayer = L.layerGroup().addTo(mapInstance)
   hazardLayer = L.layerGroup().addTo(mapInstance)
   routeLayer = L.layerGroup().addTo(mapInstance)
+  userLocationLayer = L.layerGroup().addTo(mapInstance)
   loadHazards()
   hazardRefreshTimer = window.setInterval(loadHazards, 60_000)
   mapInstance.on('moveend', loadHazards)
@@ -953,8 +1009,15 @@ onUnmounted(() => {
         <button class="planner-map-control-btn" type="button" aria-label="Zoom out" title="Zoom out" @click="mapInstance?.zoomOut()">
           <span class="material-symbols-outlined" aria-hidden="true">remove</span>
         </button>
-        <button class="planner-map-control-btn" type="button" aria-label="Fit route" title="Fit route" @click="recenterPlannerMap">
-          <span class="material-symbols-outlined" aria-hidden="true">near_me</span>
+        <button
+          class="planner-map-control-btn"
+          type="button"
+          :aria-label="isViewingUserLocation ? 'Return to Victoria map' : 'Go to my location'"
+          :title="isViewingUserLocation ? 'Return to Victoria map' : 'Go to my location'"
+          :disabled="isLocatingUser"
+          @click="locatePlannerUser"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">{{ isViewingUserLocation ? 'public' : 'my_location' }}</span>
         </button>
       </div>
       <div class="planner-map-style-switcher" aria-label="Map style">
@@ -1568,6 +1631,11 @@ h1 {
   transform: translateY(-1px);
   border-color: rgba(33, 72, 59, 0.28);
   background: #fffaf2;
+}
+
+.planner-map-control-btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .planner-map-control-btn .material-symbols-outlined {

@@ -8,6 +8,10 @@
   - `Light` / CARTO Positron
   - `Trail` / OpenTopoMap
 - Added floating map controls for zooming, recentering, and fitting the current route/selection.
+- Unified the third floating control on Risk Map and Route Planner as a current-location toggle:
+  - First click requests browser geolocation and flies to the user's current position when it is inside Victoria.
+  - Second click returns to the full Victoria map view.
+  - Both maps use the same icon, label, and location marker treatment.
 - Added compact map status pills:
   - Risk Map shows the live hazard count.
   - Route Planner shows the next point-selection state.
