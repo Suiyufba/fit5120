@@ -799,14 +799,13 @@ onMounted(async () => {
 
   mapInstance = L.map(mapElement.value, {
     zoomControl: false,
-    attributionControl: true,
+    attributionControl: false,
     fadeAnimation: false,
     markerZoomAnimation: false,
     zoomAnimation: false,
   }).setView(VICTORIA_VIEW.center, VICTORIA_VIEW.zoom, { animate: false })
   applyVictoriaMapConstraints(mapInstance)
 
-  mapInstance.attributionControl.setPrefix(false)
   baseTileLayer = createLeafletBaseLayer(L, selectedMapStyle.value).addTo(mapInstance)
 
   hazardLayer = L.layerGroup().addTo(mapInstance)

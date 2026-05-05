@@ -329,14 +329,12 @@ function locateUser() {
 onMounted(async () => {
   mapInstance = L.map(mapElement.value, {
     zoomControl: false,
-    attributionControl: true,
+    attributionControl: false,
     fadeAnimation: false,
     markerZoomAnimation: false,
     zoomAnimation: false,
   }).setView(VICTORIA_VIEW.center, VICTORIA_VIEW.zoom, { animate: false })
   applyVictoriaMapConstraints(mapInstance)
-
-  mapInstance.attributionControl.setPrefix(false)
 
   baseTileLayer = createLeafletBaseLayer(L, selectedMapStyle.value).addTo(mapInstance)
 
@@ -818,26 +816,6 @@ watch(filteredHazards, () => {
   background: #173b31;
   color: #fffaf2;
   box-shadow: 0 8px 18px rgba(23, 59, 49, 0.22);
-}
-
-.risk-map-canvas :deep(.leaflet-control-attribution) {
-  font-size: 10px;
-  line-height: 1.15;
-  color: rgba(34, 58, 51, 0.48);
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(4px);
-  border-radius: 6px 0 0 0;
-  padding: 2px 6px;
-  transition: all 0.22s ease;
-}
-
-.risk-map-canvas :deep(.leaflet-control-attribution:hover) {
-  color: rgba(34, 58, 51, 0.8);
-  background: rgba(255, 255, 255, 0.78);
-}
-
-.risk-map-canvas :deep(.leaflet-control-attribution a) {
-  color: inherit;
 }
 
 .risk-map-canvas :deep(.hs-map-popup .leaflet-popup-content-wrapper) {

@@ -229,11 +229,9 @@ function locateUser() {
 onMounted(() => {
   mapInstance = L.map(mapElement.value, {
     zoomControl: false,
-    attributionControl: true,
+    attributionControl: false,
   }).setView(VICTORIA_VIEW.center, VICTORIA_VIEW.minZoom)
   applyVictoriaMapConstraints(mapInstance)
-
-  mapInstance.attributionControl.setPrefix(false)
 
   baseTileLayer = createLeafletBaseLayer(L, selectedMapStyle.value).addTo(mapInstance)
 
@@ -318,26 +316,6 @@ watch(
 .home-preview-map :deep(.leaflet-top),
 .home-preview-map :deep(.leaflet-bottom) {
   z-index: 20;
-}
-
-.home-preview-map :deep(.leaflet-control-attribution) {
-  font-size: 10px;
-  line-height: 1.15;
-  color: rgba(42, 62, 55, 0.46);
-  background: rgba(255, 255, 255, 0.52);
-  backdrop-filter: blur(4px);
-  border-radius: 6px 0 0 0;
-  padding: 2px 6px;
-  transition: all 0.22s ease;
-}
-
-.home-preview-map :deep(.leaflet-control-attribution:hover) {
-  color: rgba(42, 62, 55, 0.78);
-  background: rgba(255, 255, 255, 0.78);
-}
-
-.home-preview-map :deep(.leaflet-control-attribution a) {
-  color: inherit;
 }
 
 .home-preview-map-status {
