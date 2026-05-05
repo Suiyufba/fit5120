@@ -60,3 +60,7 @@ cp .env.example .env  # set VITE_HAZARD_API_BASE_URL
 npm install
 npm run dev
 ```
+
+## Deployment Notes
+
+- Railway backend deploys from `backend/` and runs `npm ci`; keep `backend/package-lock.json` in sync whenever backend dependencies or devDependencies change.
