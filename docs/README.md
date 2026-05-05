@@ -1,82 +1,62 @@
-# Docs Hub
+# HikeShield
 
-Project documentation has been reorganized by domain for easier maintenance.
+A hiking safety platform for Victoria, Australia. Provides route planning with real-time hazard assessment, personalized risk scoring, and AI-powered safety recommendations.
 
-## Directory Structure
+## Key Features
 
-- [`fullstack/`](./fullstack/README.md): End-to-end features touching frontend + backend
-- [`frontend/`](./frontend/README.md): UI, interaction, client-side data, layout, map UX
-- [`backend/`](./backend/README.md): API, persistence, data pipeline, backend services
-- [`security/`](./security/README.md): Auth, security hardening, access policy
-- [`ops/`](./ops/README.md): Maintenance, repo operations, environment records
+- **Plan Safe Route** — Pick two points on a map, get multiple route candidates ranked by safety. Each route is scored against live hazards (fire, flood, storm, heat) and terrain conditions.
+- **Risk Map** — Interactive map showing active hazards across Victoria with severity zones.
+- **Community Reports** — Crowd-sourced hazard reports with photo upload.
+- **Knowledge Hub** — Educational articles on hiking safety.
+- **User Profiles** — Experience-level assessment that personalizes risk thresholds and preparation advice.
 
-## Canonical Entry Points
+## Tech Stack
 
-- Fullstack feature docs: [docs/fullstack/README.md](./fullstack/README.md)
-- Frontend docs: [docs/frontend/README.md](./frontend/README.md)
-- Backend docs: [docs/backend/README.md](./backend/README.md)
-- Security docs: [docs/security/README.md](./security/README.md)
-- Ops docs: [docs/ops/README.md](./ops/README.md)
-- Reorganization notes and old/new path map: [docs/docs-reorganization-2026-04-16.md](./docs-reorganization-2026-04-16.md)
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Vue 3 (Composition API), Leaflet (2D maps), Mapbox GL JS (3D terrain), Vite |
+| Backend | Node.js, Express |
+| Database | PostgreSQL |
+| External APIs | OpenRouteService (directions), OpenTopoData + Open-Meteo (elevation), Overpass API (OSM terrain), VicEmergency (hazards), OpenWeather (weather) |
+| AI Service | External narration API (route introductions) |
+| Hosting | Railway |
 
-## Timeline (All Domains)
+## Project Structure
 
-### 2026-05-05
-- [frontend/route-detail-risk-score-display-cleanup-2026-05-05.md](./frontend/route-detail-risk-score-display-cleanup-2026-05-05.md)
-- [fullstack/iteration-3-epic-6-7-user-stories-2026-05-05.md](./fullstack/iteration-3-epic-6-7-user-stories-2026-05-05.md)
+```
+├── frontend/          # Vue 3 SPA
+│   └── src/
+│       ├── views/     # RoutePlanner, RouteDetail, RiskMap, Home, etc.
+│       ├── components/# Shared UI components
+│       ├── services/  # API clients, auth store, route plan store
+│       └── utils/     # Map constraints, visual styles
+├── backend/           # Express API server
+│   └── src/
+│       ├── modules/
+│       │   ├── routes/        # Route planning, risk scoring, geography
+│       │   ├── hazards/       # Hazard aggregation, adapters
+│       │   ├── auth/          # Authentication, user profiles
+│       │   ├── locations/     # Geocoding (Nominatim + Photon)
+│       │   └── communityReports/
+│       ├── infrastructure/    # Postgres client, caching
+│       └── shared/            # HTTP fetch utilities
+├── ai-service/        # External AI narration service
+├── shared/            # Shared constants/types
+└── docs/              # Architecture and design docs
+```
 
-### 2026-05-04
-- [fullstack/route-safety-status-and-gemini-context-2026-05-04.md](./fullstack/route-safety-status-and-gemini-context-2026-05-04.md)
-- [fullstack/route-planner-long-distance-validation-2026-05-04.md](./fullstack/route-planner-long-distance-validation-2026-05-04.md)
-- [fullstack/route-planner-cors-network-resilience-2026-05-04.md](./fullstack/route-planner-cors-network-resilience-2026-05-04.md)
-- [fullstack/community-report-image-cross-origin-fix-2026-05-04.md](./fullstack/community-report-image-cross-origin-fix-2026-05-04.md)
-- [frontend/community-report-location-picker-layout-2026-05-04.md](./frontend/community-report-location-picker-layout-2026-05-04.md)
-- [frontend/community-report-map-popup-thumbnail-2026-05-04.md](./frontend/community-report-map-popup-thumbnail-2026-05-04.md)
-- [frontend/community-report-mobile-camera-photo-2026-05-04.md](./frontend/community-report-mobile-camera-photo-2026-05-04.md)
-- [frontend/route-planner-error-position-autoscroll-2026-05-04.md](./frontend/route-planner-error-position-autoscroll-2026-05-04.md)
-- [frontend/route-planner-ai-assistant-reminder-2026-05-04.md](./frontend/route-planner-ai-assistant-reminder-2026-05-04.md)
-- [ops/railway-ai-service-gemini-model-update-2026-05-04.md](./ops/railway-ai-service-gemini-model-update-2026-05-04.md)
-- [ops/railway-ai-service-gemini-api-2026-05-04.md](./ops/railway-ai-service-gemini-api-2026-05-04.md)
+## Quick Start
 
-### 2026-04-16
-- [fullstack/public-route-planner-community-access-2026-04-16.md](./fullstack/public-route-planner-community-access-2026-04-16.md)
-- [frontend/frontend-swr-local-cache-2026-04-16.md](./frontend/frontend-swr-local-cache-2026-04-16.md)
-- [frontend/home-risk-preview-category-alignment-2026-04-16.md](./frontend/home-risk-preview-category-alignment-2026-04-16.md)
-- [frontend/home-risk-preview-popup-detail-alignment-2026-04-16.md](./frontend/home-risk-preview-popup-detail-alignment-2026-04-16.md)
+```bash
+# Backend
+cd backend
+cp .env.example .env  # configure API keys
+npm install
+npm run dev
 
-### 2026-04-14
-- [fullstack/location-detail-panel-integration-2026-04-14.md](./fullstack/location-detail-panel-integration-2026-04-14.md)
-- [fullstack/risk-category-visibility-update-2026-04-14.md](./fullstack/risk-category-visibility-update-2026-04-14.md)
-- [frontend/risk-map-filtering-update-2026-04-14.md](./frontend/risk-map-filtering-update-2026-04-14.md)
-- [frontend/risk-map-other-category-colors-2026-04-14.md](./frontend/risk-map-other-category-colors-2026-04-14.md)
-- [frontend/community-map-risk-category-alignment-2026-04-14.md](./frontend/community-map-risk-category-alignment-2026-04-14.md)
-- [frontend/admin-dashboard-risk-map-alignment-2026-04-14.md](./frontend/admin-dashboard-risk-map-alignment-2026-04-14.md)
-- [backend/hazard-history-retention-2026-04-14.md](./backend/hazard-history-retention-2026-04-14.md)
-- [ops/system-maintenance-information-2026-04-14.md](./ops/system-maintenance-information-2026-04-14.md)
-
-### 2026-04-13
-- [security/local-admin-credentials-update-2026-04-13.md](./security/local-admin-credentials-update-2026-04-13.md)
-
-### 2026-03-31
-- [security/security-hardening-2026-03-31.md](./security/security-hardening-2026-03-31.md)
-- [frontend/auth-endpoint-default-fix.md](./frontend/auth-endpoint-default-fix.md)
-- [frontend/register-form-layout-fix.md](./frontend/register-form-layout-fix.md)
-- [frontend/forgot-password-layout-fix.md](./frontend/forgot-password-layout-fix.md)
-- [frontend/profile-update-auth-fix.md](./frontend/profile-update-auth-fix.md)
-- [frontend/profile-update-error-handling-2026-03-31.md](./frontend/profile-update-error-handling-2026-03-31.md)
-- [frontend/victoria-map-boundary-enforcement-2026-03-31.md](./frontend/victoria-map-boundary-enforcement-2026-03-31.md)
-
-### 2026-03-28
-- [fullstack/community-report-feature.md](./fullstack/community-report-feature.md)
-- [fullstack/admin-dashboard-feature.md](./fullstack/admin-dashboard-feature.md)
-- [fullstack/route-planner-risk-model.md](./fullstack/route-planner-risk-model.md)
-- [fullstack/profile-editing-feature.md](./fullstack/profile-editing-feature.md)
-- [frontend/homepage-live-data.md](./frontend/homepage-live-data.md)
-- [frontend/mobile-first-adaptation.md](./frontend/mobile-first-adaptation.md)
-- [frontend/branding-update.md](./frontend/branding-update.md)
-
-## Reorganization Notes
-
-- This structure is intentionally domain-first (not date-first).
-- Filenames are preserved to keep history traceability.
-- If you add a new doc, place it in the closest domain folder and update that folder README.
+# Frontend
+cd frontend
+cp .env.example .env  # set VITE_HAZARD_API_BASE_URL
+npm install
+npm run dev
+```
