@@ -234,6 +234,8 @@ function riskLevelByScore(score) {
 
 function noGoFloorScoreByReason(reasons = {}) {
   if (reasons.hasExtremeTooClose || reasons.hasRouteClosure) return 85;
+  if (reasons.hasFireTooClose) return 78;
+  if (reasons.hasHighTooClose) return 72;
   if (reasons.hasSevereCliffExposure || reasons.hasSteepTerrainForUser) return 72;
   if (reasons.exceedsDistanceCap || reasons.exceedsDurationCap) return 65;
   if (reasons.exceedsScoreThreshold) return 65;
@@ -274,6 +276,16 @@ function goNoGoDecision({ userLevel, riskScore, hazardImpacts, routeDistanceKm, 
   const hasExtremeTooClose = hazardImpacts.some(
     (item) => item.hazard.severity === 'extreme' && item.distanceKm <= current.extremeDistanceKm
   );
+  // High-severity hazard within 500 m — fire, flood, storm at close range
+  // are an immediate threat regardless of risk score.
+  const hasHighTooClose = hazardImpacts.some(
+    (item) => item.hazard.severity === 'high' && item.distanceKm <= 0.5
+  );
+  // Any fire within 1 km is an automatic No-Go — bushfire behaviour is too
+  // unpredictable to route hikers anywhere near the perimeter.
+  const hasFireTooClose = hazardImpacts.some(
+    (item) => item.hazard.type === 'fire' && item.distanceKm <= 1
+  );
   const exceedsDistanceCap = (routeDistanceKm || 0) > current.maxDistanceKm;
   const exceedsDurationCap = (routeDurationMin || 0) > current.maxDurationMin;
   const hasRouteClosure = Number(geographyProfile?.closureCount || 0) > 0;
@@ -284,6 +296,8 @@ function goNoGoDecision({ userLevel, riskScore, hazardImpacts, routeDistanceKm, 
   const exceedsScoreThreshold = riskScore >= current.score;
   const noGoReasons = {
     hasExtremeTooClose,
+    hasHighTooClose,
+    hasFireTooClose,
     exceedsDistanceCap,
     exceedsDurationCap,
     hasRouteClosure,

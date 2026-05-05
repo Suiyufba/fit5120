@@ -72,6 +72,81 @@ test('newcomer becomes No-Go when extreme hazard is close', () => {
   assert.equal(typeof scored.zoneSummary.level1Count, 'number');
 });
 
+test('any fire within 1km makes route No-Go regardless of severity', () => {
+  const fireHazard = {
+    id: 'fire-mod',
+    type: 'fire',
+    severity: 'moderate',
+    source: 'VicEmergency',
+    title: 'Moderate bushfire',
+    updatedAt: new Date().toISOString(),
+    coordinates: [-37.751, 145.001], // ~150m from route midpoint [-37.75, 145.0]
+  };
+
+  const scored = scoreRouteCandidate({
+    route: baseRoute,
+    hazards: [fireHazard],
+    userLevel: 'advanced',
+    fastestRoute: baseRoute,
+  });
+
+  assert.equal(scored.goNoGo, 'No-Go');
+  assert.equal(scored.noGoReasons.hasFireTooClose, true);
+  assert.ok(scored.riskScore >= 78, `fire within 1km should force risk >= 78, got ${scored.riskScore}`);
+});
+
+test('high severity hazard within 500m makes route No-Go', () => {
+  const floodHazard = {
+    id: 'flood-close',
+    type: 'flood',
+    severity: 'high',
+    source: 'OpenWeather',
+    title: 'Flash flood warning',
+    updatedAt: new Date().toISOString(),
+    coordinates: [-37.7505, 145.0005], // ~60m from route midpoint
+  };
+
+  const scored = scoreRouteCandidate({
+    route: baseRoute,
+    hazards: [floodHazard],
+    userLevel: 'intermediate',
+    fastestRoute: baseRoute,
+  });
+
+  assert.equal(scored.goNoGo, 'No-Go');
+  assert.equal(scored.noGoReasons.hasHighTooClose, true);
+});
+
+test('fire beyond 1km with otherwise low risk can still be Go', () => {
+  const farFire = {
+    id: 'fire-far',
+    type: 'fire',
+    severity: 'high',
+    source: 'VicEmergency',
+    title: 'Distant fire',
+    updatedAt: new Date().toISOString(),
+    coordinates: [-37.5, 144.5], // far from route [-37.8..-37.7, 144.9..145.1]
+  };
+
+  const scored = scoreRouteCandidate({
+    route: baseRoute,
+    hazards: [farFire],
+    userLevel: 'intermediate',
+    fastestRoute: baseRoute,
+    geographyProfile: {
+      totalAscentM: 50, totalDescentM: 50, maxSlopePct: 4, avgSlopePct: 2,
+      surfaceType: 'compacted', trailCondition: 'good',
+      riverCrossingCount: 0, cliffExposureCount: 0, closureCount: 0,
+    },
+    now: new Date('2026-04-15T02:00:00Z'),
+    maxFeelsLike: 22,
+    candidateCount: 3,
+  });
+
+  // With far fire and good conditions, route can still be Go for intermediate
+  assert.equal(scored.goNoGo, 'Go');
+});
+
 test('advanced user gets Go for low exposure route', () => {
   const hazards = [
     {
