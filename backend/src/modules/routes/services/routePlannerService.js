@@ -188,7 +188,8 @@ async function attachRouteIntroductions(payload) {
   };
 }
 
-function pickDifficultyRouteOptions(scoredRoutes, { userLevel, userProfile, now } = {}) {
+function pickDifficultyRouteOptions(scoredRoutes, opts) {
+  const { userLevel, userProfile, now } = opts || {};
   const desired = ['Easy', 'Moderate', 'Hard'];
   const selected = [];
   const usedIds = new Set();
@@ -248,12 +249,28 @@ function compositeSelectionScore(route, fastestRoute) {
   return Number(route.riskScore || 0) + burdenPenalty;
 }
 
+/**
+ * Plan a safer hiking route between two coordinates.
+ *
+ * Orchestrates: coordinate validation → candidate generation via
+ * OpenRouteService → hazard loading → geography enrichment → risk
+ * scoring → route selection → AI narration.
+ *
+ * @param {object} params
+ * @param {string | null} params.userId
+ * @param {import('hikeshield-shared').Coordinate} params.start
+ * @param {import('hikeshield-shared').Coordinate} params.end
+ * @param {Date} [params.now]
+ * @returns {Promise<import('hikeshield-shared').PlanRouteResponse & { userLevel: import('hikeshield-shared').UserLevel }>}
+ */
 export async function planSaferRoute({ userId, start, end, now = new Date() }) {
   const normalizedStart = assertCoordinate(start, 'start');
   const normalizedEnd = assertCoordinate(end, 'end');
   assertRouteDistance(normalizedStart, normalizedEnd);
 
-  const userProfile = userId ? await getRouteContextByUserId(userId) : null;
+  const userProfile = /** @type {import('hikeshield-shared').User | null} */ (
+    /** @type {unknown} */ (userId ? await getRouteContextByUserId(userId) : null)
+  );
   const userLevel = userProfile?.experienceLevel || 'newcomer';
 
   const candidates = await buildCandidateRoutes(normalizedStart, normalizedEnd);

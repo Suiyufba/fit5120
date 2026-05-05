@@ -104,13 +104,18 @@ function toHazardImpact(hazard, distanceKm, now) {
   return clamp(impact);
 }
 
+/**
+ * @param {string} updatedAt ISO date string
+ * @param {Date|string} [now] Reference time
+ * @returns {number} 0-1 recency factor
+ */
 function recencyFactor(updatedAt, now = new Date()) {
   const ts = Date.parse(updatedAt || '');
   if (Number.isNaN(ts)) return 0.6;
 
   const referenceMs = now instanceof Date ? now.getTime() : Date.parse(now || '');
   const nowMs = Number.isFinite(referenceMs) ? referenceMs : Date.now();
-  const ageHours = Math.max(0, (nowMs - ts) / (1000 * 60 * 60));
+  const ageHours = Math.max(0, (Number(nowMs) - Number(ts)) / (1000 * 60 * 60));
   if (ageHours <= 6) return 1.0;
   if (ageHours <= 24) return 0.85;
   if (ageHours <= 72) return 0.65;
@@ -265,6 +270,18 @@ function difficultyLabel(burdenScore, geographyProfile = null) {
   return 'Easy';
 }
 
+/**
+ * Determine Go / No-Go for a route based on hard safety rules.
+ *
+ * @param {object} params
+ * @param {import('hikeshield-shared').UserLevel} params.userLevel
+ * @param {number} params.riskScore
+ * @param {Array<{hazard: import('hikeshield-shared').Hazard, distanceKm: number}>} params.hazardImpacts
+ * @param {number} params.routeDistanceKm
+ * @param {number} params.routeDurationMin
+ * @param {import('hikeshield-shared').GeographyProfile | null} [params.geographyProfile]
+ * @returns {{ goNoGo: import('hikeshield-shared').GoNoGo, noGoReasons: import('hikeshield-shared').NoGoReasons }}
+ */
 function goNoGoDecision({ userLevel, riskScore, hazardImpacts, routeDistanceKm, routeDurationMin, geographyProfile }) {
   const thresholds = {
     newcomer: { score: 52, extremeDistanceKm: 2, maxDistanceKm: 30, maxDurationMin: 480 },
@@ -397,10 +414,16 @@ function seasonFromDate(date = new Date()) {
   return 'spring';
 }
 
+/**
+ * @param {number} lat
+ * @param {number} lng
+ * @param {Date|string} date
+ * @returns {number} Sunset hour in local time (0-24)
+ */
 function computeDayMinutes(lat, lng, date) {
   const d = date instanceof Date ? date : new Date(date);
   const janFirst = new Date(d.getFullYear(), 0, 1);
-  const dayOfYear = Math.floor((d - janFirst) / (1000 * 60 * 60 * 24)) + 1;
+  const dayOfYear = Math.floor((Number(d) - Number(janFirst)) / (1000 * 60 * 60 * 24)) + 1;
   const latRad = toRad(lat);
   const declination = toRad(23.45) * Math.sin(toRad((360 / 365) * (dayOfYear - 81)));
   const ha = Math.acos(
@@ -426,6 +449,22 @@ function pushTip(list, seen, key, priority, text) {
   list.push({ key, priority, text });
 }
 
+/**
+ * Build a prioritized, personalised list of preparation tips.
+ *
+ * @param {object} params
+ * @param {import('hikeshield-shared').RouteCandidate} params.route
+ * @param {import('hikeshield-shared').UserLevel} params.userLevel
+ * @param {import('hikeshield-shared').User | null} [params.userProfile]
+ * @param {import('hikeshield-shared').KeyRisk[]} params.keyRisks
+ * @param {number} params.riskScore
+ * @param {import('hikeshield-shared').GoNoGo} params.goNoGo
+ * @param {import('hikeshield-shared').GeographyProfile | null} [params.geographyProfile]
+ * @param {import('hikeshield-shared').Difficulty} [params.difficultyTier]
+ * @param {Date} [params.now]
+ * @param {number} [params.maxTips]
+ * @returns {string[]}
+ */
 export function buildSuggestedPrep({
   route,
   userLevel,
@@ -756,6 +795,21 @@ function computeInteractionPenalty({
 
 // ── Main Scoring ────────────────────────────────────────────────
 
+/**
+ * Score a single route candidate using the three-layer risk model.
+ *
+ * @param {object} params
+ * @param {import('hikeshield-shared').RouteCandidate} params.route
+ * @param {import('hikeshield-shared').Hazard[]} params.hazards
+ * @param {import('hikeshield-shared').UserLevel} params.userLevel
+ * @param {import('hikeshield-shared').User | null} [params.userProfile]
+ * @param {import('hikeshield-shared').RouteCandidate} params.fastestRoute
+ * @param {import('hikeshield-shared').GeographyProfile | null} [params.geographyProfile]
+ * @param {Date} [params.now]
+ * @param {number | null} [params.maxFeelsLike]
+ * @param {number} [params.candidateCount]
+ * @returns {import('hikeshield-shared').RouteCandidate}
+ */
 export function scoreRouteCandidate({
   route,
   hazards,
@@ -905,6 +959,14 @@ export function scoreRouteCandidate({
   };
 }
 
+/**
+ * Generate perpendicular detour waypoints when fewer than 3 natural
+ * candidates are returned by the routing engine.
+ *
+ * @param {import('hikeshield-shared').Coordinate} start
+ * @param {import('hikeshield-shared').Coordinate} end
+ * @returns {import('hikeshield-shared').Coordinate[]}
+ */
 export function buildDetourWaypointCandidates(start, end) {
   const mid = [(start.lat + end.lat) / 2, (start.lng + end.lng) / 2];
   const dLat = end.lat - start.lat;

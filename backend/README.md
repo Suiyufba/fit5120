@@ -1,36 +1,42 @@
 # HikeShield Backend (Railway-ready)
 
-后端已提供前端所需最小可用接口：
+The backend exposes the minimal set of APIs the frontend needs:
+
 - `GET /api/hazards/realtime?bbox=west,south,east,north&layers=fire,flood,storm,heat`
 - `GET /api/health`
-- `POST /api/auth/register`
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `POST /api/auth/password-reset/security`
 - `GET /api/auth/me`
-- `POST /api/routes/plan`（JWT required）
+- `POST /api/routes/plan` (JWT required)
 
-## 项目分层（按功能）
+## Module Layout
 
 ```text
 src/
-├── config/                      # 环境变量与全局配置
-├── controllers/                 # HTTP 控制器
-├── routes/                      # API 路由注册
+├── config/                      # Environment variables & global config
+├── controllers/                 # HTTP controllers
+├── routes/                      # API route registration
 ├── modules/
 │   └── hazards/
-│       ├── adapters/            # 上游数据源适配器
-│       ├── data/                # fallback 数据
-│       ├── domain/              # hazard 领域工具
-│       └── services/            # 聚合/缓存调度服务
+│       ├── adapters/            # Upstream data-source adapters
+│       ├── data/                # Fallback data
+│       ├── domain/              # Hazard domain utilities
+│       └── services/            # Aggregation / cache scheduling
+│   └── routes/
+│       ├── adapters/            # OpenRouteService adapter
+│       ├── domain/              # Risk scoring, route timing
+│       ├── services/            # Route planning, geography, narration
+│       └── repositories/        # Route plan history (Postgres)
 ├── infrastructure/
-│   └── cache/                   # 缓存实现（memory/redis）
+│   ├── cache/                   # Cache (memory / Redis)
+│   └── db/                      # Postgres clients & repositories
 ├── shared/
-│   └── http/                    # 通用 HTTP 工具
-└── server.js                    # 应用入口
+│   └── http/                    # Shared HTTP utilities
+└── server.js                    # Application entry point
 ```
 
-## 1) 本地启动
+## 1) Local Start
 
 ```bash
 npm install
@@ -38,9 +44,9 @@ cp .env.example .env
 npm run dev
 ```
 
-默认地址：`http://localhost:8080/api/hazards/realtime`
+Default address: `http://localhost:8080/api/hazards/realtime`
 
-## 2) 返回结构（已对齐前端）
+## 2) Response Shape (aligned with frontend)
 
 ```json
 {
@@ -70,32 +76,32 @@ npm run dev
 }
 ```
 
-`severity` 枚举：`extreme | high | moderate | low`
+`severity` enum: `extreme | high | moderate | low`
 
-## 3) 缓存和轮询策略
+## 3) Caching & Polling Strategy
 
-- 定时抓取上游：`FETCH_INTERVAL_MS`（默认 2 小时）
-- API 返回快照，不会每次请求都直连上游
-- 若配置 `DATABASE_URL`，快照会持久化到 Postgres，仅存一条最新数据（无历史）
-- 默认内存缓存；配置 `REDIS_URL` 后自动切 Redis（适合 Railway 多实例）
-- 上游异常时不会回退示例数据，直接返回空列表并标记 `lastError`
+- Fetch interval: `FETCH_INTERVAL_MS` (default 2 hours)
+- API returns cached snapshots — does not hit upstream on every request
+- When `DATABASE_URL` is configured, snapshots persist to Postgres (latest only, no history)
+- Default cache is in-memory; set `REDIS_URL` to switch to Redis (recommended for multi-instance Railway deployments)
+- Upstream failures return an empty list with `lastError` set — never fall back to sample data
 
-## 4) Railway 部署
+## 4) Railway Deployment
 
-### 4.1 新建服务
+### 4.1 Create Service
 
-1. Railway -> `New Project` -> `Deploy from GitHub Repo`
-2. 选择本仓库 `hiking_backEnd`
-3. Railway 会自动识别 Node 项目并执行：
+1. Railway → `New Project` → `Deploy from GitHub Repo`
+2. Select the `hiking_backEnd` repository
+3. Railway auto-detects the Node project and runs:
    - Build: `npm install`
    - Start: `npm start`
 
-### 4.2 Railway 环境变量
+### 4.2 Railway Environment Variables
 
-至少配置以下变量：
+Required minimum:
 
-- `PORT=8080`（Railway 也会自动注入，保留即可）
-- `CORS_ORIGIN=https://你的前端域名`
+- `PORT=8080` (Railway injects this automatically — keep it)
+- `CORS_ORIGIN=https://<your-frontend-domain>`
 - `FETCH_INTERVAL_MS=7200000`
 - `REQUEST_TIMEOUT_MS=10000`
 - `STALE_THRESHOLD_MS=600000`
@@ -105,61 +111,61 @@ npm run dev
 - `AUTH_JWT_SECRET=<strong-random-secret>`
 - `AUTH_JWT_EXPIRES_IN=7d`
 
-可选（建议逐步接入官方源）：
+Optional (recommended for production):
 
-- `VICROADS_API_URL=...`（DataVic Unplanned Disruption API）
-- `VICROADS_API_KEY=...`（Transport Victoria Open Data Portal 账号生成）
-- `OPENWEATHER_API_KEY=...`（OpenWeather API Key）
+- `VICROADS_API_URL=...` (DataVic Unplanned Disruption API)
+- `VICROADS_API_KEY=...` (from Transport Victoria Open Data Portal)
+- `OPENWEATHER_API_KEY=...` (OpenWeather API Key)
 - `OPENWEATHER_API_URL=https://api.openweathermap.org/data/2.5/weather`
 - `OPENROUTESERVICE_API_BASE_URL=https://api.openrouteservice.org`
-- `OPENROUTESERVICE_API_KEY=...`（OpenRouteService API Key，路线规划必需）
+- `OPENROUTESERVICE_API_KEY=...` (OpenRouteService API Key — required for route planning)
 - `OPENROUTESERVICE_PROFILE=foot-hiking`
-- `OPENROUTESERVICE_SNAP_RADIUS_M=1000`（允许 ORS 将起终点吸附到附近可路由路径）
+- `OPENROUTESERVICE_SNAP_RADIUS_M=1000` (snap start/end to nearest routable path)
 - `HIKING_BASE_SPEED_KMH=4.5`
 - `OPENTOPO_DATA_API_URL=https://api.opentopodata.org/`
 - `OPENTOPO_DATA_DATASET=aster30m`
 - `OVERPASS_API_URL=https://overpass-api.de/api/interpreter`
-- `VIC_EMERGENCY_FEED_URL=...`（你申请/确认可用的 VicEmergency feed）
-- `VIC_EMERGENCY_API_KEY=...`（如果源要求鉴权）
-- `REDIS_URL=...`（若绑定 Railway Redis 插件）
+- `VIC_EMERGENCY_FEED_URL=...` (confirmed VicEmergency feed URL)
+- `VIC_EMERGENCY_API_KEY=...` (if the feed requires authentication)
+- `REDIS_URL=...` (if using Railway Redis plugin)
 - `REDIS_TTL_SECONDS=90`
 
-### 4.3 对外地址
+### 4.3 Public URL
 
-部署后你会得到：
+After deployment you'll get:
 `https://<railway-domain>/api/hazards/realtime`
 
-## 5) 前端配置
+## 5) Frontend Configuration
 
-前端 `.env`：
+Frontend `.env`:
 
 ```env
 VITE_HAZARD_API_BASE_URL=https://<railway-domain>/api
 ```
 
-你现有前端会自动请求：
+The frontend automatically requests:
 - `/hazards/realtime`
-- 支持 `bbox` 与 `layers`
-- 60 秒轮询（已在前端实现）
+- Supports query params: `bbox` and `layers`
+- 60-second polling (implemented in the frontend)
 
-## 6) 当前已接的 API 能力
+## 6) Current API Capabilities
 
-- 聚合接口：`GET /api/hazards/realtime`
-- 查询参数：
+- Aggregation endpoint: `GET /api/hazards/realtime`
+- Query parameters:
   - `bbox=west,south,east,north`
   - `layers=fire,flood,storm,heat`
-- 数据源适配器：
-  - DataVic（默认 URL 已给）
-  - BoM（留可配置入口）
-  - VicEmergency（留可配置入口）
+- Data source adapters:
+  - DataVic (default URL provided)
+  - BoM (configurable entry point)
+  - VicEmergency (configurable entry point)
 
-## 7) 后续可加（你前端已兼容）
+## 7) Planned Enhancements
 
-- 增加 `SSE / WebSocket` 推送
-- 扩展 GeoJSON 原样返回模式
-- 增加上游健康检查和告警（例如 `/api/health/providers`）
+- SSE / WebSocket push for real-time hazard updates
+- GeoJSON native response mode
+- Upstream health checks and alerts (e.g. `/api/health/providers`)
 
-## 8) 用户认证接口
+## 8) Authentication Endpoints
 
 `POST /api/auth/register`
 
@@ -202,7 +208,7 @@ Header: `Authorization: Bearer <token>`
 }
 ```
 
-## 9) 路线规划接口（按用户等级风控）
+## 9) Route Planning (per-level risk control)
 
 `POST /api/routes/plan`
 
@@ -215,21 +221,21 @@ Header: `Authorization: Bearer <token>`
 }
 ```
 
-返回：
-- `recommendedRoute`：包含 `geometry / distanceKm / durationMin / difficulty / riskScore / riskLevel / goNoGo / explanation / keyRisks`
-- `alternatives`：备选路线摘要
-- `recommendedRoute.geographyProfile`：包含 `totalAscentM / totalDescentM / maxSlopePct / terrainType / surfaceType / trailCondition / riverCrossingCount / cliffExposureCount / closureCount`
-- `scoringBreakdown`：`hazardScore / weatherScore / zoneExposureScore / difficultyScore / geographyScore / feasibilityScore / weightedTotal`
+Returns:
+- `recommendedRoute` — includes `geometry / distanceKm / durationMin / difficulty / riskScore / riskLevel / goNoGo / explanation / keyRisks`
+- `alternatives` — alternative route summaries
+- `recommendedRoute.geographyProfile` — includes `totalAscentM / totalDescentM / maxSlopePct / terrainType / surfaceType / trailCondition / riverCrossingCount / cliffExposureCount / closureCount`
+- `scoringBreakdown` — `hazardScore / weatherScore / zoneExposureScore / difficultyScore / geographyScore / feasibilityScore / weightedTotal`
 
-说明：
-- 路线几何由 OpenRouteService Directions API 生成，默认 profile 为 `foot-hiking`
-- `durationMin` 现在按徒步语义输出，不再直接沿用驾车时间
-- 风险输入源现在会合并官方 hazard、manual hazard、community report
-- 地理特征会按 route geometry hash 缓存在 PostgreSQL，避免重复抓 elevation / OSM 约束
-- 风险总分会同时考虑：
-  - hazard proximity（危险源与路径贴近程度）
-  - weather overlap（天气类风险）
-  - zone exposure（L1/L2/L3 风险区覆盖）
-  - route burden（距离、徒步时长、绕路成本）
-  - geography profile（海拔、累计爬升/下降、坡度、地表与路线约束）
-- 超长徒步路线会触发额外 `No-Go` 判定，避免出现“几百公里仍然低风险”的不合理结果
+Notes:
+- Route geometry is generated by OpenRouteService Directions API, default profile `foot-hiking`
+- `durationMin` uses hiking-semantic estimation (Tobler's function + Naismith's rule), no longer reuses driving time
+- Risk inputs now merge official hazards, manual hazards, and community reports
+- Geography profiles are cached in PostgreSQL by route geometry hash to avoid redundant elevation/OSM queries
+- Total risk score considers:
+  - hazard proximity (how close hazards are to the route)
+  - weather overlap (weather-type risks)
+  - zone exposure (L1/L2/L3 risk zone coverage)
+  - route burden (distance, hiking duration, detour cost)
+  - geography profile (elevation, cumulative ascent/descent, slope, surface & trail constraints)
+- Extra-long hiking routes trigger an additional `No-Go` flag to prevent unreasonably low risk scores for very long distances

@@ -1,4 +1,5 @@
 import { computed, reactive } from 'vue'
+import type { AuthResponse, MeResponse, User } from 'hikeshield-shared'
 import {
   confirmPasswordReset,
   fetchCurrentUser,
@@ -10,7 +11,13 @@ import {
 
 const SESSION_TOKEN_KEY = 'hikeshield_auth_token'
 
-const state = reactive({
+interface AuthState {
+  token: string
+  user: User | null
+  ready: boolean
+}
+
+const state = reactive<AuthState>({
   token: sessionStorage.getItem(SESSION_TOKEN_KEY) || '',
   user: null,
   ready: false,
@@ -18,20 +25,20 @@ const state = reactive({
 
 const isAuthenticated = computed(() => Boolean(state.token && state.user))
 
-function isTokenExpired(token) {
+function isTokenExpired(token: string): boolean {
   try {
     const payloadBase64 = String(token).split('.')[1]
     if (!payloadBase64) return true
-    const payload = JSON.parse(atob(payloadBase64))
+    const payload = JSON.parse(atob(payloadBase64)) as { exp?: number }
     const exp = Number(payload?.exp || 0)
     if (!exp) return true
     return exp * 1000 <= Date.now()
-  } catch (_error) {
+  } catch {
     return true
   }
 }
 
-function setSession({ token, user }) {
+function setSession({ token, user }: { token: string; user: User | null }): void {
   state.token = token || ''
   state.user = user || null
   if (state.token) {
@@ -41,15 +48,15 @@ function setSession({ token, user }) {
   }
 }
 
-function extractToken(payload) {
-  return String(payload?.token || payload?.accessToken || payload?.jwt || '')
+function extractToken(payload: AuthResponse): string {
+  return String(payload?.token || '')
 }
 
-export function logout() {
+export function logout(): void {
   setSession({ token: '', user: null })
 }
 
-export async function restoreSession() {
+export async function restoreSession(): Promise<void> {
   if (state.ready) return
 
   if (!state.token || isTokenExpired(state.token)) {
@@ -59,60 +66,65 @@ export async function restoreSession() {
   }
 
   try {
-    const payload = await fetchCurrentUser(state.token)
+    const payload = await fetchCurrentUser(state.token) as MeResponse
     setSession({ token: state.token, user: payload.user })
-  } catch (_error) {
+  } catch {
     logout()
   } finally {
     state.ready = true
   }
 }
 
-export async function signIn({ email, password }) {
-  const payload = await loginUser({ email, password })
+export async function signIn({ email, password }: { email: string; password: string }): Promise<User> {
+  const payload = await loginUser({ email, password }) as AuthResponse
   setSession({ token: extractToken(payload), user: payload?.user || null })
   return payload.user
 }
 
-export async function signUp({ email, password, age, region, securityQuestion, securityAnswer, assessmentAnswers }) {
-  const payload = await registerUser({
-    email,
-    password,
-    age,
-    region,
-    securityQuestion,
-    securityAnswer,
-    assessmentAnswers,
-  })
+export async function signUp(params: {
+  email: string
+  password: string
+  age: number
+  region: string
+  securityQuestion: string
+  securityAnswer: string
+  assessmentAnswers: Record<string, string>
+}): Promise<User> {
+  const payload = await registerUser(params) as AuthResponse
   setSession({ token: extractToken(payload), user: payload?.user || null })
   return payload.user
 }
 
-export async function resetPassword({ email, securityQuestion, securityAnswer, newPassword }) {
-  return confirmPasswordReset({ email, securityQuestion, securityAnswer, newPassword })
+export async function resetPassword(params: {
+  email: string
+  securityQuestion: string
+  securityAnswer: string
+  newPassword: string
+}): Promise<unknown> {
+  return confirmPasswordReset(params)
 }
 
-export async function saveProfile({ age, region }) {
+export async function saveProfile(params: { age?: number; region?: string }): Promise<User> {
   if (!state.token || !state.user) {
     throw new Error('Profile editing is unavailable for this session')
   }
 
-  const payload = await updateCurrentUserProfile(state.token, { age, region })
+  const payload = await updateCurrentUserProfile(state.token, params) as MeResponse
   setSession({ token: state.token, user: payload.user })
   return payload.user
 }
 
-export async function saveSensitiveProfile({ email, newPassword, securityQuestion, securityAnswer }) {
+export async function saveSensitiveProfile(params: {
+  email?: string
+  newPassword?: string
+  securityQuestion?: string
+  securityAnswer?: string
+}): Promise<User> {
   if (!state.token || !state.user) {
     throw new Error('Credential editing is unavailable for this session')
   }
 
-  const payload = await updateCurrentUserSensitiveProfile(state.token, {
-    email,
-    newPassword,
-    securityQuestion,
-    securityAnswer,
-  })
+  const payload = await updateCurrentUserSensitiveProfile(state.token, params) as MeResponse
   setSession({ token: state.token, user: payload.user })
   return payload.user
 }

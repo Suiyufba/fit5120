@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "ignoreDeprecations": "6.0",
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "hikeshield-shared": ["../shared/dist/index.d.ts"],
+      "hikeshield-shared/*": ["../shared/dist/*"]
+    }
+  },
+  "include": ["src/**/*.js"],
+  "exclude": ["node_modules", "dist", "src/**/*.test.js", "src/shared/**", "src/modules/*/repositories/*", "src/modules/auth/**", "src/infrastructure/**", "src/modules/routes/adapters/**", "src/modules/routes/services/routeGeographyService.js", "src/modules/routes/services/routeNarrationService.js", "src/modules/knowledge/**", "src/modules/locations/**", "src/modules/communityReports/**", "src/controllers/**", "src/routes/**", "src/server.js"]
+}

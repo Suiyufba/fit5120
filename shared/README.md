@@ -1,8 +1,59 @@
-# shared
+# HikeShield Shared Types
 
-Optional shared package for common types and utilities.
+TypeScript type definitions shared across the monorepo. **Types only** — no
+runtime code is emitted.
 
-## Suggested Next Step
+## Usage
 
-- Add `types/hazard.ts`
-- Add validation helpers for upstream feed normalization
+### In the backend (Node.js with `--checkJs`)
+
+Add a JSDoc type import in any `.js` file:
+
+```js
+/** @type {import('hikeshield-shared').RoutePayload} */
+const payload = toRoutePayload(route);
+```
+
+Or use inline type casts:
+
+```js
+/**
+ * @param {import('hikeshield-shared').PlanRouteRequest} req
+ * @returns {Promise<import('hikeshield-shared').PlanRouteResponse>}
+ */
+export async function planSaferRoute(req) { ... }
+```
+
+### In the frontend (Vite)
+
+Vite resolves TypeScript `.d.ts` files natively. Import types directly
+in `<script setup lang="ts">` or `.ts` service files:
+
+```ts
+import type { PlanRouteResponse, RoutePayload } from 'hikeshield-shared';
+
+export async function planSafeRoute(
+  params: PlanRouteRequest,
+): Promise<PlanRouteResponse> { ... }
+```
+
+### Standalone type-check
+
+```bash
+npm --workspace shared run typecheck
+```
+
+## Build
+
+```bash
+npm --workspace shared run build    # emits dist/*.d.ts
+```
+
+## Module Map
+
+| Module | Exports |
+|--------|---------|
+| `hazard.ts` | `Hazard`, `HazardSeverity`, `HazardType`, `HazardSourceStatus`, `HazardMeta`, `HazardSnapshot`, `HazardApiResponse` |
+| `route.ts` | `Coordinate`, `RouteGeometry`, `GeographyProfile`, `KeyRisk`, `ZoneSummary`, `NoGoReasons`, `ScoringBreakdown`, `UserLevel`, `Difficulty`, `RiskLevel`, `SafetyStatus`, `GoNoGo`, `RouteCandidate`, `RoutePayload`, `RouteOption` |
+| `api.ts` | `ApiError`, `PlanRouteRequest`, `PlanRouteResponse`, `RoutePlanHistoryItem`, `RoutePlanHistoryResponse`, `DeleteRoutePlanHistoryResponse`, `ClearRoutePlanHistoryResponse`, `HazardQueryParams` |
+| `auth.ts` | `User`, `RegisterRequest`, `LoginRequest`, `PasswordResetRequest`, `UpdateProfileRequest`, `UpdateSensitiveProfileRequest`, `AuthResponse`, `MeResponse` |

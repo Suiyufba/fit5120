@@ -126,7 +126,7 @@ export function estimateHikingDurationMin({
   userLevel = 'newcomer',
   fallbackSpeedKmh = FALLBACK_SPEED_KMH,
   floorMin = 0,
-} = {}) {
+} = /** @type {any} */ ({})) {
   const distance = Math.max(Number(distanceKm) || 0, 0);
   if (distance === 0) {
     return Number(Math.max(floorMin, 0).toFixed(1));

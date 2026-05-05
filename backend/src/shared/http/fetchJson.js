@@ -26,6 +26,7 @@ export async function fetchJson(url, options = {}) {
         details = payload ? JSON.stringify(payload) : '';
       }
       const suffix = details ? `: ${details.slice(0, 500)}` : '';
+      /** @type {Error & { status?: number, responseBody?: string }} */
       const error = new Error(`HTTP ${response.status} from ${url}${suffix}`);
       error.status = response.status;
       error.responseBody = details;

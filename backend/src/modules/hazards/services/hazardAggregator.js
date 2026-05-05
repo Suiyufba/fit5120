@@ -71,6 +71,12 @@ async function pullProviders() {
   };
 }
 
+/**
+ * Pull hazards from all upstream providers and merge into a deduplicated
+ * snapshot. Updates both in-memory state and Postgres (if configured).
+ *
+ * @returns {Promise<import('hikeshield-shared').HazardSnapshot>}
+ */
 export async function refreshHazardSnapshot() {
   try {
     latestSnapshot = await pullProviders();
@@ -82,6 +88,17 @@ export async function refreshHazardSnapshot() {
   return latestSnapshot;
 }
 
+/**
+ * Return hazards scoped to a bounding-box request.
+ *
+ * Merges the latest upstream snapshot with manual hazards, then filters
+ * by layer type and geographic bounding box.
+ *
+ * @param {object} params
+ * @param {string | undefined} params.bboxParam
+ * @param {string | undefined} params.layersParam
+ * @returns {Promise<import('hikeshield-shared').HazardApiResponse>}
+ */
 export async function getHazardsForRequest({ bboxParam, layersParam }) {
   const bbox = parseBbox(bboxParam);
   const layers = parseLayers(layersParam, config.defaultLayers);
