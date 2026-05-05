@@ -796,7 +796,7 @@ export function scoreRouteCandidate({
 
   // Layer 3: Interaction Penalty
   const interactionPenalty = computeInteractionPenalty({
-    hazardTypes: [...new Set(hazards.map((h) => h.type))],
+    hazardTypes: [...new Set(hazardExposure.impacts.map((item) => item.hazard.type))],
     hazardImpacts: hazardExposure.impacts,
     geographyProfile,
     durationMin: route.durationMin || 0,
