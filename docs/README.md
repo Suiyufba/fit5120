@@ -21,6 +21,9 @@ Project documentation has been reorganized by domain for easier maintenance.
 
 ## Timeline (All Domains)
 
+### 2026-05-05
+- [frontend/route-detail-risk-score-display-cleanup-2026-05-05.md](./frontend/route-detail-risk-score-display-cleanup-2026-05-05.md)
+
 ### 2026-05-04
 - [fullstack/route-safety-status-and-gemini-context-2026-05-04.md](./fullstack/route-safety-status-and-gemini-context-2026-05-04.md)
 - [fullstack/route-planner-long-distance-validation-2026-05-04.md](./fullstack/route-planner-long-distance-validation-2026-05-04.md)

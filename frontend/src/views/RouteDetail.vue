@@ -842,7 +842,7 @@ onUnmounted(() => {
               <p class="route-picker__meta">
                 {{ option.distanceKm.toFixed(1) }} km · {{ formatDuration(option.durationMin) }}
               </p>
-              <p class="route-picker__risk">{{ option.riskLevel }} ({{ option.riskScore.toFixed(1) }})</p>
+              <p class="route-picker__risk">{{ option.riskLevel }}</p>
             </button>
           </div>
         </section>
@@ -851,7 +851,7 @@ onUnmounted(() => {
           <article><span>Distance</span><strong>{{ recommended.distanceKm.toFixed(1) }} km</strong></article>
           <article><span>How Long It Takes</span><strong>{{ formatDuration(recommended.durationMin) }}</strong></article>
           <article><span>Difficulty</span><strong>{{ recommended.slotDifficulty || recommended.difficulty }}</strong></article>
-          <article><span>Risk</span><strong>{{ recommended.riskLevel }} ({{ recommended.riskScore.toFixed(1) }})</strong></article>
+          <article><span>Risk</span><strong>{{ recommended.riskLevel }}</strong></article>
         </div>
 
         <div class="status-tag" :class="{ 'status-tag--danger': recommendedIsDangerous }">
