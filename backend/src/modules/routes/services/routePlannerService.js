@@ -38,10 +38,15 @@ function assertCoordinate(point, fieldName) {
   return { lat, lng };
 }
 
+const MIN_ROUTE_DIRECT_DISTANCE_M = 100;
+
 function assertRouteDistance(start, end) {
   const distanceKm = directDistanceKm(start, end);
   if (distanceKm > MAX_ROUTE_DIRECT_DISTANCE_KM) {
     throw new Error(`Start and destination are too far apart for hiking route planning. Choose two points within ${MAX_ROUTE_DIRECT_DISTANCE_KM} km of each other.`);
+  }
+  if (distanceKm * 1000 < MIN_ROUTE_DIRECT_DISTANCE_M) {
+    throw new Error('Start and destination are too close together. Choose two distinct points at least 100 m apart.');
   }
 }
 

@@ -186,21 +186,10 @@ function durationExposureScore(durationMin) {
   return clamp(90 + (Math.log1p(mins - 720) * 1.7));
 }
 
-function detourPenaltyScore(route, fastestRoute) {
-  const distanceKm = route.distanceKm || 0;
-  const durationMin = route.durationMin || 0;
-  const fastestDistance = Math.max(fastestRoute?.distanceKm || distanceKm || 1, 1);
-  const fastestDuration = Math.max(fastestRoute?.durationMin || durationMin || 1, 1);
-  const extraDistanceRatio = Math.max(0, (distanceKm - fastestDistance) / fastestDistance);
-  const extraDurationRatio = Math.max(0, (durationMin - fastestDuration) / fastestDuration);
-  return clamp((extraDistanceRatio * 55) + (extraDurationRatio * 65));
-}
-
-function routeBurdenScore(route, fastestRoute) {
+function routeBurdenScore(route) {
   const distanceScore = distanceEnduranceScore(route.distanceKm || 0);
   const durationScore = durationExposureScore(route.durationMin || 0);
-  const detourScore = detourPenaltyScore(route, fastestRoute);
-  return clamp((0.4 * distanceScore) + (0.45 * durationScore) + (0.15 * detourScore));
+  return clamp((0.47 * distanceScore) + (0.53 * durationScore));
 }
 
 function coverageZoneScore(coverageImpacts) {
@@ -301,7 +290,7 @@ function isOpenWeatherHazard(hazard) {
   return String(hazard.source || '').toLowerCase().includes('openweather') && WEATHER_TYPES.has(hazard.type);
 }
 
-function goNoGoDecision({ userLevel, riskScore, impacts, geographyProfile }) {
+function goNoGoDecision({ userLevel, riskScore, hazardImpacts, routeDistanceKm, routeDurationMin, geographyProfile }) {
   const thresholds = {
     newcomer: { score: 52, extremeDistanceKm: 2, maxDistanceKm: 30, maxDurationMin: 480 },
     intermediate: { score: 66, extremeDistanceKm: 1.5, maxDistanceKm: 45, maxDurationMin: 660 },
@@ -309,11 +298,11 @@ function goNoGoDecision({ userLevel, riskScore, impacts, geographyProfile }) {
   };
   const current = thresholds[userLevel] || thresholds.newcomer;
 
-  const hasExtremeTooClose = impacts.some(
+  const hasExtremeTooClose = hazardImpacts.some(
     (item) => item.hazard.severity === 'extreme' && item.distanceKm <= current.extremeDistanceKm
   );
-  const exceedsDistanceCap = (impacts.routeDistanceKm || 0) > current.maxDistanceKm;
-  const exceedsDurationCap = (impacts.routeDurationMin || 0) > current.maxDurationMin;
+  const exceedsDistanceCap = (routeDistanceKm || 0) > current.maxDistanceKm;
+  const exceedsDurationCap = (routeDurationMin || 0) > current.maxDurationMin;
   const hasRouteClosure = Number(geographyProfile?.closureCount || 0) > 0;
   const hasSevereCliffExposure = userLevel !== 'advanced' && Number(geographyProfile?.cliffExposureCount || 0) >= 2;
   const hasSteepTerrainForUser =
@@ -621,7 +610,7 @@ export function scoreRouteCandidate({
   const weatherAgg = topImpactAverage(hazards, geometry, (hazard) => isOpenWeatherHazard(hazard));
   const coverageImpacts = collectCoverageImpacts(hazards, geometry);
   const zoneExposure = coverageZoneScore(coverageImpacts);
-  const routeDifficultyScore = routeBurdenScore(route, fastestRoute);
+  const routeDifficultyScore = routeBurdenScore(route);
   const feasibilityScore = feasibilityPenaltyScore(route);
   const geographyScore = geographyRiskScore(geographyProfile);
   const rawWeighted = clamp(
@@ -638,10 +627,9 @@ export function scoreRouteCandidate({
   const goNoGoResult = goNoGoDecision({
     userLevel,
     riskScore: weightedTotal,
-    impacts: Object.assign([...hazardAgg.impacts], {
-      routeDistanceKm: route.distanceKm || 0,
-      routeDurationMin: route.durationMin || 0
-    }),
+    hazardImpacts: hazardAgg.impacts,
+    routeDistanceKm: route.distanceKm || 0,
+    routeDurationMin: route.durationMin || 0,
     geographyProfile,
   });
   const goNoGo = goNoGoResult.goNoGo;
