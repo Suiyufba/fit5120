@@ -4,6 +4,7 @@ End-to-end features that involve both frontend and backend changes.
 
 ## Feature Docs
 
+- [iteration-3-epic-6-7-user-stories-2026-05-05.md](./iteration-3-epic-6-7-user-stories-2026-05-05.md)
 - [route-safety-status-and-gemini-context-2026-05-04.md](./route-safety-status-and-gemini-context-2026-05-04.md)
 - [route-planner-long-distance-validation-2026-05-04.md](./route-planner-long-distance-validation-2026-05-04.md)
 - [route-planner-cors-network-resilience-2026-05-04.md](./route-planner-cors-network-resilience-2026-05-04.md)

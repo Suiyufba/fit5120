@@ -23,6 +23,7 @@ Project documentation has been reorganized by domain for easier maintenance.
 
 ### 2026-05-05
 - [frontend/route-detail-risk-score-display-cleanup-2026-05-05.md](./frontend/route-detail-risk-score-display-cleanup-2026-05-05.md)
+- [fullstack/iteration-3-epic-6-7-user-stories-2026-05-05.md](./fullstack/iteration-3-epic-6-7-user-stories-2026-05-05.md)
 
 ### 2026-05-04
 - [fullstack/route-safety-status-and-gemini-context-2026-05-04.md](./fullstack/route-safety-status-and-gemini-context-2026-05-04.md)
