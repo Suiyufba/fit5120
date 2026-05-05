@@ -764,14 +764,12 @@ function locatePlannerUser() {
 onMounted(() => {
   mapInstance = L.map(mapElement.value, {
     zoomControl: false,
-    attributionControl: true,
+    attributionControl: false,
     fadeAnimation: false,
     markerZoomAnimation: false,
     zoomAnimation: false,
   }).setView(VICTORIA_VIEW.center, VICTORIA_VIEW.zoom, { animate: false })
   applyVictoriaMapConstraints(mapInstance)
-
-  mapInstance.attributionControl.setPrefix(false)
   baseTileLayer = createLeafletBaseLayer(L, selectedMapStyle.value).addTo(mapInstance)
 
   markerLayer = L.layerGroup().addTo(mapInstance)
@@ -1687,11 +1685,6 @@ h1 {
   box-shadow: 0 8px 18px rgba(23, 59, 49, 0.22);
 }
 
-.planner-map :deep(.leaflet-control-attribution) {
-  font-size: 10px;
-  background: rgba(255, 255, 255, 0.58);
-}
-
 .planner-map :deep(.hs-map-popup .leaflet-popup-content-wrapper) {
   border: 1px solid rgba(33, 72, 59, 0.14);
   border-radius: 0.9rem;
@@ -1769,10 +1762,6 @@ h1 {
   .planner-map-style-switcher {
     right: 1.15rem;
     bottom: calc(var(--mobile-sheet-peek, 250px) + 1rem);
-  }
-
-  .planner-map :deep(.leaflet-control-attribution) {
-    display: none;
   }
 
   .route-options {
