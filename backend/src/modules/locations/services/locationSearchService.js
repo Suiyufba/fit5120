@@ -1,12 +1,16 @@
 import { fetchJson } from '../../../shared/http/fetchJson.js';
 
 const NOMINATIM_BASE_URL = 'https://nominatim.openstreetmap.org';
+const PHOTON_BASE_URL = 'https://photon.komoot.io';
+const SEARCH_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const SEARCH_CACHE_MAX_ITEMS = 120;
 const VICTORIA_BBOX = {
   minLat: -39.45,
   maxLat: -33.85,
   minLng: 140.85,
   maxLng: 150.05,
 };
+const searchCache = new Map();
 
 function inVictoria({ lat, lng }) {
   return lat >= VICTORIA_BBOX.minLat
@@ -48,11 +52,65 @@ function normalizeSearchResult(item) {
   };
 }
 
-export async function searchLocationsByText({ query, limit = 6 }) {
-  const q = String(query || '').trim();
-  if (!q) return [];
+function normalizePhotonResult(feature) {
+  const coordinates = feature?.geometry?.coordinates;
+  const lng = Number(coordinates?.[0]);
+  const lat = Number(coordinates?.[1]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (!inVictoria({ lat, lng })) return null;
 
-  const safeLimit = Math.max(1, Math.min(Number(limit) || 6, 10));
+  const properties = feature?.properties || {};
+  const parts = [
+    properties.name,
+    properties.street,
+    properties.district || properties.city || properties.county,
+    properties.state,
+    properties.country,
+  ]
+    .map((part) => String(part || '').trim())
+    .filter(Boolean);
+
+  return {
+    displayName: parts.length ? [...new Set(parts)].join(', ') : 'Unnamed location',
+    lat,
+    lng,
+  };
+}
+
+function dedupeAndLimit(items, limit) {
+  const seen = new Set();
+  return items
+    .filter(Boolean)
+    .filter((item) => {
+      const key = `${item.lat.toFixed(6)},${item.lng.toFixed(6)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, limit);
+}
+
+function getCachedSearch(cacheKey) {
+  const cached = searchCache.get(cacheKey);
+  if (!cached || Date.now() - cached.createdAt > SEARCH_CACHE_TTL_MS) {
+    searchCache.delete(cacheKey);
+    return null;
+  }
+  return cached.results;
+}
+
+function setCachedSearch(cacheKey, results) {
+  searchCache.set(cacheKey, {
+    createdAt: Date.now(),
+    results,
+  });
+  while (searchCache.size > SEARCH_CACHE_MAX_ITEMS) {
+    const oldestKey = searchCache.keys().next().value;
+    searchCache.delete(oldestKey);
+  }
+}
+
+async function searchNominatim(q, safeLimit) {
   const params = new URLSearchParams({
     q,
     format: 'jsonv2',
@@ -71,20 +129,59 @@ export async function searchLocationsByText({ query, limit = 6 }) {
     timeoutMs: 8000,
   });
 
-  const seen = new Set();
-  const normalized = Array.isArray(payload)
-    ? payload
-      .map(normalizeSearchResult)
-      .filter(Boolean)
-      .filter((item) => {
-        const key = `${item.lat.toFixed(6)},${item.lng.toFixed(6)}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
+  return Array.isArray(payload)
+    ? payload.map(normalizeSearchResult)
     : [];
+}
 
-  return normalized.slice(0, safeLimit);
+async function searchPhoton(q, safeLimit) {
+  const params = new URLSearchParams({
+    q,
+    limit: String(safeLimit * 2),
+    lat: '-37.8136',
+    lon: '144.9631',
+  });
+
+  const payload = await fetchJson(`${PHOTON_BASE_URL}/api/?${params.toString()}`, {
+    headers: {
+      Accept: 'application/json',
+      'User-Agent': 'HikeShield/1.0 (location-search)',
+    },
+    timeoutMs: 8000,
+  });
+
+  return Array.isArray(payload?.features)
+    ? payload.features.map(normalizePhotonResult)
+    : [];
+}
+
+export async function searchLocationsByText({ query, limit = 6 }) {
+  const q = String(query || '').trim();
+  if (!q) return [];
+
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 6, 10));
+  const cacheKey = `${q.toLowerCase()}|${safeLimit}`;
+  const cached = getCachedSearch(cacheKey);
+  if (cached) return cached;
+
+  let results = [];
+  try {
+    results = await searchNominatim(q, safeLimit);
+  } catch (_error) {
+    results = [];
+  }
+
+  if (!results.length) {
+    try {
+      results = await searchPhoton(q, safeLimit);
+    } catch (_error) {
+      results = [];
+    }
+  }
+
+  const normalized = dedupeAndLimit(results, safeLimit);
+  setCachedSearch(cacheKey, normalized);
+  return normalized;
 }
 
 export async function reverseLocation({ lat, lng }) {

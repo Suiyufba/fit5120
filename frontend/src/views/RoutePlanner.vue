@@ -72,6 +72,8 @@ let startReverseLookupController
 let endReverseLookupController
 let startReverseLookupRequestId = 0
 let endReverseLookupRequestId = 0
+let startSearchTimer
+let endSearchTimer
 
 const layerMeta = {
   fire: { label: 'Bushfire', color: '#D84727' },
@@ -176,13 +178,30 @@ function pointMatches(currentPoint, nextPoint) {
   return currentPoint.lat === nextPoint.lat && currentPoint.lng === nextPoint.lng
 }
 
-async function searchLocationOptions(type, query) {
+async function runLocationSearch(type, query, controller) {
+  try {
+    const results = await searchLocations(String(query || '').trim(), {
+      signal: controller.signal,
+      limit: 6,
+    })
+    if (type === 'start' && startSearchController === controller) startSuggestions.value = results
+    else if (type === 'end' && endSearchController === controller) endSuggestions.value = results
+  } catch (error) {
+    if (error?.name === 'AbortError') return
+    if (type === 'start' && startSearchController === controller) startSuggestions.value = []
+    else if (type === 'end' && endSearchController === controller) endSuggestions.value = []
+  }
+}
+
+function searchLocationOptions(type, query) {
   const text = String(query || '').trim()
   if (type === 'start') {
     startInput.value = query
+    if (startSearchTimer) window.clearTimeout(startSearchTimer)
     if (startSearchController) startSearchController.abort()
   } else {
     endInput.value = query
+    if (endSearchTimer) window.clearTimeout(endSearchTimer)
     if (endSearchController) endSearchController.abort()
   }
 
@@ -193,20 +212,13 @@ async function searchLocationOptions(type, query) {
   }
 
   const controller = new AbortController()
-  if (type === 'start') startSearchController = controller
-  else endSearchController = controller
-
-  try {
-    const results = await searchLocations(text, {
-      signal: controller.signal,
-      limit: 6,
-    })
-    if (type === 'start') startSuggestions.value = results
-    else endSuggestions.value = results
-  } catch (error) {
-    if (error?.name === 'AbortError') return
-    if (type === 'start') startSuggestions.value = []
-    else endSuggestions.value = []
+  const search = () => runLocationSearch(type, text, controller)
+  if (type === 'start') {
+    startSearchController = controller
+    startSearchTimer = window.setTimeout(search, 350)
+  } else {
+    endSearchController = controller
+    endSearchTimer = window.setTimeout(search, 350)
   }
 }
 
@@ -796,6 +808,8 @@ onMounted(() => {
 onUnmounted(() => {
   if (inflightController) inflightController.abort()
   if (historyInflightController) historyInflightController.abort()
+  if (startSearchTimer) window.clearTimeout(startSearchTimer)
+  if (endSearchTimer) window.clearTimeout(endSearchTimer)
   if (startSearchController) startSearchController.abort()
   if (endSearchController) endSearchController.abort()
   if (startReverseLookupController) startReverseLookupController.abort()
