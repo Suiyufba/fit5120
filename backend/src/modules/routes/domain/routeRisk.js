@@ -14,7 +14,6 @@ const TYPE_FACTOR = {
   other: 0.85
 };
 
-const WEATHER_TYPES = new Set(['heat', 'flood', 'storm']);
 const USER_RISK_FACTOR = {
   newcomer: 1.12,
   intermediate: 1.0,
@@ -98,18 +97,20 @@ function zoneLabel(level) {
   return 'Outside Risk Zone';
 }
 
-function toHazardImpact(hazard, distanceKm) {
+function toHazardImpact(hazard, distanceKm, now) {
   const base = SEVERITY_BASE[hazard.severity] ?? 20;
   const factor = TYPE_FACTOR[hazard.type] ?? TYPE_FACTOR.other;
-  const impact = base * distanceFactor(distanceKm) * factor * recencyFactor(hazard.updatedAt);
+  const impact = base * distanceFactor(distanceKm) * factor * recencyFactor(hazard.updatedAt, now);
   return clamp(impact);
 }
 
-function recencyFactor(updatedAt) {
+function recencyFactor(updatedAt, now = new Date()) {
   const ts = Date.parse(updatedAt || '');
   if (Number.isNaN(ts)) return 0.6;
 
-  const ageHours = Math.max(0, (Date.now() - ts) / (1000 * 60 * 60));
+  const referenceMs = now instanceof Date ? now.getTime() : Date.parse(now || '');
+  const nowMs = Number.isFinite(referenceMs) ? referenceMs : Date.now();
+  const ageHours = Math.max(0, (nowMs - ts) / (1000 * 60 * 60));
   if (ageHours <= 6) return 1.0;
   if (ageHours <= 24) return 0.85;
   if (ageHours <= 72) return 0.65;
@@ -119,7 +120,7 @@ function recencyFactor(updatedAt) {
   return 0;
 }
 
-function topImpactAverage(hazards, geometry, filterFn) {
+function topImpactAverage(hazards, geometry, filterFn, now) {
   const impacts = hazards
     .filter(filterFn)
     .map((hazard) => {
@@ -127,7 +128,7 @@ function topImpactAverage(hazards, geometry, filterFn) {
       return {
         hazard,
         distanceKm,
-        impact: toHazardImpact(hazard, distanceKm)
+        impact: toHazardImpact(hazard, distanceKm, now)
       };
     })
     .filter((item) => Number.isFinite(item.distanceKm) && item.distanceKm <= 8 && item.impact > 0)
@@ -149,7 +150,7 @@ function topImpactAverage(hazards, geometry, filterFn) {
   };
 }
 
-function collectCoverageImpacts(hazards, geometry, filterFn = () => true) {
+function collectCoverageImpacts(hazards, geometry, filterFn = () => true, now) {
   return hazards
     .filter(filterFn)
     .map((hazard) => {
@@ -159,7 +160,7 @@ function collectCoverageImpacts(hazards, geometry, filterFn = () => true) {
         hazard,
         distanceKm,
         zoneLevel,
-        impact: toHazardImpact(hazard, distanceKm)
+        impact: toHazardImpact(hazard, distanceKm, now)
       };
     })
     .filter((item) => Number.isFinite(item.distanceKm) && item.zoneLevel > 0)
@@ -224,30 +225,6 @@ function terrainPenalty(surfaceType, trailCondition) {
   return clamp(score, 0, 30);
 }
 
-function geographyRiskScore(geographyProfile) {
-  if (!geographyProfile) return 0;
-
-  const ascentScore = clamp((Number(geographyProfile.totalAscentM || 0) / 1400) * 100);
-  const descentScore = clamp((Number(geographyProfile.totalDescentM || 0) / 1600) * 100);
-  const slopeScore = clamp((Number(geographyProfile.maxSlopePct || 0) / 35) * 100);
-  const exposureScore = clamp(
-    (Number(geographyProfile.riverCrossingCount || 0) * 10)
-    + (Number(geographyProfile.cliffExposureCount || 0) * 14)
-    + (Number(geographyProfile.closureCount || 0) * 28),
-    0,
-    100
-  );
-  const terrainScore = terrainPenalty(geographyProfile.surfaceType, geographyProfile.trailCondition);
-
-  return clamp(
-    (0.22 * ascentScore)
-    + (0.12 * descentScore)
-    + (0.28 * slopeScore)
-    + (0.28 * exposureScore)
-    + (0.10 * terrainScore)
-  );
-}
-
 function riskLevelByScore(score) {
   if (score >= 85) return 'Extreme';
   if (score >= 65) return 'High';
@@ -284,10 +261,6 @@ function difficultyLabel(burdenScore, geographyProfile = null) {
   if (composite >= 72) return 'Hard';
   if (composite >= 38) return 'Moderate';
   return 'Easy';
-}
-
-function isOpenWeatherHazard(hazard) {
-  return String(hazard.source || '').toLowerCase().includes('openweather') && WEATHER_TYPES.has(hazard.type);
 }
 
 function goNoGoDecision({ userLevel, riskScore, hazardImpacts, routeDistanceKm, routeDurationMin, geographyProfile }) {
@@ -408,6 +381,23 @@ function seasonFromDate(date = new Date()) {
   if ([2, 3, 4].includes(month)) return 'autumn';
   if ([5, 6, 7].includes(month)) return 'winter';
   return 'spring';
+}
+
+function computeDayMinutes(lat, lng, date) {
+  const d = date instanceof Date ? date : new Date(date);
+  const janFirst = new Date(d.getFullYear(), 0, 1);
+  const dayOfYear = Math.floor((d - janFirst) / (1000 * 60 * 60 * 24)) + 1;
+  const latRad = toRad(lat);
+  const declination = toRad(23.45) * Math.sin(toRad((360 / 365) * (dayOfYear - 81)));
+  const ha = Math.acos(
+    clamp((-Math.sin(toRad(-0.83)) - Math.sin(latRad) * Math.sin(declination))
+      / (Math.cos(latRad) * Math.cos(declination)), -1, 1)
+  );
+  const solarNoonUtcMinutes = 12 * 60 - (lng / 15) * 60;
+  const daylightHalfMinutes = (ha / (2 * Math.PI)) * 24 * 60;
+  const sunsetUtcMinutes = solarNoonUtcMinutes + daylightHalfMinutes;
+  const tzOffsetHours = -d.getTimezoneOffset() / 60;
+  return ((sunsetUtcMinutes / 60) + tzOffsetHours + 24) % 24;
 }
 
 function isVictorianRegion(region = '') {
@@ -596,6 +586,162 @@ export function buildSuggestedPrep({
   return tips.slice(0, maxTips).map((tip) => tip.text);
 }
 
+// ── Layer 1: Base Risk ──────────────────────────────────────────
+
+function computeHazardExposure(hazards, geometry, now) {
+  const allImpacts = hazards
+    .map((hazard) => {
+      const distanceKm = distanceToRouteKm(hazard.coordinates, geometry);
+      return {
+        hazard,
+        distanceKm,
+        impact: toHazardImpact(hazard, distanceKm, now),
+      };
+    })
+    .filter((item) => Number.isFinite(item.distanceKm) && item.distanceKm <= 8 && item.impact > 0)
+    .sort((a, b) => b.impact - a.impact);
+
+  const top6 = allImpacts.slice(0, 6);
+
+  if (!top6.length) {
+    return { score: 0, impacts: [], diversityBoost: 1 };
+  }
+
+  const uniqueTypes = new Set(top6.map((item) => item.hazard.type)).size;
+  const diversityBoost = 1 + (uniqueTypes / 6) * 0.35;
+
+  const avg = top6.reduce((sum, item) => sum + item.impact, 0) / top6.length;
+  return {
+    score: Number(clamp(avg * Math.min(1.65, diversityBoost)).toFixed(1)),
+    impacts: top6,
+    diversityBoost: Number(diversityBoost.toFixed(2)),
+  };
+}
+
+function computeRouteEffort(route, geographyProfile) {
+  const burdenScore = routeBurdenScore(route);
+  const ascentScore = clamp((Number(geographyProfile?.totalAscentM || 0) / 1400) * 100);
+  const slopeScore = clamp((Number(geographyProfile?.maxSlopePct || 0) / 35) * 100);
+  const elevationFatigue = clamp(0.6 * ascentScore + 0.4 * slopeScore);
+
+  return {
+    score: Number(clamp(0.55 * burdenScore + 0.45 * elevationFatigue).toFixed(1)),
+    burdenScore: Number(burdenScore.toFixed(1)),
+    elevationFatigue: Number(elevationFatigue.toFixed(1)),
+  };
+}
+
+function computeTerrainDanger(geometry, hazards, geographyProfile, now) {
+  const coverageImpacts = collectCoverageImpacts(hazards, geometry, () => true, now);
+  const zoneCoverage = coverageZoneScore(coverageImpacts);
+
+  const terrainSurface = terrainPenalty(
+    geographyProfile?.surfaceType,
+    geographyProfile?.trailCondition,
+  );
+
+  const exposureCounts = clamp(
+    (Number(geographyProfile?.riverCrossingCount || 0) * 10)
+    + (Number(geographyProfile?.cliffExposureCount || 0) * 14)
+    + (Number(geographyProfile?.closureCount || 0) * 28),
+    0,
+    100,
+  );
+
+  return {
+    score: Number(clamp(0.40 * zoneCoverage + 0.30 * terrainSurface + 0.30 * exposureCounts).toFixed(1)),
+    zoneCoverage: Number(zoneCoverage.toFixed(1)),
+    terrainSurface: Number(terrainSurface.toFixed(1)),
+    exposureCounts: Number(exposureCounts.toFixed(1)),
+    coverageImpacts,
+  };
+}
+
+// ── Layer 2: Environmental Multiplier ───────────────────────────
+
+function computeEnvMultiplier({ lat, lng, now, durationMin, season, maxFeelsLike }) {
+  const sunsetHour = computeDayMinutes(lat, lng, now);
+  const nowDate = now instanceof Date ? now : new Date(now);
+  const nowHour = nowDate.getHours() + nowDate.getMinutes() / 60;
+  const finishHour = nowHour + (durationMin || 0) / 60;
+  const daylightGap = finishHour - sunsetHour;
+
+  let sunAdjust = 0;
+  if (daylightGap < -2) sunAdjust = -0.10;
+  else if (daylightGap < 0) sunAdjust = 0;
+  else if (daylightGap < 0.5) sunAdjust = 0.08;
+  else if (daylightGap < 1) sunAdjust = 0.15;
+  else sunAdjust = 0.22;
+
+  const seasonMap = { summer: 0.10, autumn: -0.05, winter: 0.06, spring: 0.00 };
+  const seasonAdjust = seasonMap[season] || 0;
+
+  let tempAdjust = 0;
+  const t = Number(maxFeelsLike);
+  if (Number.isFinite(t)) {
+    if (t < 5) tempAdjust = 0.06;
+    else if (t < 30) tempAdjust = 0;
+    else if (t < 35) tempAdjust = 0.04;
+    else if (t < 38) tempAdjust = 0.08;
+    else if (t < 42) tempAdjust = 0.14;
+    else tempAdjust = 0.20;
+  }
+
+  const multiplier = clamp(1.0 + sunAdjust + seasonAdjust + tempAdjust, 0.70, 1.40);
+
+  return {
+    multiplier: Number(multiplier.toFixed(2)),
+    sunAdjust: Number(sunAdjust.toFixed(2)),
+    seasonAdjust: Number(seasonAdjust.toFixed(2)),
+    tempAdjust: Number(tempAdjust.toFixed(2)),
+    sunsetHour: Number(sunsetHour.toFixed(1)),
+    finishHour: Number(finishHour.toFixed(1)),
+  };
+}
+
+// ── Layer 3: Interaction Penalty ────────────────────────────────
+
+function computeInteractionPenalty({
+  hazardTypes,
+  hazardImpacts,
+  geographyProfile,
+  durationMin,
+  sunsetHour,
+  finishHour,
+  maxFeelsLike,
+  candidateCount,
+}) {
+  let penalty = 0;
+  const types = new Set(hazardTypes);
+
+  const hasFire = types.has('fire');
+  const hasStorm = types.has('storm');
+  const hasFlood = types.has('flood');
+  const hasHeat = types.has('heat');
+  const maxSlope = Number(geographyProfile?.maxSlopePct || 0);
+  const cliffCount = Number(geographyProfile?.cliffExposureCount || 0);
+  const riverCount = Number(geographyProfile?.riverCrossingCount || 0);
+  const closureCount = Number(geographyProfile?.closureCount || 0);
+  const finishAfterSunset = finishHour > sunsetHour;
+
+  if (hasFire && hasStorm) penalty += 12;
+  if ((hasFlood || hasStorm) && maxSlope >= 22) penalty += 10;
+  if (hasHeat && durationMin >= 180) penalty += 8;
+  if (closureCount > 0 && candidateCount <= 1) penalty += 10;
+  if (hasFire && hazardImpacts.some((item) => item.hazard.type === 'fire' && item.distanceKm <= 1)) penalty += 8;
+  if (types.size >= 2) {
+    const nearHazards = hazardImpacts.filter((item) => item.distanceKm <= 1);
+    const nearTypes = new Set(nearHazards.map((item) => item.hazard.type));
+    if (nearTypes.size >= 2) penalty += 6;
+  }
+  if (finishAfterSunset && (cliffCount > 0 || riverCount > 0)) penalty += 8;
+  if (Number.isFinite(maxFeelsLike) && maxFeelsLike < 2 && (hasFlood || hasStorm)) penalty += 6;
+
+  return clamp(penalty, 0, 30);
+}
+
+// ── Main Scoring ────────────────────────────────────────────────
+
 export function scoreRouteCandidate({
   route,
   hazards,
@@ -604,30 +750,57 @@ export function scoreRouteCandidate({
   fastestRoute,
   geographyProfile = null,
   now = new Date(),
+  maxFeelsLike = null,
+  candidateCount = 1,
 }) {
   const geometry = route.geometry || [];
-  const hazardAgg = topImpactAverage(hazards, geometry, () => true);
-  const weatherAgg = topImpactAverage(hazards, geometry, (hazard) => isOpenWeatherHazard(hazard));
-  const coverageImpacts = collectCoverageImpacts(hazards, geometry);
-  const zoneExposure = coverageZoneScore(coverageImpacts);
-  const routeDifficultyScore = routeBurdenScore(route);
-  const feasibilityScore = feasibilityPenaltyScore(route);
-  const geographyScore = geographyRiskScore(geographyProfile);
-  const rawWeighted = clamp(
-    (0.34 * hazardAgg.score)
-    + (0.12 * weatherAgg.score)
-    + (0.18 * zoneExposure)
-    + (0.16 * routeDifficultyScore)
-    + (0.20 * geographyScore)
-    + feasibilityScore
+  const midpoint = geometry.length
+    ? geometry[Math.floor(geometry.length / 2)]
+    : [-37.81, 144.96];
+
+  // Layer 1: Base Risk
+  const hazardExposure = computeHazardExposure(hazards, geometry, now);
+  const routeEffort = computeRouteEffort(route, geographyProfile);
+  const terrainDanger = computeTerrainDanger(geometry, hazards, geographyProfile, now);
+
+  const baseRisk = clamp(
+    0.40 * hazardExposure.score
+    + 0.30 * routeEffort.score
+    + 0.30 * terrainDanger.score,
   );
+
+  // Layer 2: Environmental Multiplier
+  const season = seasonFromDate(now);
+  const env = computeEnvMultiplier({
+    lat: midpoint[0],
+    lng: midpoint[1],
+    now,
+    durationMin: route.durationMin || 0,
+    season,
+    maxFeelsLike,
+  });
+
+  // Layer 3: Interaction Penalty
+  const interactionPenalty = computeInteractionPenalty({
+    hazardTypes: [...new Set(hazards.map((h) => h.type))],
+    hazardImpacts: hazardExposure.impacts,
+    geographyProfile,
+    durationMin: route.durationMin || 0,
+    sunsetHour: env.sunsetHour,
+    finishHour: env.finishHour,
+    maxFeelsLike,
+    candidateCount,
+  });
+
+  const rawWeighted = clamp(baseRisk * env.multiplier + interactionPenalty);
   const profileFactor = USER_RISK_FACTOR[userLevel] || USER_RISK_FACTOR.newcomer;
   const weightedTotal = clamp(rawWeighted * profileFactor);
 
+  // Go/No-Go
   const goNoGoResult = goNoGoDecision({
     userLevel,
     riskScore: weightedTotal,
-    hazardImpacts: hazardAgg.impacts,
+    hazardImpacts: hazardExposure.impacts,
     routeDistanceKm: route.distanceKm || 0,
     routeDurationMin: route.durationMin || 0,
     geographyProfile,
@@ -637,6 +810,8 @@ export function scoreRouteCandidate({
   const adjustedWeightedTotal = clamp(Math.max(weightedTotal, noGoFloorScore));
   const riskLevel = riskLevelByScore(adjustedWeightedTotal);
 
+  // Key risks
+  const coverageImpacts = terrainDanger.coverageImpacts;
   const keyRisks = coverageImpacts.slice(0, 3).map((item) => ({
     id: item.hazard.id,
     title: item.hazard.title,
@@ -649,19 +824,19 @@ export function scoreRouteCandidate({
     advice: riskAdviceByType({
       type: item.hazard.type,
       severity: item.hazard.severity,
-      distanceKm: item.distanceKm
-    })
+      distanceKm: item.distanceKm,
+    }),
   }));
 
   const explanation = buildExplanation({
     chosenRoute: route,
     fastestRoute,
-    topHazards: hazardAgg.impacts.slice(0, 2),
+    topHazards: hazardExposure.impacts.slice(0, 2),
     goNoGo,
     geographyProfile,
   });
 
-  const difficulty = difficultyLabel(routeDifficultyScore, geographyProfile);
+  const difficulty = difficultyLabel(routeEffort.burdenScore, geographyProfile);
 
   return {
     ...route,
@@ -677,7 +852,7 @@ export function scoreRouteCandidate({
     zoneSummary: {
       level1Count: coverageImpacts.filter((item) => item.zoneLevel === 1).length,
       level2Count: coverageImpacts.filter((item) => item.zoneLevel === 2).length,
-      level3Count: coverageImpacts.filter((item) => item.zoneLevel === 3).length
+      level3Count: coverageImpacts.filter((item) => item.zoneLevel === 3).length,
     },
     suggestedPrep: buildSuggestedPrep({
       route,
@@ -691,17 +866,28 @@ export function scoreRouteCandidate({
       now,
     }),
     scoringBreakdown: {
-      hazardScore: Number(hazardAgg.score.toFixed(1)),
-      weatherScore: Number(weatherAgg.score.toFixed(1)),
-      zoneExposureScore: Number(zoneExposure.toFixed(1)),
-      difficultyScore: Number(routeDifficultyScore.toFixed(1)),
-      geographyScore: Number(geographyScore.toFixed(1)),
-      feasibilityScore: Number(feasibilityScore.toFixed(1)),
+      baseRisk: Number(baseRisk.toFixed(1)),
+      hazardExposure: hazardExposure.score,
+      diversityBoost: hazardExposure.diversityBoost,
+      routeEffort: routeEffort.score,
+      burdenScore: routeEffort.burdenScore,
+      elevationFatigue: routeEffort.elevationFatigue,
+      terrainDanger: terrainDanger.score,
+      zoneCoverage: terrainDanger.zoneCoverage,
+      terrainSurface: terrainDanger.terrainSurface,
+      exposureCounts: terrainDanger.exposureCounts,
+      envMultiplier: env.multiplier,
+      sunAdjust: env.sunAdjust,
+      seasonAdjust: env.seasonAdjust,
+      tempAdjust: env.tempAdjust,
+      sunsetHour: env.sunsetHour,
+      finishHour: env.finishHour,
+      interactionPenalty: Number(interactionPenalty.toFixed(1)),
       baseWeightedTotal: Number(rawWeighted.toFixed(1)),
       profileFactor: Number(profileFactor.toFixed(2)),
       weightedTotal: Number(adjustedWeightedTotal.toFixed(1)),
       noGoFloorScore: Number(noGoFloorScore.toFixed(1)),
-    }
+    },
   };
 }
 
@@ -737,3 +923,12 @@ export function buildDetourWaypointCandidates(start, end) {
 
   return candidates;
 }
+
+export const __testing_risk__ = {
+  computeDayMinutes,
+  computeEnvMultiplier,
+  computeInteractionPenalty,
+  computeHazardExposure,
+  computeRouteEffort,
+  computeTerrainDanger,
+};

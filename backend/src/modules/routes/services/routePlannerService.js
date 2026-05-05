@@ -263,6 +263,11 @@ export async function planSaferRoute({ userId, start, end, now = new Date() }) {
 
   const hazards = await loadLatestHazards();
 
+  const maxFeelsLike = hazards.reduce((max, hazard) => {
+    const temp = Number(hazard.feelsLike);
+    return Number.isFinite(temp) && (max === null || temp > max) ? temp : max;
+  }, null);
+
   const candidatesWithGeography = await Promise.all(
     candidates.map(async (route) => {
       const geographyProfile = await getRouteGeographyProfileForRoute(route);
@@ -283,6 +288,8 @@ export async function planSaferRoute({ userId, start, end, now = new Date() }) {
       fastestRoute,
       geographyProfile,
       now,
+      maxFeelsLike,
+      candidateCount: candidatesWithGeography.length,
     }),
   );
 

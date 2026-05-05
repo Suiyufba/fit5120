@@ -48,6 +48,8 @@ export async function fetchBomHazards() {
     const feelsLike = Number(main.feels_like);
     const temp = Number(main.temp);
 
+    const roundedFeelsLike = Number.isFinite(feelsLike) ? Math.round(feelsLike) : undefined;
+
     if (Number.isFinite(feelsLike) && feelsLike >= 38) {
       hazards.push(
         sanitizeHazard({
@@ -60,7 +62,8 @@ export async function fetchBomHazards() {
           source: 'OpenWeather',
           sourceUrl: `https://openweathermap.org/city/${weather?.id || ''}`,
           updatedAt,
-          coordinates: [point.lat, point.lon]
+          coordinates: [point.lat, point.lon],
+          feelsLike: roundedFeelsLike,
         })
       );
     }
@@ -77,7 +80,8 @@ export async function fetchBomHazards() {
           source: 'OpenWeather',
           sourceUrl: `https://openweathermap.org/city/${weather?.id || ''}`,
           updatedAt,
-          coordinates: [point.lat, point.lon]
+          coordinates: [point.lat, point.lon],
+          feelsLike: roundedFeelsLike,
         })
       );
     }
@@ -94,7 +98,8 @@ export async function fetchBomHazards() {
           source: 'OpenWeather',
           sourceUrl: `https://openweathermap.org/city/${weather?.id || ''}`,
           updatedAt,
-          coordinates: [point.lat, point.lon]
+          coordinates: [point.lat, point.lon],
+          feelsLike: roundedFeelsLike,
         })
       );
     }
@@ -111,7 +116,8 @@ export async function fetchBomHazards() {
           source: 'OpenWeather',
           sourceUrl: `https://openweathermap.org/city/${weather?.id || ''}`,
           updatedAt,
-          coordinates: [point.lat, point.lon]
+          coordinates: [point.lat, point.lon],
+          feelsLike: roundedFeelsLike,
         })
       );
     }

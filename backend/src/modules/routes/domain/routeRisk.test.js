@@ -119,14 +119,14 @@ test('recent hazard has higher influence than stale hazard', () => {
     hazards: [recentHazard],
     userLevel: 'intermediate',
     fastestRoute: baseRoute
-  }).scoringBreakdown.hazardScore;
+  }).scoringBreakdown.hazardExposure;
 
   const staleScore = scoreRouteCandidate({
     route: baseRoute,
     hazards: [staleHazard],
     userLevel: 'intermediate',
     fastestRoute: baseRoute
-  }).scoringBreakdown.hazardScore;
+  }).scoringBreakdown.hazardExposure;
 
   assert.ok(recentScore > staleScore);
 });
@@ -449,4 +449,211 @@ test('geography profile raises risk when route has steep slopes and closures', (
 
   assert.ok(steep.riskScore > flat.riskScore);
   assert.equal(steep.goNoGo, 'No-Go');
+});
+
+// ── Three-Layer Model Tests ─────────────────────────────────────
+
+test('computeDayMinutes returns summer sunset after 7pm and winter sunset before 6pm for Melbourne', async () => {
+  const { __testing_risk__ } = await import('./routeRisk.js');
+  const { computeDayMinutes } = __testing_risk__;
+
+  const melbourneLat = -37.81;
+  const melbourneLng = 144.96;
+
+  const summerSunset = computeDayMinutes(melbourneLat, melbourneLng, new Date('2026-01-15T05:00:00Z'));
+  const winterSunset = computeDayMinutes(melbourneLat, melbourneLng, new Date('2026-07-15T05:00:00Z'));
+
+  assert.ok(summerSunset > 19, `Summer sunset should be after 7pm, got ${summerSunset}`);
+  assert.ok(winterSunset < 18, `Winter sunset should be before 6pm, got ${winterSunset}`);
+});
+
+test('computeEnvMultiplier is near or below 1.0 for ideal conditions', async () => {
+  const { __testing_risk__ } = await import('./routeRisk.js');
+  const { computeEnvMultiplier } = __testing_risk__;
+
+  const result = computeEnvMultiplier({
+    lat: -37.81, lng: 144.96,
+    now: new Date('2026-04-15T02:00:00Z'), // 1pm Melbourne, autumn
+    durationMin: 120,
+    season: 'autumn',
+    maxFeelsLike: 22,
+  });
+
+  assert.ok(result.multiplier <= 1.0, `ideal conditions should not amplify risk, got ${result.multiplier}`);
+  assert.equal(result.seasonAdjust, -0.05);
+});
+
+test('computeEnvMultiplier caps at 1.40 for extreme conditions', async () => {
+  const { __testing_risk__ } = await import('./routeRisk.js');
+  const { computeEnvMultiplier } = __testing_risk__;
+
+  const result = computeEnvMultiplier({
+    lat: -37.81, lng: 144.96,
+    now: new Date('2026-01-15T09:00:00Z'), // 8pm Melbourne, summer
+    durationMin: 180,
+    season: 'summer',
+    maxFeelsLike: 44,
+  });
+
+  assert.equal(result.multiplier, 1.40);
+  assert.ok(result.sunAdjust > 0.10, 'finishing after sunset should penalize');
+  assert.ok(result.tempAdjust > 0.10, 'extreme heat should penalize');
+});
+
+test('computeInteractionPenalty adds for fire + storm combo', async () => {
+  const { __testing_risk__ } = await import('./routeRisk.js');
+  const { computeInteractionPenalty } = __testing_risk__;
+
+  const result = computeInteractionPenalty({
+    hazardTypes: ['fire', 'storm'],
+    hazardImpacts: [],
+    geographyProfile: {},
+    durationMin: 120,
+    sunsetHour: 20,
+    finishHour: 16,
+    maxFeelsLike: 25,
+    candidateCount: 2,
+  });
+
+  assert.ok(result >= 12, `fire+storm should add >=12, got ${result}`);
+});
+
+test('computeInteractionPenalty adds for rain + steep slope', async () => {
+  const { __testing_risk__ } = await import('./routeRisk.js');
+  const { computeInteractionPenalty } = __testing_risk__;
+
+  const result = computeInteractionPenalty({
+    hazardTypes: ['flood'],
+    hazardImpacts: [],
+    geographyProfile: { maxSlopePct: 25 },
+    durationMin: 120,
+    sunsetHour: 20,
+    finishHour: 16,
+    maxFeelsLike: 25,
+    candidateCount: 2,
+  });
+
+  assert.ok(result >= 10, `rain+steep should add >=10, got ${result}`);
+});
+
+test('computeInteractionPenalty is zero with no interacting conditions', async () => {
+  const { __testing_risk__ } = await import('./routeRisk.js');
+  const { computeInteractionPenalty } = __testing_risk__;
+
+  const result = computeInteractionPenalty({
+    hazardTypes: ['trail'],
+    hazardImpacts: [],
+    geographyProfile: { maxSlopePct: 10 },
+    durationMin: 120,
+    sunsetHour: 20,
+    finishHour: 16,
+    maxFeelsLike: 22,
+    candidateCount: 3,
+  });
+
+  assert.equal(result, 0);
+});
+
+test('computeInteractionPenalty caps at 30', async () => {
+  const { __testing_risk__ } = await import('./routeRisk.js');
+  const { computeInteractionPenalty } = __testing_risk__;
+
+  const result = computeInteractionPenalty({
+    hazardTypes: ['fire', 'storm', 'flood', 'heat'],
+    hazardImpacts: [
+      { hazard: { type: 'fire' }, distanceKm: 0.5 },
+      { hazard: { type: 'flood' }, distanceKm: 0.8 },
+    ],
+    geographyProfile: { maxSlopePct: 25, cliffExposureCount: 1, closureCount: 1 },
+    durationMin: 200,
+    sunsetHour: 20,
+    finishHour: 22,
+    maxFeelsLike: 0,
+    candidateCount: 1,
+  });
+
+  assert.equal(result, 30);
+});
+
+test('computeHazardExposure gives higher diversity boost for mixed types', async () => {
+  const { __testing_risk__ } = await import('./routeRisk.js');
+  const { computeHazardExposure } = __testing_risk__;
+
+  const geometry = [[-37.8, 144.9], [-37.7, 145.1]];
+
+  const sameTypeHazards = [
+    { id: 'f1', type: 'fire', severity: 'high', source: 'VicEmergency', title: 'Fire 1',
+      updatedAt: new Date().toISOString(), coordinates: [-37.79, 144.95] },
+    { id: 'f2', type: 'fire', severity: 'high', source: 'VicEmergency', title: 'Fire 2',
+      updatedAt: new Date().toISOString(), coordinates: [-37.78, 144.96] },
+  ];
+  const diverseHazards = [
+    { id: 'f1', type: 'fire', severity: 'high', source: 'VicEmergency', title: 'Fire',
+      updatedAt: new Date().toISOString(), coordinates: [-37.79, 144.95] },
+    { id: 'fl1', type: 'flood', severity: 'moderate', source: 'OpenWeather', title: 'Flood',
+      updatedAt: new Date().toISOString(), coordinates: [-37.78, 144.96] },
+  ];
+
+  const sameResult = computeHazardExposure(sameTypeHazards, geometry, new Date());
+  const diverseResult = computeHazardExposure(diverseHazards, geometry, new Date());
+
+  assert.ok(diverseResult.diversityBoost > sameResult.diversityBoost,
+    `diverse types should get higher diversity boost. same=${sameResult.diversityBoost} diverse=${diverseResult.diversityBoost}`);
+});
+
+test('three-layer model: bad conditions score much higher than good conditions', () => {
+  const flatRoute = { ...baseRoute, distanceKm: 10, durationMin: 150 };
+  const steepRoute = { ...baseRoute, distanceKm: 10, durationMin: 240 };
+
+  const fireHazard = {
+    id: 'fire1', type: 'fire', severity: 'high', source: 'VicEmergency',
+    title: 'Bushfire', updatedAt: new Date().toISOString(),
+    coordinates: [-37.79, 144.95],
+  };
+  const stormHazard = {
+    id: 'storm1', type: 'storm', severity: 'moderate', source: 'OpenWeather',
+    title: 'Wind', updatedAt: new Date().toISOString(),
+    coordinates: [-37.78, 144.96],
+  };
+
+  const badConditions = scoreRouteCandidate({
+    route: steepRoute,
+    hazards: [fireHazard, stormHazard],
+    userLevel: 'newcomer',
+    fastestRoute: flatRoute,
+    geographyProfile: {
+      totalAscentM: 800, totalDescentM: 600, maxSlopePct: 25, avgSlopePct: 12,
+      surfaceType: 'rock', trailCondition: 'bad',
+      riverCrossingCount: 1, cliffExposureCount: 1, closureCount: 0,
+    },
+    now: new Date('2026-01-15T09:00:00Z'), // 8pm summer
+    maxFeelsLike: 40,
+    candidateCount: 2,
+  });
+
+  const goodConditions = scoreRouteCandidate({
+    route: flatRoute,
+    hazards: [],
+    userLevel: 'intermediate',
+    fastestRoute: flatRoute,
+    geographyProfile: {
+      totalAscentM: 100, totalDescentM: 100, maxSlopePct: 5, avgSlopePct: 2,
+      surfaceType: 'compacted', trailCondition: 'good',
+      riverCrossingCount: 0, cliffExposureCount: 0, closureCount: 0,
+    },
+    now: new Date('2026-04-15T02:00:00Z'), // 1pm autumn
+    maxFeelsLike: 22,
+    candidateCount: 3,
+  });
+
+  assert.ok(badConditions.riskScore > goodConditions.riskScore,
+    `bad (${badConditions.riskScore}) should score higher than good (${goodConditions.riskScore})`);
+  assert.ok(badConditions.scoringBreakdown.envMultiplier > 1.1,
+    `bad envMultiplier should be >1.1, got ${badConditions.scoringBreakdown.envMultiplier}`);
+  assert.ok(badConditions.scoringBreakdown.interactionPenalty > 0,
+    `should have interaction penalty, got ${badConditions.scoringBreakdown.interactionPenalty}`);
+  assert.ok(goodConditions.scoringBreakdown.envMultiplier <= 1.0,
+    `good envMultiplier should be <=1.0, got ${goodConditions.scoringBreakdown.envMultiplier}`);
+  assert.ok(badConditions.scoringBreakdown.baseRisk > goodConditions.scoringBreakdown.baseRisk,
+    `bad baseRisk should exceed good baseRisk`);
 });

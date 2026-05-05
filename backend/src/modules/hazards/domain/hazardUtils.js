@@ -67,5 +67,6 @@ export const sanitizeHazard = (hazard) => ({
   source: String(hazard.source || 'Unknown'),
   sourceUrl: String(hazard.sourceUrl || ''),
   updatedAt: hazard.updatedAt || nowIso(),
-  coordinates: Array.isArray(hazard.coordinates) ? hazard.coordinates : null
+  coordinates: Array.isArray(hazard.coordinates) ? hazard.coordinates : null,
+  feelsLike: Number.isFinite(Number(hazard.feelsLike)) ? Number(hazard.feelsLike) : undefined,
 });
