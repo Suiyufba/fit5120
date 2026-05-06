@@ -227,32 +227,50 @@ async function attachRouteIntroductions(
   };
 }
 
-function pickDifficultyRouteOptions(
+const difficultySlots: RouteOption['targetDifficulty'][] = ['Easy', 'Moderate', 'Hard'];
+const difficultyRank: Record<string, number> = { Easy: 0, Moderate: 1, Hard: 2 };
+const riskRank: Record<string, number> = { Low: 0, Moderate: 1, High: 2, Extreme: 3 };
+
+function routeOptionBurdenScore(route: RouteCandidate): number {
+  const burdenScore = Number(route.scoringBreakdown?.burdenScore ?? 0);
+  const effortScore = Number(route.scoringBreakdown?.routeEffort ?? 0);
+  const riskScore = Number(route.riskScore ?? 0);
+  const routeDifficultyRank = difficultyRank[route.difficulty] ?? 1;
+  const routeRiskRank = riskRank[route.riskLevel] ?? 0;
+  const noGoPenalty = route.goNoGo === 'No-Go' ? 100 : 0;
+  const distancePenalty = Math.max(0, Number(route.distanceKm || 0) - 8) * 1.2;
+  const durationPenalty = Math.max(0, Number(route.durationMin || 0) - 150) / 10;
+
+  return (
+    noGoPenalty +
+    routeRiskRank * 24 +
+    riskScore * 0.35 +
+    burdenScore * 0.45 +
+    effortScore * 0.3 +
+    routeDifficultyRank * 12 +
+    distancePenalty +
+    durationPenalty
+  );
+}
+
+export function pickDifficultyRouteOptions(
   scoredRoutes: RouteCandidate[],
   opts?: { userLevel?: UserLevel; userProfile?: User | null; now?: Date },
 ): RouteOption[] {
   const { userLevel, userProfile, now } = opts || {};
-  const desired = ['Easy', 'Moderate', 'Hard'];
-  const selected: { slot: string; route: RouteCandidate }[] = [];
-  const usedIds = new Set<string>();
-
-  desired.forEach((difficulty) => {
-    const hit = scoredRoutes.find(
-      (route) => route.difficulty === difficulty && !usedIds.has(route.id),
-    );
-    if (!hit) return;
-    usedIds.add(hit.id);
-    selected.push({ slot: difficulty, route: hit });
-  });
-
-  if (selected.length < 3) {
-    scoredRoutes.forEach((route) => {
-      if (selected.length >= 3 || usedIds.has(route.id)) return;
-      usedIds.add(route.id);
-      const nextSlot = desired[selected.length] || route.difficulty || 'Moderate';
-      selected.push({ slot: nextSlot, route });
-    });
-  }
+  const selected = [...scoredRoutes]
+    .sort((a, b) => {
+      const aScore = routeOptionBurdenScore(a);
+      const bScore = routeOptionBurdenScore(b);
+      if (aScore !== bScore) return aScore - bScore;
+      if ((a.distanceKm || 0) !== (b.distanceKm || 0)) return (a.distanceKm || 0) - (b.distanceKm || 0);
+      return (a.durationMin || 0) - (b.durationMin || 0);
+    })
+    .slice(0, 3)
+    .map((route, index) => ({
+      slot: difficultySlots[index] || route.difficulty || 'Moderate',
+      route,
+    }));
 
   return selected.slice(0, 3).map(({ slot, route }) => {
     const tieredPrep = buildSuggestedPrep({
