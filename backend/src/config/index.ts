@@ -2,14 +2,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const toInt = (value, fallback) => {
-  const parsed = Number.parseInt(value, 10);
+function toInt(value: string | undefined, fallback: number): number {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
   return Number.isNaN(parsed) ? fallback : parsed;
-};
+}
 
 const isTestEnv = process.env.NODE_ENV === 'test';
 
-function requireEnv(name, { minLength = 1 } = {}) {
+function requireEnv(name: string, { minLength = 1 }: { minLength?: number } = {}): string {
   const value = String(process.env[name] || '').trim();
   if (isTestEnv) return value;
   if (!value || value.length < minLength) {
@@ -18,7 +18,7 @@ function requireEnv(name, { minLength = 1 } = {}) {
   return value;
 }
 
-function parseCsv(value) {
+function parseCsv(value: string | undefined): string[] {
   return String(value || '')
     .split(',')
     .map((item) => item.trim())
@@ -33,7 +33,41 @@ if (!isTestEnv && (!corsOrigins.length || corsOrigins.includes('*'))) {
   throw new Error('CORS_ORIGIN must explicitly list trusted origin(s), wildcard is not allowed');
 }
 
-export const config = {
+export interface AppConfig {
+  port: number;
+  fetchIntervalMs: number;
+  requestTimeoutMs: number;
+  staleThresholdMs: number;
+  defaultLayers: string[];
+  corsOrigins: string[];
+  databaseUrl: string;
+  databaseSsl: boolean;
+  authJwtSecret: string;
+  authJwtExpiresIn: string;
+  redisUrl: string;
+  redisTtlSeconds: number;
+  vicroadsApiUrl: string;
+  vicroadsApiKey: string;
+  bomFeedUrl: string;
+  openWeatherApiKey: string;
+  openWeatherApiUrl: string;
+  openRouteServiceApiBaseUrl: string;
+  openRouteServiceApiKey: string;
+  openRouteServiceProfile: string;
+  openRouteServiceSnapRadiusM: number;
+  hikingBaseSpeedKmh: number;
+  openTopoDataApiUrl: string;
+  openTopoDataDataset: string;
+  openMeteoElevationApiUrl: string;
+  overpassApiUrl: string;
+  vicEmergencyFeedUrl: string;
+  vicEmergencyApiKey: string;
+  aiServiceUrl: string;
+  aiServiceAuthToken: string;
+  aiServiceRequestTimeoutMs: number;
+}
+
+export const config: AppConfig = {
   port: toInt(process.env.PORT, 8080),
   fetchIntervalMs: toInt(process.env.FETCH_INTERVAL_MS, 7200000),
   requestTimeoutMs: toInt(process.env.REQUEST_TIMEOUT_MS, 10000),

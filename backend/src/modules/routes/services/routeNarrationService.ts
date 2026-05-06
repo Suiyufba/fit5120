@@ -1,11 +1,23 @@
 import { config } from '../../../config/index.js';
+import type { GeographyProfile, KeyRisk, ZoneSummary } from 'hikeshield-shared';
 
-function formatDistance(distanceKm) {
+interface NarrationRoute {
+  distanceKm?: number;
+  durationMin?: number;
+  difficulty?: string;
+  safetyStatus?: string;
+  goNoGo?: string;
+  zoneSummary?: ZoneSummary;
+  geographyProfile?: GeographyProfile;
+  keyRisks?: KeyRisk[];
+}
+
+function formatDistance(distanceKm?: number): string {
   const value = Number(distanceKm || 0);
   return `${value.toFixed(1)} km`;
 }
 
-function formatDuration(durationMin) {
+function formatDuration(durationMin?: number): string {
   const totalMinutes = Math.max(1, Math.round(Number(durationMin || 0)));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -14,7 +26,7 @@ function formatDuration(durationMin) {
   return `${minutes} min`;
 }
 
-function describeTerrain(geographyProfile = {}) {
+function describeTerrain(geographyProfile: GeographyProfile = {} as GeographyProfile): string {
   const terrain = String(geographyProfile.terrainType || '').trim().toLowerCase();
   const surface = String(geographyProfile.surfaceType || '').trim().toLowerCase();
   const trail = String(geographyProfile.trailCondition || '').trim().toLowerCase();
@@ -55,15 +67,15 @@ function describeTerrain(geographyProfile = {}) {
     .join(', ');
 }
 
-function describeAudience(route = {}) {
+function describeAudience(route: NarrationRoute = {}): string {
   const difficulty = String(route.difficulty || '').toLowerCase();
   if (difficulty === 'easy') return 'beginners with basic fitness and some preparation';
   if (difficulty === 'hard') return 'experienced hikers who are comfortable managing effort and changing conditions';
   return 'walkers with moderate fitness who are prepared for a longer or more uneven outing';
 }
 
-function zoneAlertSummary(zoneSummary = {}) {
-  const parts = [];
+function zoneAlertSummary(zoneSummary: ZoneSummary = { level1Count: 0, level2Count: 0, level3Count: 0 }): string {
+  const parts: string[] = [];
   const level1 = Number(zoneSummary.level1Count || 0);
   const level2 = Number(zoneSummary.level2Count || 0);
   const level3 = Number(zoneSummary.level3Count || 0);
@@ -73,7 +85,7 @@ function zoneAlertSummary(zoneSummary = {}) {
   return parts.join(', ');
 }
 
-function describeRiskHighlights(route = {}) {
+function describeRiskHighlights(route: NarrationRoute = {}): string {
   const risks = Array.isArray(route.keyRisks) ? route.keyRisks.slice(0, 3) : [];
   if (!risks.length) return 'the usual footing and weather checks before departure';
   return risks
@@ -88,7 +100,7 @@ function describeRiskHighlights(route = {}) {
     .join(', ');
 }
 
-function describeHighlight(route = {}) {
+function describeHighlight(route: NarrationRoute = {}): string {
   const terrain = String(route?.geographyProfile?.terrainType || '').toLowerCase();
   if (terrain.includes('forest') || terrain.includes('bush')) return 'Victoria bush scenery and trail atmosphere';
   if (terrain.includes('coast')) return 'coastal scenery and open outlooks';
@@ -96,7 +108,7 @@ function describeHighlight(route = {}) {
   return 'local landscapes and time on the trail';
 }
 
-export function buildRouteIntroductionFallback(route = {}) {
+export function buildRouteIntroductionFallback(route: NarrationRoute = {}): string {
   const difficulty = String(route.difficulty || 'moderate').toLowerCase();
   const riskSentence = route.safetyStatus === 'Dangerous' || route.goNoGo === 'No-Go'
     ? 'Current conditions suggest this route needs extra caution and may be better postponed unless the alerts clear.'
@@ -106,12 +118,12 @@ export function buildRouteIntroductionFallback(route = {}) {
   return `This track offers a ${difficulty} walk over approximately ${formatDistance(route.distanceKm)}, typically taking around ${formatDuration(route.durationMin)} to complete. The route features ${describeTerrain(route.geographyProfile)}, making it suitable for ${describeAudience(route)}. Hikers should be aware of ${describeRiskHighlights(route)}${alertSummary ? `, with ${alertSummary} in nearby zones` : ''}. ${riskSentence} It is a good option for enjoying ${describeHighlight(route)}.`;
 }
 
-export function extractAiServiceIntro(payload) {
+export function extractAiServiceIntro(payload: { intro?: string }): string {
   const intro = String(payload?.intro || '').trim();
   return intro;
 }
 
-async function generateRouteIntroductionFromAiService(route = {}) {
+async function generateRouteIntroductionFromAiService(route: NarrationRoute = {}): Promise<string> {
   const baseUrl = String(config.aiServiceUrl || '').trim().replace(/\/$/, '');
   if (!baseUrl) return '';
   const apiUrl = `${baseUrl}/v1/route-introduction`;
@@ -119,7 +131,7 @@ async function generateRouteIntroductionFromAiService(route = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  let response;
+  let response: Response;
   try {
     response = await fetch(apiUrl, {
       method: 'POST',
@@ -128,9 +140,7 @@ async function generateRouteIntroductionFromAiService(route = {}) {
         ...(config.aiServiceAuthToken ? { 'x-ai-service-token': config.aiServiceAuthToken } : {}),
       },
       signal: controller.signal,
-      body: JSON.stringify({
-        route,
-      }),
+      body: JSON.stringify({ route }),
     });
   } finally {
     clearTimeout(timer);
@@ -140,17 +150,17 @@ async function generateRouteIntroductionFromAiService(route = {}) {
     throw new Error(`AI service narration request failed with ${response.status}`);
   }
 
-  const payload = await response.json();
+  const payload = (await response.json()) as { intro?: string };
   return extractAiServiceIntro(payload);
 }
 
-export async function generateRouteIntroduction(route = {}) {
+export async function generateRouteIntroduction(route: NarrationRoute = {}): Promise<string> {
   const fallback = buildRouteIntroductionFallback(route);
   try {
     const generated = await generateRouteIntroductionFromAiService(route);
     return generated || fallback;
   } catch (error) {
-    console.warn('Falling back to rule-based route introduction (ai-service unavailable):', error.message);
+    console.warn('Falling back to rule-based route introduction (ai-service unavailable):', (error as Error).message);
     return fallback;
   }
 }

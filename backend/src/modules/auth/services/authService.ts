@@ -8,54 +8,88 @@ import {
   findUserById,
   updateOwnCredentialsById,
   updateOwnProfileById,
-  updateUserPasswordByEmail
+  updateUserPasswordByEmail,
 } from '../repositories/userRepository.js';
+import type { UserLevel } from 'hikeshield-shared';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/;
 const RESET_MAX_ATTEMPTS = 3;
 const RESET_LOCK_WINDOW_MS = 60 * 60 * 1000;
-const passwordResetAttemptStore = new Map();
+const passwordResetAttemptStore = new Map<string, { failures: number; lockedUntil: number }>();
 
-function sanitizeUser(user) {
+interface DbUser {
+  id: string;
+  email: string;
+  age?: number;
+  region: string;
+  passwordHash: string;
+  securityQuestion: string;
+  securityAnswerHash?: string;
+  experienceLevel: UserLevel;
+  assessmentScore?: number;
+  assessmentAnswers?: Record<string, unknown>;
+  createdAt?: string;
+}
+
+interface SanitizedUser {
+  id: string;
+  email: string;
+  age?: number;
+  region: string;
+  securityQuestion: string;
+  experienceLevel: UserLevel;
+  assessmentScore?: number;
+  createdAt?: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function sanitizeUser(user: Record<string, any> | null): SanitizedUser | null {
   if (!user) return null;
   return {
-    id: user.id,
-    email: user.email,
-    age: user.age,
-    region: user.region,
-    securityQuestion: user.securityQuestion,
-    experienceLevel: user.experienceLevel,
-    assessmentScore: user.assessmentScore,
-    createdAt: user.createdAt,
+    id: String(user.id ?? ''),
+    email: String(user.email ?? ''),
+    age: Number.isFinite(Number(user.age)) ? Number(user.age) : undefined,
+    region: String(user.region ?? ''),
+    securityQuestion: String(user.securityQuestion ?? ''),
+    experienceLevel: (['newcomer', 'intermediate', 'advanced'].includes(String(user.experienceLevel ?? ''))
+      ? String(user.experienceLevel)
+      : 'newcomer') as UserLevel,
+    assessmentScore: Number.isFinite(Number(user.assessmentScore)) ? Number(user.assessmentScore) : undefined,
+    createdAt: user.createdAt ? String(user.createdAt) : undefined,
   };
 }
 
-function signToken(userId) {
+function signToken(userId: string): string {
   return jwt.sign({ sub: String(userId) }, config.authJwtSecret, {
     expiresIn: config.authJwtExpiresIn,
-  });
+  } as jwt.SignOptions);
 }
 
-function normalizeEmail(email) {
+function normalizeEmail(email: string): string {
   return String(email || '').trim().toLowerCase();
 }
 
-function normalizeSecurityAnswer(answer) {
+function normalizeSecurityAnswer(answer: string): string {
   return String(answer || '').trim().toLowerCase();
 }
 
-function normalizeSecurityQuestion(question) {
+function normalizeSecurityQuestion(question: string): string {
   return String(question || '').trim().toLowerCase();
 }
 
-function validatePasswordStrength(password, fieldName = 'Password') {
+function validatePasswordStrength(password: string, fieldName = 'Password'): void {
   const text = String(password || '');
   if (!PASSWORD_REGEX.test(text)) {
     throw new Error(`${fieldName} must be at least 12 characters and include uppercase, lowercase, number, and special character`);
   }
 }
 
-function getResetAttemptState(email) {
+interface ResetAttemptState {
+  failures: number;
+  lockedUntil: number;
+}
+
+function getResetAttemptState(email: string): ResetAttemptState {
   const key = normalizeEmail(email);
   const state = passwordResetAttemptStore.get(key) || { failures: 0, lockedUntil: 0 };
   if (state.lockedUntil && state.lockedUntil <= Date.now()) {
@@ -66,55 +100,73 @@ function getResetAttemptState(email) {
   return state;
 }
 
-function ensureResetNotLocked(email) {
+function ensureResetNotLocked(email: string): void {
   const state = getResetAttemptState(email);
   if (state.lockedUntil > Date.now()) {
     throw new Error('Too many failed reset attempts. Try again in 1 hour.');
   }
 }
 
-function markResetFailure(email) {
+function markResetFailure(email: string): void {
   const key = normalizeEmail(email);
   const current = getResetAttemptState(email);
   const nextFailures = current.failures + 1;
-  const next = {
+  const next: ResetAttemptState = {
     failures: nextFailures,
     lockedUntil: nextFailures >= RESET_MAX_ATTEMPTS ? Date.now() + RESET_LOCK_WINDOW_MS : 0,
   };
   passwordResetAttemptStore.set(key, next);
 }
 
-function clearResetFailures(email) {
+function clearResetFailures(email: string): void {
   passwordResetAttemptStore.delete(normalizeEmail(email));
 }
 
-function throwResetCredentialError(email) {
+function throwResetCredentialError(email: string): never {
   markResetFailure(email);
   throw new Error('Invalid credentials for password reset');
 }
 
-function validateRegisterInput({ email, password, age, region, securityQuestion, securityAnswer }) {
-  const normalizedEmail = normalizeEmail(email);
+export interface RegisterInput {
+  email: string;
+  password: string;
+  age: number;
+  region: string;
+  securityQuestion: string;
+  securityAnswer: string;
+  assessmentAnswers?: unknown;
+}
+
+interface ValidatedRegisterInput {
+  normalizedEmail: string;
+  ageNumber: number;
+  normalizedRegion: string;
+  normalizedSecurityQuestion: string;
+  normalizedSecurityAnswer: string;
+}
+
+function validateRegisterInput(input: RegisterInput): ValidatedRegisterInput {
+  const normalizedEmail = normalizeEmail(input.email);
   if (!normalizedEmail || !normalizedEmail.includes('@')) {
     throw new Error('Please provide a valid email');
   }
 
-  validatePasswordStrength(password);
+  validatePasswordStrength(input.password);
 
-  const ageNumber = Number.parseInt(age, 10);
+  const ageNumber = Number.parseInt(String(input.age), 10);
   if (Number.isNaN(ageNumber) || ageNumber < 10 || ageNumber > 100) {
     throw new Error('Age must be between 10 and 100');
   }
 
-  if (!String(region || '').trim()) {
+  if (!String(input.region || '').trim()) {
     throw new Error('Region is required');
   }
 
-  if (!String(securityQuestion || '').trim()) {
+  if (!String(input.securityQuestion || '').trim()) {
     throw new Error('Security question is required');
   }
 
-  const normalizedSecurityAnswer = normalizeSecurityAnswer(securityAnswer);
+  const normalizedSecurityAnswer = normalizeSecurityAnswer(input.securityAnswer);
   if (!normalizedSecurityAnswer || normalizedSecurityAnswer.length < 2) {
     throw new Error('Security answer is required');
   }
@@ -122,13 +174,18 @@ function validateRegisterInput({ email, password, age, region, securityQuestion,
   return {
     normalizedEmail,
     ageNumber,
-    normalizedRegion: String(region).trim(),
-    normalizedSecurityQuestion: String(securityQuestion).trim(),
+    normalizedRegion: String(input.region).trim(),
+    normalizedSecurityQuestion: String(input.securityQuestion).trim(),
     normalizedSecurityAnswer,
   };
 }
 
-export async function registerUser(input) {
+export interface AuthResult {
+  token: string;
+  user: SanitizedUser;
+}
+
+export async function registerUser(input: RegisterInput): Promise<AuthResult> {
   const {
     normalizedEmail,
     ageNumber,
@@ -156,7 +213,7 @@ export async function registerUser(input) {
     level,
     score,
     answers: input.assessmentAnswers || {},
-  });
+  } as Parameters<typeof createUser>[0]);
 
   if (!user) {
     throw new Error('User store unavailable');
@@ -165,11 +222,11 @@ export async function registerUser(input) {
   const token = signToken(user.id);
   return {
     token,
-    user: sanitizeUser(user),
+    user: sanitizeUser(user)!,
   };
 }
 
-export async function loginUser({ email, password }) {
+export async function loginUser({ email, password }: { email: string; password: string }): Promise<AuthResult> {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail || !password) {
     throw new Error('Email and password are required');
@@ -188,16 +245,23 @@ export async function loginUser({ email, password }) {
   const token = signToken(user.id);
   return {
     token,
-    user: sanitizeUser(user),
+    user: sanitizeUser(user)!,
   };
 }
 
-export async function resetPasswordWithSecurityAnswer({ email, securityQuestion, securityAnswer, newPassword }) {
-  const normalizedEmail = normalizeEmail(email);
+export interface ResetPasswordInput {
+  email: string;
+  securityQuestion: string;
+  securityAnswer: string;
+  newPassword: string;
+}
+
+export async function resetPasswordWithSecurityAnswer(input: ResetPasswordInput): Promise<{ ok: boolean }> {
+  const normalizedEmail = normalizeEmail(input.email);
   if (!normalizedEmail || !normalizedEmail.includes('@')) {
     throw new Error('Please provide a valid email');
   }
-  validatePasswordStrength(newPassword, 'New password');
+  validatePasswordStrength(input.newPassword, 'New password');
   ensureResetNotLocked(normalizedEmail);
 
   const user = await findUserByEmail(normalizedEmail);
@@ -205,21 +269,21 @@ export async function resetPasswordWithSecurityAnswer({ email, securityQuestion,
     throwResetCredentialError(normalizedEmail);
   }
   if (
-    !normalizeSecurityQuestion(securityQuestion)
-    || normalizeSecurityQuestion(user.securityQuestion) !== normalizeSecurityQuestion(securityQuestion)
+    !normalizeSecurityQuestion(input.securityQuestion) ||
+    normalizeSecurityQuestion(user.securityQuestion) !== normalizeSecurityQuestion(input.securityQuestion)
   ) {
     throwResetCredentialError(normalizedEmail);
   }
 
   const isValidAnswer = await bcrypt.compare(
-    normalizeSecurityAnswer(securityAnswer),
-    user.securityAnswerHash
+    normalizeSecurityAnswer(input.securityAnswer),
+    user.securityAnswerHash,
   );
   if (!isValidAnswer) {
     throwResetCredentialError(normalizedEmail);
   }
 
-  const passwordHash = await bcrypt.hash(String(newPassword), 10);
+  const passwordHash = await bcrypt.hash(String(input.newPassword), 10);
   await updateUserPasswordByEmail({
     email: normalizedEmail,
     passwordHash,
@@ -229,26 +293,31 @@ export async function resetPasswordWithSecurityAnswer({ email, securityQuestion,
   return { ok: true };
 }
 
-export function verifyAuthToken(token) {
+export function verifyAuthToken(token: string): string | null {
   try {
-    const payload = jwt.verify(token, config.authJwtSecret);
+    const payload = jwt.verify(token, config.authJwtSecret) as { sub?: string };
     return payload?.sub ? String(payload.sub) : null;
-  } catch (_error) {
+  } catch {
     return null;
   }
 }
 
-export async function getProfileByUserId(userId) {
+export async function getProfileByUserId(userId: string): Promise<SanitizedUser | null> {
   const user = await findUserById(userId);
   return sanitizeUser(user);
 }
 
-/**
- * Return an extended profile for route planning that includes the raw
- * assessment answers and region. This is trusted for server-side use only;
- * the public /profile endpoint should keep using getProfileByUserId.
- */
-export async function getRouteContextByUserId(userId) {
+export interface RouteContext {
+  id: string;
+  email: string;
+  age: number | null;
+  region: string;
+  experienceLevel: UserLevel;
+  assessmentScore: number;
+  assessmentAnswers: Record<string, unknown>;
+}
+
+export async function getRouteContextByUserId(userId: string): Promise<RouteContext | null> {
   if (!userId) return null;
   const user = await findUserById(userId);
   if (!user) return null;
@@ -259,26 +328,42 @@ export async function getRouteContextByUserId(userId) {
     region: user.region || '',
     experienceLevel: user.experienceLevel,
     assessmentScore: Number(user.assessmentScore || 0),
-    assessmentAnswers: user.assessmentAnswers || {},
+    assessmentAnswers: (user.assessmentAnswers || {}) as Record<string, unknown>,
   };
 }
 
-export async function updateProfileByUserId(userId, { age, region }) {
+export async function updateProfileByUserId(
+  userId: string,
+  { age, region }: { age?: number; region?: string },
+): Promise<{ user: SanitizedUser }> {
   const result = await updateOwnProfileById(userId, { age, region });
   if (!result) {
     throw new Error('User store unavailable');
   }
   if (result.error) {
-    throw new Error(result.error);
+    throw new Error(result.error as string);
   }
   if (!result.ok || !result.user) {
     throw new Error('User not found');
   }
 
-  return { user: sanitizeUser(result.user) };
+  return { user: sanitizeUser(result.user )! };
 }
 
-export async function updateSensitiveProfileByUserId(userId, { email, newPassword, securityQuestion, securityAnswer }) {
+export async function updateSensitiveProfileByUserId(
+  userId: string,
+  {
+    email,
+    newPassword,
+    securityQuestion,
+    securityAnswer,
+  }: {
+    email?: string;
+    newPassword?: string;
+    securityQuestion?: string;
+    securityAnswer?: string;
+  },
+): Promise<{ user: SanitizedUser }> {
   const user = await findUserById(userId);
   if (!user) {
     throw new Error('User not found');
@@ -291,8 +376,8 @@ export async function updateSensitiveProfileByUserId(userId, { email, newPasswor
   }
 
   if (
-    !normalizeSecurityQuestion(securityQuestion)
-    || normalizeSecurityQuestion(user.securityQuestion) !== normalizeSecurityQuestion(securityQuestion)
+    !normalizeSecurityQuestion(securityQuestion ?? '') ||
+    normalizeSecurityQuestion(user.securityQuestion) !== normalizeSecurityQuestion(securityQuestion ?? '')
   ) {
     throw new Error('Security question verification failed');
   }
@@ -303,22 +388,22 @@ export async function updateSensitiveProfileByUserId(userId, { email, newPasswor
   }
 
   const isValidAnswer = await bcrypt.compare(
-    normalizeSecurityAnswer(securityAnswer),
-    userWithSecrets.securityAnswerHash
+    normalizeSecurityAnswer(securityAnswer ?? ''),
+    userWithSecrets.securityAnswerHash,
   );
   if (!isValidAnswer) {
     throw new Error('Security answer verification failed');
   }
 
-  let nextPasswordHash = null;
+  let nextPasswordHash: string | null = null;
   if (wantsPasswordUpdate) {
-    validatePasswordStrength(newPassword, 'New password');
+    validatePasswordStrength(newPassword!, 'New password');
     nextPasswordHash = await bcrypt.hash(String(newPassword), 10);
   }
 
   let normalizedEmail = '';
   if (wantsEmailUpdate) {
-    normalizedEmail = normalizeEmail(email);
+    normalizedEmail = normalizeEmail(email!);
     if (!normalizedEmail || !normalizedEmail.includes('@')) {
       throw new Error('Please provide a valid email');
     }
@@ -333,11 +418,11 @@ export async function updateSensitiveProfileByUserId(userId, { email, newPasswor
     throw new Error('User store unavailable');
   }
   if (result.error) {
-    throw new Error(result.error);
+    throw new Error(result.error as string);
   }
   if (!result.ok || !result.user) {
     throw new Error('User not found');
   }
 
-  return { user: sanitizeUser(result.user) };
+  return { user: sanitizeUser(result.user )! };
 }

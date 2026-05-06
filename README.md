@@ -27,18 +27,30 @@ Browser (Vue 3 SPA)
     ▼ HTTP/JSON
 Express API Server (/api)
     │
-    ├── POST /routes/plan          # Plan safe route
-    ├── GET  /routes/history       # Route plan history
-    ├── GET  /hazards/realtime     # Live hazard feed
-    ├── GET  /locations/search     # Geocoding
-    ├── POST /community-reports    # User hazard reports
-    ├── POST /auth/*               # Authentication
-    └── GET  /knowledge/articles   # Educational content
+    ├── POST   /routes/plan              # Plan safe route
+    ├── GET    /routes/history           # Route plan history
+    ├── DELETE /routes/history           # Clear route history
+    ├── DELETE /routes/history/:id       # Delete one history item
+    ├── GET    /hazards/realtime         # Live hazard feed
+    ├── GET    /hazards/history          # Hazard snapshots over time
+    ├── GET    /locations/search         # Geocoding (forward)
+    ├── GET    /locations/reverse        # Geocoding (reverse)
+    ├── GET    /community-reports        # List community reports
+    ├── POST   /community-reports        # Submit a community report
+    ├── POST   /community-reports/images # Upload report image
+    ├── GET    /community-reports/images/:id  # Get report image
+    ├── POST   /auth/register            # Create account
+    ├── POST   /auth/login               # Sign in
+    ├── GET    /auth/me                  # Current user info
+    ├── PUT    /auth/profile             # Update profile
+    ├── PUT    /auth/profile/sensitive   # Update credentials
+    ├── POST   /auth/password-reset/security  # Reset password via security Q&A
+    └── GET    /knowledge/articles       # Educational content
     │
     ▼
 External Services
     ├── OpenRouteService     # Route geometry & directions
-    ├── OpenTopoData         # Elevation profiles
+    ├── OpenTopoData         # Elevation profiles (primary)
     ├── Open-Meteo           # Elevation fallback
     ├── Overpass API (OSM)   # Terrain constraints
     ├── VicEmergency         # Official hazard feed
@@ -48,10 +60,13 @@ External Services
     ▼
 PostgreSQL / Memory
     ├── hazard_latest_snapshot
+    ├── hazard_snapshot_history
     ├── route_geography_profiles
     ├── route_plan_history
     ├── users
     ├── community_reports
+    ├── community_report_images
+    ├── manual_hazards
     └── knowledge_articles
 ```
 
@@ -63,22 +78,20 @@ hikeshield/
 ├── backend/           # Express API server (Railway)
 ├── ai-service/        # AI route narration (Railway)
 ├── worker/            # Async jobs (placeholder)
-├── shared/            # Shared types/helpers (placeholder)
+├── shared/            # TypeScript type definitions
 ├── docs/              # Architecture & risk model docs
-├── .env.example
-├── package.json       # Monorepo workspace scripts
-└── DESIGN.md          # Design system reference
+└── .env.example       # Shared environment variables
 ```
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Vue 3, Vue Router, Vite, Tailwind CSS |
+| Frontend | Vue 3 (Composition API), Vue Router, Vite, Tailwind CSS |
 | Maps | Leaflet, Mapbox GL JS |
 | Backend | Node.js, Express, Helmet |
 | Database | PostgreSQL (pg), Redis (ioredis) |
-| Auth | JWT (jsonwebtoken), bcryptjs |
+| Auth | JWT (jsonwebtoken), bcryptjs, express-rate-limit |
 | AI | Gemini 2.5 Flash (generative language API) |
 | Deploy | Vercel (frontend), Railway (backend + AI) |
 
@@ -87,6 +100,9 @@ hikeshield/
 ```bash
 # Install all workspaces
 npm install
+
+# Build shared types (required before type-checking)
+npm --workspace shared run build
 
 # Start frontend dev server (http://localhost:5173)
 npm run dev:frontend
@@ -105,9 +121,10 @@ before starting.
 
 - **Frontend**: Vue 3 SPA with map-based route planning and risk visualization —
   see `frontend/README.md`
-- **Backend**: Express API for hazards, routes, auth, community reports, and
-  knowledge articles — see `backend/README.md`
+- **Backend**: Express API for hazards, routes, auth, community reports,
+  knowledge articles, and geocoding — see `backend/README.md`
 - **AI Service**: Gemini-powered route introduction with rule-based fallback —
   see `ai-service/README.md`
+- **Shared**: TypeScript type definitions shared across the monorepo —
+  see `shared/README.md`
 - **Worker**: Reserved for async jobs (not yet implemented)
-- **Shared**: Reserved for cross-package types and helpers (not yet implemented)

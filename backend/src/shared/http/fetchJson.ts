@@ -1,6 +1,18 @@
 import { config } from '../../config/index.js';
 
-export async function fetchJson(url, options = {}) {
+export interface FetchOptions {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
+  timeoutMs?: number;
+}
+
+export interface FetchError extends Error {
+  status?: number;
+  responseBody?: string;
+}
+
+export async function fetchJson<T = unknown>(url: string, options: FetchOptions = {}): Promise<T> {
   if (!url) {
     throw new Error('Missing URL');
   }
@@ -14,26 +26,24 @@ export async function fetchJson(url, options = {}) {
       method: options.method || 'GET',
       headers: options.headers || {},
       body: options.body,
-      signal: controller.signal
+      signal: controller.signal,
     });
 
     if (!response.ok) {
       let details = '';
-      if (typeof response.text === 'function') {
-        details = await response.text().catch(() => '');
-      } else if (typeof response.json === 'function') {
-        const payload = await response.json().catch(() => null);
-        details = payload ? JSON.stringify(payload) : '';
+      try {
+        details = await response.text();
+      } catch {
+        // ignore
       }
       const suffix = details ? `: ${details.slice(0, 500)}` : '';
-      /** @type {Error & { status?: number, responseBody?: string }} */
-      const error = new Error(`HTTP ${response.status} from ${url}${suffix}`);
+      const error: FetchError = new Error(`HTTP ${response.status} from ${url}${suffix}`);
       error.status = response.status;
       error.responseBody = details;
       throw error;
     }
 
-    return await response.json();
+    return (await response.json()) as T;
   } finally {
     clearTimeout(timer);
   }

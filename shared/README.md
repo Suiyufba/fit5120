@@ -46,8 +46,11 @@ npm --workspace shared run typecheck
 ## Build
 
 ```bash
-npm --workspace shared run build    # emits dist/*.d.ts
+npm --workspace shared run build    # emits dist/*.d.ts and dist/*.js
 ```
+
+Run this before type-checking the frontend or backend, as they import from the
+built output.
 
 ## Module Map
 

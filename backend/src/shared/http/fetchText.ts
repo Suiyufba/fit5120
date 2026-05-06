@@ -1,6 +1,6 @@
 import { config } from '../../config/index.js';
 
-export async function fetchText(url, options = {}) {
+export async function fetchText(url: string, options: { headers?: Record<string, string>; timeoutMs?: number } = {}): Promise<string> {
   if (!url) {
     throw new Error('Missing URL');
   }
@@ -12,7 +12,7 @@ export async function fetchText(url, options = {}) {
   try {
     const response = await fetch(url, {
       headers: options.headers || {},
-      signal: controller.signal
+      signal: controller.signal,
     });
 
     if (!response.ok) {

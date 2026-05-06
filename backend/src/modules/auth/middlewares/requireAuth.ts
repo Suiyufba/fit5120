@@ -1,6 +1,11 @@
+import type { Request, Response, NextFunction } from 'express';
 import { verifyAuthToken } from '../services/authService.js';
 
-export function requireAuth(req, res, next) {
+export interface AuthenticatedRequest extends Request {
+  auth?: { userId: string };
+}
+
+export function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
 

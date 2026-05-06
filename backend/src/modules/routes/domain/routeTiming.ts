@@ -1,19 +1,4 @@
-/**
- * Hiking duration estimation.
- *
- * Combines three established walking-time models:
- *   1. Tobler's hiking function (speed as a function of slope):
- *        v(S) = 6 * exp(-3.5 * |S + 0.05|)   km/h, S = dh/dx (slope fraction)
- *   2. Naismith's rule for ascent cost  (+1 min per 10 m climbed).
- *   3. Langmuir's correction for steep descents (>12% grade slows hikers).
- *
- * It layers on top:
- *   - Terrain surface and trail condition multipliers (OSM tag driven).
- *   - User experience calibration (newcomer / intermediate / advanced).
- *   - Ascent-scaled break time (more climbing = more rests).
- *
- * The module is pure (no I/O) so it is cheap to unit-test and reuse.
- */
+import type { GeographyProfile, UserLevel } from 'hikeshield-shared';
 
 const MIN_SAFE_SPEED_KMH = 1.4;
 const MAX_SAFE_SPEED_KMH = 6.0;
@@ -21,7 +6,7 @@ const MIN_FACTOR = 0.75;
 const MAX_FACTOR = 1.6;
 const FALLBACK_SPEED_KMH = 4.5;
 
-const SURFACE_FACTOR = {
+const SURFACE_FACTOR: Record<string, number> = {
   paved: 0.95,
   asphalt: 0.95,
   concrete: 0.95,
@@ -37,7 +22,7 @@ const SURFACE_FACTOR = {
   mud: 1.26,
 };
 
-const TRAIL_CONDITION_FACTOR = {
+const TRAIL_CONDITION_FACTOR: Record<string, number> = {
   excellent: 0.97,
   good: 1.0,
   intermediate: 1.06,
@@ -47,21 +32,21 @@ const TRAIL_CONDITION_FACTOR = {
   horrible: 1.4,
 };
 
-const USER_PACE_FACTOR = {
+const USER_PACE_FACTOR: Record<string, number> = {
   advanced: 0.9,
   intermediate: 1.0,
   newcomer: 1.15,
 };
 
-function clamp(value, min, max) {
+function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-function toblerSpeedKmh(slopeGrade) {
+function toblerSpeedKmh(slopeGrade: number): number {
   return 6 * Math.exp(-3.5 * Math.abs(slopeGrade + 0.05));
 }
 
-export function terrainSpeedFactor(surfaceType, trailCondition) {
+export function terrainSpeedFactor(surfaceType?: string, trailCondition?: string): number {
   const surfaceKey = String(surfaceType || '').toLowerCase();
   const conditionKey = String(trailCondition || '').toLowerCase();
   const surface = SURFACE_FACTOR[surfaceKey] ?? 1.0;
@@ -69,64 +54,56 @@ export function terrainSpeedFactor(surfaceType, trailCondition) {
   return clamp(surface * condition, MIN_FACTOR, MAX_FACTOR);
 }
 
-export function userPaceFactor(userLevel) {
+export function userPaceFactor(userLevel?: UserLevel): number {
   return USER_PACE_FACTOR[String(userLevel || '').toLowerCase()] ?? USER_PACE_FACTOR.newcomer;
 }
 
-function naismithAscentMinutes(ascentM) {
-  // Classic Naismith: +1 min per 10 m of ascent. Steep climbs (>600m) get an
-  // additional fatigue tax because Tobler alone under-predicts sustained effort.
+function naismithAscentMinutes(ascentM: number): number {
   const climb = Math.max(Number(ascentM) || 0, 0);
   const base = climb / 10;
   const fatigue = climb > 600 ? (climb - 600) / 45 : 0;
   return base + fatigue;
 }
 
-function langmuirDescentMinutes(descentM, avgSlopePct) {
+function langmuirDescentMinutes(descentM: number, avgSlopePct: number): number {
   const descent = Math.max(Number(descentM) || 0, 0);
   const slope = Math.max(Number(avgSlopePct) || 0, 0);
-  // Gentle downhills actually speed you up — Langmuir subtracts time on <12% grade.
-  // Steep ones cost time because you have to control the descent.
   if (descent <= 0) return 0;
   if (slope <= 12) return -(descent / 200);
   return (descent - 300) > 0 ? (descent - 300) / 40 : 0;
 }
 
-function breakMinutes(movingMinutes, ascentM) {
+function breakMinutes(movingMinutes: number, ascentM: number): number {
   const hours = Math.max(movingMinutes, 0) / 60;
   const restPerHour = 8;
   const climbFactor = Math.min(Math.max(Number(ascentM) || 0, 0) / 400, 3) * 10;
   return hours * restPerHour + climbFactor;
 }
 
-function deriveAvgSlopeFromProfile(geographyProfile, distanceKm) {
+function deriveAvgSlopeFromProfile(geographyProfile: GeographyProfile | null, distanceKm: number): number {
   const reported = Number(geographyProfile?.avgSlopePct || 0);
   if (reported > 0) return reported;
   const ascent = Math.max(Number(geographyProfile?.totalAscentM || 0), 0);
   const descent = Math.max(Number(geographyProfile?.totalDescentM || 0), 0);
   if ((ascent + descent) <= 0 || distanceKm <= 0) return 0;
-  // Estimate from raw ascent+descent averaged over the distance (meters over meters *100 %).
   return clamp(((ascent + descent) / (distanceKm * 1000)) * 100, 0, 30);
 }
 
-/**
- * Estimate realistic hiking duration (minutes) for a route.
- *
- * @param {object} opts
- * @param {number} opts.distanceKm Route length in kilometres.
- * @param {object} [opts.geographyProfile] Optional elevation/terrain profile.
- * @param {string} [opts.userLevel='newcomer'] User experience label.
- * @param {number} [opts.fallbackSpeedKmh=4.5] Used when no geography is known.
- * @param {number} [opts.floorMin=0] Optional minimum duration from the route provider.
- * @returns {number} Estimated duration in minutes, rounded to 1 decimal.
- */
+export interface EstimateOptions {
+  distanceKm: number;
+  geographyProfile?: GeographyProfile | null;
+  userLevel?: UserLevel;
+  fallbackSpeedKmh?: number;
+  floorMin?: number;
+}
+
 export function estimateHikingDurationMin({
   distanceKm,
   geographyProfile = null,
   userLevel = 'newcomer',
   fallbackSpeedKmh = FALLBACK_SPEED_KMH,
   floorMin = 0,
-} = /** @type {any} */ ({})) {
+}: EstimateOptions): number {
   const distance = Math.max(Number(distanceKm) || 0, 0);
   if (distance === 0) {
     return Number(Math.max(floorMin, 0).toFixed(1));
@@ -137,7 +114,7 @@ export function estimateHikingDurationMin({
   const avgSlopePct = deriveAvgSlopeFromProfile(geographyProfile, distance);
   const hasProfile = ascentM > 0 || descentM > 0 || avgSlopePct > 0;
 
-  let movingMinutes;
+  let movingMinutes: number;
   if (hasProfile) {
     const toblerSpeed = clamp(toblerSpeedKmh(avgSlopePct / 100), MIN_SAFE_SPEED_KMH, MAX_SAFE_SPEED_KMH);
     const horizontalMin = (distance / toblerSpeed) * 60;

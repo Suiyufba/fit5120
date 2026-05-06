@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { config } from './config/index.js';
@@ -22,7 +22,7 @@ app.set('trust proxy', 1);
 
 const allowedOrigins = new Set(config.corsOrigins);
 
-function applyCorsHeaders(req, res) {
+function applyCorsHeaders(req: Request, res: Response): void {
   const origin = req.get('origin');
   if (!origin || !allowedOrigins.has(origin)) return;
   res.setHeader('Access-Control-Allow-Origin', origin);
@@ -36,22 +36,24 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", ...config.corsOrigins],
-      frameAncestors: ["'none'"],
-      objectSrc: ["'none'"],
-      upgradeInsecureRequests: [],
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", ...config.corsOrigins],
+        frameAncestors: ["'none'"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
     },
-  },
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-}));
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  }),
+);
 
 app.use((req, res, next) => {
   const proto = req.headers['x-forwarded-proto'];
@@ -63,19 +65,21 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(cors({
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.has(origin)) {
-      callback(null, true);
-      return;
-    }
-    callback(new Error('CORS origin denied'));
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Plan-Session-Id'],
-}));
+app.use(
+  cors({
+    origin(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error('CORS origin denied'));
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Plan-Session-Id'],
+  }),
+);
 
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     next();
     return;
@@ -95,12 +99,12 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '2mb' }));
 app.use('/api', apiRouter);
 
-app.use((error, _req, res, _next) => {
+app.use((error: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Unhandled server error:', error);
   res.status(500).json({ error: 'Internal server error' });
 });
 
-async function boot() {
+async function boot(): Promise<void> {
   try {
     const dbReady = await initHazardSnapshotStore();
     const userStoreReady = await initUserStore();
@@ -148,7 +152,7 @@ async function boot() {
       console.warn('DATABASE_URL is not set, route plan history disabled');
     }
   } catch (error) {
-    console.error('Failed to initialize database stores:', error.message);
+    console.error('Failed to initialize database stores:', (error as Error).message);
   }
 
   app.listen(config.port, () => {
@@ -158,10 +162,7 @@ async function boot() {
   });
 }
 
-// Run an immediate cleanup on startup and then keep reports fresh by purging
-// anything older than the 24-hour TTL every hour. Failures are logged but
-// don't crash the server — the next tick will retry.
-function startCommunityReportPurger() {
+function startCommunityReportPurger(): void {
   const ONE_HOUR_MS = 60 * 60 * 1000;
   const runOnce = async () => {
     try {
@@ -170,7 +171,7 @@ function startCommunityReportPurger() {
         console.log(`Purged ${removed} expired community report(s) from ${storage}.`);
       }
     } catch (error) {
-      console.error('Community report purge failed:', error?.message || error);
+      console.error('Community report purge failed:', (error as Error)?.message || error);
     }
   };
 

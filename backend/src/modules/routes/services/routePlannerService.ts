@@ -8,27 +8,40 @@ import { estimateHikingDurationMin } from '../domain/routeTiming.js';
 import { getRouteGeographyProfileForRoute } from './routeGeographyService.js';
 import { config } from '../../../config/index.js';
 import { generateRouteIntroduction } from './routeNarrationService.js';
+import type {
+  Coordinate,
+  GeographyProfile,
+  Hazard,
+  PlanRouteResponse,
+  RouteCandidate,
+  RouteOption,
+  RoutePayload,
+  User,
+  UserLevel,
+} from 'hikeshield-shared';
 
 const MAX_CANDIDATES = 6;
 const MAX_ROUTE_DIRECT_DISTANCE_KM = 80;
+const MIN_ROUTE_DIRECT_DISTANCE_M = 100;
 
-function toRad(degrees) {
+function toRad(degrees: number): number {
   return (degrees * Math.PI) / 180;
 }
 
-function directDistanceKm(start, end) {
+function directDistanceKm(start: Coordinate, end: Coordinate): number {
   const earthRadiusKm = 6371;
   const dLat = toRad(end.lat - start.lat);
   const dLng = toRad(end.lng - start.lng);
   const a =
-    Math.sin(dLat / 2) ** 2
-    + Math.cos(toRad(start.lat)) * Math.cos(toRad(end.lat)) * Math.sin(dLng / 2) ** 2;
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(start.lat)) * Math.cos(toRad(end.lat)) * Math.sin(dLng / 2) ** 2;
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function assertCoordinate(point, fieldName) {
-  const lat = Number(point?.lat);
-  const lng = Number(point?.lng);
+function assertCoordinate(point: unknown, fieldName: string): Coordinate {
+  const p = point as Record<string, unknown>;
+  const lat = Number(p?.lat);
+  const lng = Number(p?.lng);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     throw new Error(`${fieldName} must include numeric lat/lng`);
   }
@@ -38,38 +51,55 @@ function assertCoordinate(point, fieldName) {
   return { lat, lng };
 }
 
-const MIN_ROUTE_DIRECT_DISTANCE_M = 100;
-
-function assertRouteDistance(start, end) {
+function assertRouteDistance(start: Coordinate, end: Coordinate): void {
   const distanceKm = directDistanceKm(start, end);
   if (distanceKm > MAX_ROUTE_DIRECT_DISTANCE_KM) {
-    throw new Error(`Start and destination are too far apart for hiking route planning. Choose two points within ${MAX_ROUTE_DIRECT_DISTANCE_KM} km of each other.`);
+    throw new Error(
+      `Start and destination are too far apart for hiking route planning. Choose two points within ${MAX_ROUTE_DIRECT_DISTANCE_KM} km of each other.`,
+    );
   }
   if (distanceKm * 1000 < MIN_ROUTE_DIRECT_DISTANCE_M) {
-    throw new Error('Start and destination are too close together. Choose two distinct points at least 100 m apart.');
+    throw new Error(
+      'Start and destination are too close together. Choose two distinct points at least 100 m apart.',
+    );
   }
 }
 
-async function loadLatestHazards() {
+interface SimpleHazard extends Hazard {
+  feelsLike?: number;
+}
+
+async function loadLatestHazards(): Promise<SimpleHazard[]> {
   const snapshot = await getLatestHazardSnapshot();
-  const official = snapshot?.hazards?.length ? snapshot.hazards : [];
+  const official: SimpleHazard[] = snapshot?.hazards?.length ? snapshot.hazards : [];
   const manual = await listManualHazards({ includeInactive: false });
   const reportsPayload = await listCommunityReports(300);
-  const reports = (reportsPayload?.reports || []).map((report) => ({
-    id: report.id,
-    type: report.hazardType || 'other',
-    severity: report.severity || 'moderate',
-    title: report.title || report.locationName || 'Community report',
-    description: report.description || '',
-    source: 'Community Report',
-    updatedAt: report.reportedAt,
-    coordinates: [report.latitude, report.longitude],
-  }));
+  const reports: SimpleHazard[] = (reportsPayload?.reports || []).map(
+    (report: Record<string, unknown>) => ({
+      id: report.id as string,
+      type: (report.hazardType as Hazard['type']) || 'other',
+      severity: (report.severity as Hazard['severity']) || 'moderate',
+      title: (report.title as string) || (report.locationName as string) || 'Community report',
+      description: (report.description as string) || '',
+      source: 'Community Report',
+      updatedAt: report.reportedAt as string,
+      coordinates: [report.latitude as number, report.longitude as number] as [number, number],
+    }),
+  );
 
   return [...official, ...manual, ...reports];
 }
 
-function geometrySignature(geometry = []) {
+interface RouteShape {
+  geometry?: number[][];
+  distanceKm?: number;
+  durationMin?: number;
+  id?: string;
+  rawDurationMin?: number;
+  difficulty?: string;
+}
+
+function geometrySignature(geometry: number[][] = []): string {
   if (!Array.isArray(geometry) || geometry.length < 2) return '';
   const first = geometry[0];
   const last = geometry[geometry.length - 1];
@@ -81,9 +111,9 @@ function geometrySignature(geometry = []) {
     .join('|');
 }
 
-function dedupeRoutes(routes) {
-  const seen = new Set();
-  const unique = [];
+function dedupeRoutes(routes: RouteShape[]): RouteShape[] {
+  const seen = new Set<string>();
+  const unique: RouteShape[] = [];
   routes.forEach((route) => {
     const signature = geometrySignature(route.geometry);
     const key = `${signature}:${route.distanceKm}:${route.durationMin}`;
@@ -95,9 +125,9 @@ function dedupeRoutes(routes) {
   return unique;
 }
 
-async function buildCandidateRoutes(start, end) {
+async function buildCandidateRoutes(start: Coordinate, end: Coordinate): Promise<RouteShape[]> {
   const baseRoutes = await fetchOpenRouteServiceRoutes([start, end], { alternatives: true });
-  const candidates = [...baseRoutes];
+  const candidates: RouteShape[] = [...baseRoutes];
 
   if (candidates.length < 3) {
     const detours = buildDetourWaypointCandidates(start, end);
@@ -117,18 +147,19 @@ async function buildCandidateRoutes(start, end) {
     }));
 }
 
-function refitDurationWithGeography(route, geographyProfile, userLevel) {
+function refitDurationWithGeography(
+  route: RouteShape,
+  geographyProfile: GeographyProfile,
+  userLevel: UserLevel,
+): RouteShape & { refittedDurationMin?: number } {
   const refitted = estimateHikingDurationMin({
-    distanceKm: route.distanceKm,
+    distanceKm: route.distanceKm ?? 0,
     geographyProfile,
     userLevel,
     fallbackSpeedKmh: config.hikingBaseSpeedKmh,
     floorMin: route.rawDurationMin || 0,
   });
-  const finalDuration = Math.max(
-    Number(route.rawDurationMin || 0),
-    Number(refitted || 0),
-  );
+  const finalDuration = Math.max(Number(route.rawDurationMin || 0), Number(refitted || 0));
   return {
     ...route,
     durationMin: Number(Number(finalDuration).toFixed(1)),
@@ -136,7 +167,7 @@ function refitDurationWithGeography(route, geographyProfile, userLevel) {
   };
 }
 
-function toRoutePayload(route) {
+function toRoutePayload(route: RouteCandidate): RoutePayload {
   return {
     id: route.id,
     geometry: route.geometry,
@@ -147,55 +178,68 @@ function toRoutePayload(route) {
     riskLevel: route.riskLevel,
     goNoGo: route.goNoGo,
     safetyStatus: route.safetyStatus || (route.goNoGo === 'No-Go' ? 'Dangerous' : 'Safe'),
-    noGoReasons: route.noGoReasons || {},
+    noGoReasons: route.noGoReasons || ({} as RouteCandidate['noGoReasons']),
     intro: route.intro || '',
     explanation: route.explanation,
     keyRisks: route.keyRisks,
     zoneSummary: route.zoneSummary,
     suggestedPrep: route.suggestedPrep,
     geographyProfile: route.geographyProfile,
-    scoringBreakdown: route.scoringBreakdown || {},
+    scoringBreakdown: route.scoringBreakdown || ({} as RouteCandidate['scoringBreakdown']),
   };
 }
 
-async function attachRouteIntroductions(payload) {
-  const byId = new Map();
-  const allRoutes = [
-    payload.recommendedRoute,
-    ...(payload.alternatives || []),
-    ...(payload.routeOptions || []),
-  ].filter(Boolean);
+async function attachRouteIntroductions(
+  recommendedRoute: RoutePayload,
+  alternatives: RoutePayload[],
+  routeOptions: RouteOption[],
+  userLevel: UserLevel,
+): Promise<{
+  recommendedRoute: RoutePayload;
+  alternatives: RoutePayload[];
+  routeOptions: RouteOption[];
+}> {
+  const byId = new Map<string, string>();
+  const allRoutes = [recommendedRoute, ...alternatives, ...routeOptions].filter(Boolean);
 
   await Promise.all(
     allRoutes.map(async (route) => {
       if (!route?.id || byId.has(route.id)) return;
-      byId.set(route.id, await generateRouteIntroduction({
-        ...route,
-        hikerExperienceLevel: payload.userLevel,
-      }));
+      byId.set(
+        route.id,
+        await generateRouteIntroduction({
+          ...route,
+          hikerExperienceLevel: userLevel,
+        } as Parameters<typeof generateRouteIntroduction>[0]),
+      );
     }),
   );
 
-  const decorate = (route) => {
-    if (!route) return route;
-    return { ...route, intro: byId.get(route.id) || route.intro || '' };
+  const decorate = <T extends RoutePayload>(route: T): T => {
+    const intro = byId.get(route.id) || route.intro || '';
+    return { ...route, intro } as T;
   };
 
   return {
-    recommendedRoute: decorate(payload.recommendedRoute),
-    alternatives: (payload.alternatives || []).map(decorate),
-    routeOptions: (payload.routeOptions || []).map(decorate),
+    recommendedRoute: decorate(recommendedRoute),
+    alternatives: alternatives.map(decorate),
+    routeOptions: routeOptions.map(decorate),
   };
 }
 
-function pickDifficultyRouteOptions(scoredRoutes, opts) {
+function pickDifficultyRouteOptions(
+  scoredRoutes: RouteCandidate[],
+  opts?: { userLevel?: UserLevel; userProfile?: User | null; now?: Date },
+): RouteOption[] {
   const { userLevel, userProfile, now } = opts || {};
   const desired = ['Easy', 'Moderate', 'Hard'];
-  const selected = [];
-  const usedIds = new Set();
+  const selected: { slot: string; route: RouteCandidate }[] = [];
+  const usedIds = new Set<string>();
 
   desired.forEach((difficulty) => {
-    const hit = scoredRoutes.find((route) => route.difficulty === difficulty && !usedIds.has(route.id));
+    const hit = scoredRoutes.find(
+      (route) => route.difficulty === difficulty && !usedIds.has(route.id),
+    );
     if (!hit) return;
     usedIds.add(hit.id);
     selected.push({ slot: difficulty, route: hit });
@@ -211,28 +255,25 @@ function pickDifficultyRouteOptions(scoredRoutes, opts) {
   }
 
   return selected.slice(0, 3).map(({ slot, route }) => {
-    // Re-derive suggestedPrep so the Easy / Moderate / Hard slots each surface
-    // tier-appropriate advice — otherwise a Hard-slot route with an inherent
-    // "Moderate" label would inherit Moderate-tier tips.
     const tieredPrep = buildSuggestedPrep({
       route,
-      userLevel,
-      userProfile,
+      userLevel: userLevel ?? 'newcomer',
+      userProfile: userProfile as unknown as User | null,
       keyRisks: route.keyRisks,
       riskScore: route.riskScore,
       goNoGo: route.goNoGo,
       geographyProfile: route.geographyProfile,
-      difficultyTier: slot,
+      difficultyTier: slot as RouteCandidate['difficulty'],
       now,
     });
     return {
-      targetDifficulty: slot,
+      targetDifficulty: slot as RouteOption['targetDifficulty'],
       ...toRoutePayload({ ...route, suggestedPrep: tieredPrep }),
-    };
+    } as RouteOption;
   });
 }
 
-function burdenRatio(route, fastestRoute) {
+function burdenRatio(route: RouteCandidate, fastestRoute: RouteCandidate): number {
   const fastestDistance = Math.max(fastestRoute?.distanceKm || 1, 0.1);
   const fastestDuration = Math.max(fastestRoute?.durationMin || 1, 0.1);
   const extraDistance = Math.max(0, (route.distanceKm || 0) - fastestDistance) / fastestDistance;
@@ -240,38 +281,31 @@ function burdenRatio(route, fastestRoute) {
   return 0.5 * extraDistance + 0.5 * extraDuration;
 }
 
-function compositeSelectionScore(route, fastestRoute) {
-  // Prefer routes with low risk AND that don't balloon the trip compared to
-  // the fastest routing option. A 0-20 point tax per 100% extra burden keeps the
-  // tie-breaker mild — hazard avoidance still dominates.
+function compositeSelectionScore(route: RouteCandidate, fastestRoute: RouteCandidate): number {
   const ratio = burdenRatio(route, fastestRoute);
   const burdenPenalty = Math.min(20, ratio * 20);
   return Number(route.riskScore || 0) + burdenPenalty;
 }
 
-/**
- * Plan a safer hiking route between two coordinates.
- *
- * Orchestrates: coordinate validation → candidate generation via
- * OpenRouteService → hazard loading → geography enrichment → risk
- * scoring → route selection → AI narration.
- *
- * @param {object} params
- * @param {string | null} params.userId
- * @param {import('hikeshield-shared').Coordinate} params.start
- * @param {import('hikeshield-shared').Coordinate} params.end
- * @param {Date} [params.now]
- * @returns {Promise<import('hikeshield-shared').PlanRouteResponse & { userLevel: import('hikeshield-shared').UserLevel }>}
- */
-export async function planSaferRoute({ userId, start, end, now = new Date() }) {
+export interface PlanSaferRouteParams {
+  userId: string | null;
+  start: Coordinate;
+  end: Coordinate;
+  now?: Date;
+}
+
+export async function planSaferRoute({
+  userId,
+  start,
+  end,
+  now = new Date(),
+}: PlanSaferRouteParams): Promise<PlanRouteResponse & { userLevel: UserLevel }> {
   const normalizedStart = assertCoordinate(start, 'start');
   const normalizedEnd = assertCoordinate(end, 'end');
   assertRouteDistance(normalizedStart, normalizedEnd);
 
-  const userProfile = /** @type {import('hikeshield-shared').User | null} */ (
-    /** @type {unknown} */ (userId ? await getRouteContextByUserId(userId) : null)
-  );
-  const userLevel = userProfile?.experienceLevel || 'newcomer';
+  const userProfile = userId ? await getRouteContextByUserId(userId) : null;
+  const userLevel: UserLevel = userProfile?.experienceLevel || 'newcomer';
 
   const candidates = await buildCandidateRoutes(normalizedStart, normalizedEnd);
   if (!candidates.length) {
@@ -280,7 +314,7 @@ export async function planSaferRoute({ userId, start, end, now = new Date() }) {
 
   const hazards = await loadLatestHazards();
 
-  const maxFeelsLike = hazards.reduce((max, hazard) => {
+  const maxFeelsLike = hazards.reduce<number | null>((max, hazard) => {
     const temp = Number(hazard.feelsLike);
     return Number.isFinite(temp) && (max === null || temp > max) ? temp : max;
   }, null);
@@ -293,15 +327,17 @@ export async function planSaferRoute({ userId, start, end, now = new Date() }) {
     }),
   );
 
-  const routesForFastest = candidatesWithGeography.map(({ route }) => route);
-  const fastestRoute = [...routesForFastest].sort((a, b) => a.durationMin - b.durationMin)[0];
+  const routesForFastest = candidatesWithGeography.map(({ route }) => route as unknown as RouteCandidate);
+  const fastestRoute = [...routesForFastest].sort(
+    (a, b) => (a.durationMin ?? 0) - (b.durationMin ?? 0),
+  )[0];
 
   const scored = candidatesWithGeography.map(({ route, geographyProfile }) =>
     scoreRouteCandidate({
-      route,
+      route: route as unknown as RouteCandidate,
       hazards,
       userLevel,
-      userProfile,
+      userProfile: userProfile as unknown as User | null,
       fastestRoute,
       geographyProfile,
       now,
@@ -310,9 +346,6 @@ export async function planSaferRoute({ userId, start, end, now = new Date() }) {
     }),
   );
 
-  // Primary: pick the route with the best combined risk + burden profile. This
-  // avoids the situation where the "safest" route is a 4-hour detour that
-  // barely reduces risk vs. the fastest route.
   const sortedForRecommendation = [...scored]
     .map((route) => ({ route, compositeScore: compositeSelectionScore(route, fastestRoute) }))
     .sort((a, b) => {
@@ -329,22 +362,27 @@ export async function planSaferRoute({ userId, start, end, now = new Date() }) {
   const recommendedRoute = sortedForRecommendation[0];
   const alternatives = sortedForRecommendation.slice(1).map((route) => toRoutePayload(route));
 
-  // Difficulty-slot picker uses pure risk order so the 3 options reflect the
-  // safest-first ranking, not the composite tie-breaker above.
   const scoredByRisk = [...scored].sort((a, b) => a.riskScore - b.riskScore);
-  const routeOptions = pickDifficultyRouteOptions(scoredByRisk, { userLevel, userProfile, now });
-
-  const payload = {
+  const routeOptions = pickDifficultyRouteOptions(scoredByRisk, {
     userLevel,
-    recommendedRoute: toRoutePayload(recommendedRoute),
+    userProfile: userProfile as unknown as User | null,
+    now,
+  });
+
+  const recommendedPayload = toRoutePayload(recommendedRoute);
+
+  const withIntroductions = await attachRouteIntroductions(
+    recommendedPayload,
     alternatives,
     routeOptions,
-    scoringBreakdown: recommendedRoute.scoringBreakdown,
-  };
+    userLevel,
+  );
 
-  const withIntroductions = await attachRouteIntroductions(payload);
   return {
-    ...payload,
-    ...withIntroductions,
+    userLevel,
+    recommendedRoute: withIntroductions.recommendedRoute,
+    alternatives: withIntroductions.alternatives,
+    routeOptions: withIntroductions.routeOptions,
+    scoringBreakdown: recommendedRoute.scoringBreakdown,
   };
 }

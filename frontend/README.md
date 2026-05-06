@@ -21,13 +21,14 @@
 - **Knowledge Hub** — Curated hiking safety articles served from the backend database.
 - **Authentication** — Register, login, password reset with JWT. Per-level risk
   thresholds (Newcomer / Intermediate / Advanced) affect route recommendations.
+- **Location Detail** — View place information and nearby route options.
 
 ## Tech Stack
 
 - **Framework**: Vue 3 + Vue Router (Composition API)
 - **Styling**: Tailwind CSS + custom CSS variables (HS design tokens)
 - **Maps**: Leaflet (2D), Mapbox GL JS (3D terrain)
-- **State**: Reactive stores (authStore, routePlanStore) with sessionStorage persistence
+- **State**: Reactive stores (`authStore`, `routePlanStore`) with sessionStorage persistence
 - **Build**: Vite
 - **Deploy**: Vercel
 
@@ -37,40 +38,40 @@
 frontend/
 ├── src/
 │   ├── components/
-│   │   ├── Navbar.vue            # Top navigation bar
-│   │   ├── SiteFooter.vue        # Global footer
-│   │   └── HomeRiskPreviewMap.vue # Embedded risk preview on home page
+│   │   ├── Navbar.vue              # Top navigation bar
+│   │   ├── SiteFooter.vue          # Global footer
+│   │   └── HomeRiskPreviewMap.vue  # Embedded risk preview on home page
 │   ├── views/
-│   │   ├── Home.vue              # Landing with preview map, alerts, articles
-│   │   ├── RiskMap.vue           # Full-screen hazard map with severity zones
-│   │   ├── RoutePlanner.vue      # Route planning with start/end pickers
-│   │   ├── RouteDetail.vue       # 3D route inspection & risk breakdown
-│   │   ├── CommunityReports.vue  # Browse community hazard reports
-│   │   ├── ReportHazard.vue      # Submit a new hazard report
-│   │   ├── KnowledgeHub.vue      # Safety articles browser
-│   │   ├── LocationDetail.vue    # Location information page
-│   │   ├── Login.vue             # Sign in
-│   │   ├── Register.vue          # Create account
-│   │   ├── ForgotPassword.vue    # Password reset via security question
-│   │   └── Profile.vue           # User profile & settings
+│   │   ├── Home.vue                # Landing with preview map, alerts, articles
+│   │   ├── RiskMap.vue             # Full-screen hazard map with severity zones
+│   │   ├── RoutePlanner.vue        # Route planning with start/end pickers
+│   │   ├── RouteDetail.vue         # 3D route inspection & risk breakdown
+│   │   ├── CommunityReports.vue    # Browse community hazard reports
+│   │   ├── ReportHazard.vue        # Submit a new hazard report
+│   │   ├── KnowledgeHub.vue        # Safety articles browser
+│   │   ├── LocationDetail.vue      # Location information page
+│   │   ├── Login.vue               # Sign in
+│   │   ├── Register.vue            # Create account
+│   │   ├── ForgotPassword.vue      # Password reset via security question
+│   │   └── Profile.vue             # User profile & settings
 │   ├── services/
-│   │   ├── hazardApi.js          # Hazard feed fetching with caching
-│   │   ├── routeApi.js           # Route planning API client
-│   │   ├── routePlanStore.js     # Session-persisted route plan state
-│   │   ├── authApi.js            # Auth API client
-│   │   ├── authStore.js          # Reactive auth state with session persistence
-│   │   ├── communityReportApi.js # Community report CRUD
-│   │   ├── knowledgeApi.js       # Knowledge article fetching
-│   │   ├── locationApi.js        # Geocoding / reverse geocoding
-│   │   └── localCache.js         # Generic client-side cache helper
+│   │   ├── hazardApi.js            # Hazard feed fetching with local cache
+│   │   ├── routeApi.ts             # Route planning API client
+│   │   ├── routePlanStore.ts       # Session-persisted route plan state
+│   │   ├── authApi.ts              # Auth API client
+│   │   ├── authStore.ts            # Reactive auth state with sessionStorage persistence
+│   │   ├── communityReportApi.js   # Community report CRUD
+│   │   ├── knowledgeApi.js         # Knowledge article fetching
+│   │   ├── locationApi.js          # Geocoding / reverse geocoding
+│   │   └── localCache.js           # Generic client-side cache helper (localStorage)
 │   ├── router/
-│   │   └── index.js              # Route definitions & navigation guards
-│   ├── utils/                    # Shared utility functions
-│   ├── App.vue                   # Root component with site access gate
-│   ├── main.js                   # Application entry point
-│   └── style.css                 # Global styles & HS design tokens
-├── public/                       # Static assets
-├── index.html                    # HTML template
+│   │   └── index.js                # Route definitions & navigation guards
+│   ├── utils/                      # Shared utility functions
+│   ├── App.vue                     # Root component with site access gate
+│   ├── main.js                     # Application entry point
+│   └── style.css                   # Global styles & HS design tokens
+├── public/                         # Static assets
+├── index.html                      # HTML template
 ├── package.json
 ├── vite.config.js
 ├── tailwind.config.js
@@ -107,13 +108,13 @@ The frontend polls the backend every 60 seconds for hazard updates:
 GET /hazards/realtime?bbox=west,south,east,north&layers=fire,flood,storm,heat
 ```
 
-Route planning requires authentication:
+Route planning supports both authenticated and anonymous users:
 
 ```
-POST /routes/plan   (header: Authorization: Bearer <token>)
+POST /routes/plan   (optional header: Authorization: Bearer <token>)
 ```
 
-Anonymous users are tracked via `X-Plan-Session-Id` (UUID in localStorage).
+Anonymous users are tracked via `X-Plan-Session-Id` (UUID in sessionStorage).
 
 ## Design Tokens
 
@@ -132,8 +133,6 @@ custom properties in `src/style.css`:
 | `--hs-sage` | `#e7eee4` | Section backgrounds |
 
 **Fonts**: IBM Plex Sans (body), Fraunces (headings)
-
-See `DESIGN.md` at the repository root for the full design system.
 
 ## Map Strategy
 
