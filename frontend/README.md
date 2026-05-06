@@ -55,27 +55,26 @@ frontend/
 │   │   ├── ForgotPassword.vue      # Password reset via security question
 │   │   └── Profile.vue             # User profile & settings
 │   ├── services/
-│   │   ├── hazardApi.js            # Hazard feed fetching with local cache
+│   │   ├── hazardApi.ts            # Hazard feed fetching with local cache
 │   │   ├── routeApi.ts             # Route planning API client
 │   │   ├── routePlanStore.ts       # Session-persisted route plan state
 │   │   ├── authApi.ts              # Auth API client
 │   │   ├── authStore.ts            # Reactive auth state with sessionStorage persistence
-│   │   ├── communityReportApi.js   # Community report CRUD
-│   │   ├── knowledgeApi.js         # Knowledge article fetching
-│   │   ├── locationApi.js          # Geocoding / reverse geocoding
-│   │   └── localCache.js           # Generic client-side cache helper (localStorage)
+│   │   ├── communityReportApi.ts   # Community report CRUD
+│   │   ├── knowledgeApi.ts         # Knowledge article fetching
+│   │   ├── locationApi.ts          # Geocoding / reverse geocoding
+│   │   └── localCache.ts           # Generic client-side cache helper (localStorage)
 │   ├── router/
-│   │   └── index.js                # Route definitions & navigation guards
+│   │   └── index.ts                # Route definitions & navigation guards
 │   ├── utils/                      # Shared utility functions
 │   ├── App.vue                     # Root component with site access gate
-│   ├── main.js                     # Application entry point
+│   ├── main.ts                     # Application entry point
 │   └── style.css                   # Global styles & HS design tokens
 ├── public/                         # Static assets
 ├── index.html                      # HTML template
 ├── package.json
-├── vite.config.js
-├── tailwind.config.js
-└── postcss.config.js
+├── vite.config.ts
+└── tailwind.config.ts
 ```
 
 ## Quick Start

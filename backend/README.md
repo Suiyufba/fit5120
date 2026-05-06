@@ -74,7 +74,7 @@ src/
 │   └── db/                      # Postgres client & repositories
 ├── shared/
 │   └── http/                    # Shared HTTP fetch utilities
-└── server.js                    # Application entry point
+└── server.ts                    # Application entry point
 ```
 
 ## Local Start

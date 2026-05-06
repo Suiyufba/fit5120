@@ -5,23 +5,22 @@ runtime code is emitted.
 
 ## Usage
 
-### In the backend (Node.js with `--checkJs`)
+### In the backend (TypeScript)
 
-Add a JSDoc type import in any `.js` file:
+Import shared types directly in any `.ts` file:
 
-```js
-/** @type {import('hikeshield-shared').RoutePayload} */
+```ts
+import type { RoutePayload } from 'hikeshield-shared';
+
 const payload = toRoutePayload(route);
 ```
 
-Or use inline type casts:
+Or annotate function contracts directly:
 
-```js
-/**
- * @param {import('hikeshield-shared').PlanRouteRequest} req
- * @returns {Promise<import('hikeshield-shared').PlanRouteResponse>}
- */
-export async function planSaferRoute(req) { ... }
+```ts
+import type { PlanRouteRequest, PlanRouteResponse } from 'hikeshield-shared';
+
+export async function planSaferRoute(req: PlanRouteRequest): Promise<PlanRouteResponse> { ... }
 ```
 
 ### In the frontend (Vite)
