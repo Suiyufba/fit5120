@@ -318,7 +318,22 @@ function getPlannerScrollContainer() {
 
 async function scrollToPlanResult() {
   await nextTick()
-  plannerSummary.value?.scrollIntoView({
+  const summaryElement = plannerSummary.value
+  if (!summaryElement) return
+
+  const scrollContainer = getPlannerScrollContainer()
+  if (scrollContainer) {
+    const containerRect = scrollContainer.getBoundingClientRect()
+    const summaryRect = summaryElement.getBoundingClientRect()
+    const top = scrollContainer.scrollTop + summaryRect.top - containerRect.top - 12
+    scrollContainer.scrollTo({
+      top: Math.max(top, 0),
+      behavior: 'smooth',
+    })
+    return
+  }
+
+  summaryElement.scrollIntoView({
     behavior: 'smooth',
     block: 'start',
   })
@@ -553,13 +568,15 @@ onUnmounted(() => {
 
       <p v-if="error" ref="plannerError" class="planner-error" role="alert">{{ error }}</p>
 
-      <PlannerRouteSummary
-        :route-choices="routeChoices"
-        :selected-route-id="selectedRouteId"
-        :summary="summary"
-        @select-route="selectRoute"
-        @view-details="goToDetails"
-      />
+      <div ref="plannerSummary">
+        <PlannerRouteSummary
+          :route-choices="routeChoices"
+          :selected-route-id="selectedRouteId"
+          :summary="summary"
+          @select-route="selectRoute"
+          @view-details="goToDetails"
+        />
+      </div>
 
       <PlannerHistoryPanel
         :history-items="historyItems"
