@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import SiteFooter from '../components/SiteFooter.vue'
 import HomeRiskPreviewMap from '../components/HomeRiskPreviewMap.vue'
+import TrailMotionShowcase from '../components/TrailMotionShowcase.vue'
 import { fetchRealtimeHazards } from '../services/hazardApi'
 import { fetchCommunityReports } from '../services/communityReportApi'
 import { fetchKnowledgeArticles } from '../services/knowledgeApi'
@@ -256,6 +257,8 @@ onUnmounted(() => {
         </div>
       </div>
     </section>
+
+    <TrailMotionShowcase />
 
     <!-- Risk Map Preview & Hazard Bento -->
     <section class="px-4 md:px-8 max-w-7xl mx-auto">
