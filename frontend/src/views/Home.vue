@@ -257,8 +257,9 @@ onUnmounted(() => {
           <span class="home-hero__kicker">
             <span></span>Premium Victorian Safety Guide
           </span>
-          <h1>
-            Hike Victoria with quiet <span>confidence.</span>
+          <h1 class="home-hero__title">
+            <span class="home-hero__title-main">Redefine trail safety</span>
+            <span class="home-hero__title-script">with live interactions</span>
           </h1>
           <p>
             Plan safer routes, read live risk layers, and move through the outdoors with official data and community intelligence in one refined trail companion.
@@ -280,6 +281,10 @@ onUnmounted(() => {
         </div>
         <div class="home-hero__interaction" aria-label="Interactive hiking safety overview">
           <div class="home-hero__halo" aria-hidden="true"></div>
+          <div class="home-hero__cursor-tag" aria-hidden="true">
+            <span class="material-symbols-outlined">near_me</span>
+            <strong>HikeShield</strong>
+          </div>
           <div class="home-hero__radar" aria-hidden="true">
             <span></span>
             <span></span>
@@ -576,6 +581,7 @@ onUnmounted(() => {
   isolation: isolate;
   margin-bottom: 1.5rem;
   perspective: 1200px;
+  background: #f8f7f1;
 }
 
 .home-hero__media,
@@ -588,6 +594,7 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center bottom;
   transform: scale(1.08) translate3d(
     calc((50% - var(--hero-pointer-x)) * 0.035),
     calc((50% - var(--hero-pointer-y)) * 0.028),
@@ -599,9 +606,21 @@ onUnmounted(() => {
 .home-hero__overlay {
   z-index: 1;
   background:
-    radial-gradient(circle at var(--hero-pointer-x) var(--hero-pointer-y), rgba(217, 232, 207, 0.28), transparent 21rem),
-    linear-gradient(90deg, rgba(13, 35, 29, 0.9) 0%, rgba(13, 35, 29, 0.62) 42%, rgba(13, 35, 29, 0.16) 100%),
-    linear-gradient(0deg, rgba(13, 35, 29, 0.72), transparent 44%);
+    radial-gradient(circle at var(--hero-pointer-x) var(--hero-pointer-y), rgba(201, 225, 255, 0.45), transparent 18rem),
+    linear-gradient(180deg, rgba(248, 247, 241, 0.96) 0%, rgba(248, 247, 241, 0.76) 32%, rgba(248, 247, 241, 0.12) 58%, rgba(13, 35, 29, 0.58) 100%),
+    linear-gradient(90deg, rgba(248, 247, 241, 0.9) 0%, rgba(248, 247, 241, 0.52) 38%, rgba(248, 247, 241, 0.05) 100%);
+}
+
+.home-hero::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(118deg, transparent 0 46%, rgba(126, 177, 223, 0.18) 47%, rgba(126, 177, 223, 0.04) 52%, transparent 55%),
+    radial-gradient(ellipse at 78% 40%, rgba(255, 255, 255, 0.52), transparent 26rem);
+  mix-blend-mode: screen;
 }
 
 .home-hero__content {
@@ -617,8 +636,8 @@ onUnmounted(() => {
 }
 
 .home-hero__copy {
-  max-width: 48rem;
-  color: #fffaf2;
+  max-width: 54rem;
+  color: #101412;
   animation: hero-copy-rise 0.85s cubic-bezier(0.2, 0.78, 0.22, 1) both;
 }
 
@@ -631,7 +650,7 @@ onUnmounted(() => {
   font-weight: 900;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255, 250, 242, 0.82);
+  color: rgba(19, 43, 35, 0.72);
 }
 
 .home-hero__kicker span {
@@ -640,23 +659,35 @@ onUnmounted(() => {
   background: currentColor;
 }
 
-.home-hero h1 {
+.home-hero__title {
   max-width: 54rem;
   margin: 0;
-  color: #fffaf2;
-  font-size: clamp(3.1rem, 6.8vw, 6.55rem);
-  line-height: 1.04;
-  letter-spacing: -0.035em;
+  color: #050807;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: clamp(3.7rem, 7.8vw, 8rem);
+  font-weight: 500;
+  line-height: 0.9;
+  letter-spacing: 0;
 }
 
-.home-hero h1 span {
-  color: #d9e8cf;
+.home-hero__title-main,
+.home-hero__title-script {
+  display: block;
+}
+
+.home-hero__title-script {
+  margin-top: -0.08em;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 0.74em;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0;
 }
 
 .home-hero p {
-  max-width: 39rem;
+  max-width: 38rem;
   margin-top: 1.5rem;
-  color: rgba(255, 250, 242, 0.78);
+  color: rgba(19, 43, 35, 0.74);
   font-size: clamp(1rem, 1.35vw, 1.18rem);
   line-height: 1.7;
 }
@@ -679,20 +710,53 @@ onUnmounted(() => {
 
 .home-hero__halo {
   position: absolute;
-  inset: 8% -5% 2% 4%;
-  border-radius: 2rem;
+  inset: 3% -8% -6% 0%;
+  border-radius: 48% 52% 44% 56% / 38% 42% 58% 62%;
   background:
-    radial-gradient(circle at 36% 32%, rgba(255, 250, 242, 0.58), transparent 7rem),
-    radial-gradient(circle at 70% 74%, rgba(143, 174, 131, 0.44), transparent 9rem),
-    linear-gradient(150deg, rgba(255, 250, 242, 0.22), rgba(33, 72, 59, 0.1));
+    radial-gradient(circle at 24% 40%, rgba(255, 231, 184, 0.92), transparent 6rem),
+    radial-gradient(circle at 48% 46%, rgba(159, 193, 128, 0.72), transparent 11rem),
+    radial-gradient(circle at 76% 32%, rgba(129, 176, 228, 0.54), transparent 8rem),
+    linear-gradient(140deg, rgba(255, 250, 242, 0.5), rgba(33, 72, 59, 0.08));
   filter: blur(0.2px);
-  transform: translateZ(-45px) rotate(-3deg);
+  transform: translateZ(-45px) rotate(-10deg) skewX(-8deg);
   opacity: 0.94;
+}
+
+.home-hero__cursor-tag {
+  position: absolute;
+  z-index: 5;
+  top: 24%;
+  right: 16%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  border: 3px solid #fff;
+  border-radius: 0.58rem;
+  background: #060807;
+  padding: 0.34rem 0.58rem 0.34rem 0.42rem;
+  color: #fff;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+  transform: translateZ(170px) rotate(-2deg);
+  animation: hero-cursor-drift 4.8s ease-in-out infinite;
+}
+
+.home-hero__cursor-tag .material-symbols-outlined {
+  margin-left: -2.5rem;
+  color: #050807;
+  font-size: 2.9rem;
+  filter: drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff);
+  transform: rotate(-18deg);
+}
+
+.home-hero__cursor-tag strong {
+  font-size: 0.74rem;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .home-hero__radar {
   position: absolute;
-  inset: 4.5rem 1.2rem auto auto;
+  inset: 6.8rem 0.8rem auto auto;
   width: min(72vw, 24rem);
   aspect-ratio: 1;
   border-radius: 50%;
@@ -706,6 +770,7 @@ onUnmounted(() => {
     0 28px 80px rgba(0, 0, 0, 0.28);
   transform: translateZ(30px) rotateX(58deg) rotateZ(-18deg);
   animation: hero-radar-sweep 7s linear infinite;
+  opacity: 0.82;
 }
 
 .home-hero__radar span {
@@ -782,15 +847,15 @@ onUnmounted(() => {
 }
 
 .home-hero__trail-card--route {
-  top: 12%;
-  left: 2%;
+  top: 20%;
+  left: 0;
   transform: translateZ(90px) rotate(-4deg);
   animation: hero-float-a 5.8s ease-in-out infinite;
 }
 
 .home-hero__trail-card--weather {
   right: 2%;
-  bottom: 8%;
+  bottom: 4%;
   transform: translateZ(110px) rotate(3deg);
   animation: hero-float-b 6.3s ease-in-out infinite;
 }
@@ -800,7 +865,7 @@ onUnmounted(() => {
   z-index: 4;
   left: 8%;
   right: 10%;
-  bottom: 14%;
+  bottom: 13%;
   display: grid;
   gap: 0.8rem;
   border: 1px solid rgba(255, 250, 242, 0.28);
@@ -896,6 +961,18 @@ onUnmounted(() => {
   }
 }
 
+@keyframes hero-cursor-drift {
+  0%,
+  100% {
+    margin-top: 0;
+    margin-right: 0;
+  }
+  50% {
+    margin-top: -0.7rem;
+    margin-right: 0.55rem;
+  }
+}
+
 @media (max-width: 900px) {
   .home-hero {
     min-height: auto;
@@ -931,8 +1008,8 @@ onUnmounted(() => {
   }
 
   .home-hero h1 {
-    font-size: clamp(3rem, 17vw, 4.4rem);
-    line-height: 1.03;
+    font-size: clamp(3.2rem, 16vw, 4.7rem);
+    line-height: 0.94;
   }
 
   .home-hero__actions {
@@ -949,7 +1026,7 @@ onUnmounted(() => {
 
   .home-hero__trail-card--route {
     left: 0;
-    top: 8%;
+    top: 14%;
   }
 
   .home-hero__trail-card--weather {
@@ -962,8 +1039,15 @@ onUnmounted(() => {
     left: auto;
     right: auto;
     bottom: auto;
-    margin-top: 7.5rem;
+    margin-top: 8.5rem;
     transform: none;
+  }
+
+  .home-hero__cursor-tag {
+    top: 7.5rem;
+    right: 1.2rem;
+    transform: scale(0.86);
+    transform-origin: right top;
   }
 }
 
@@ -973,7 +1057,8 @@ onUnmounted(() => {
   .home-hero__copy,
   .home-hero__radar,
   .home-hero__radar span,
-  .home-hero__trail-card {
+  .home-hero__trail-card,
+  .home-hero__cursor-tag {
     animation: none;
     transition: none;
     transform: none;
