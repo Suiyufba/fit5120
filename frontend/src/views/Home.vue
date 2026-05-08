@@ -3,7 +3,6 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import SiteFooter from '../components/SiteFooter.vue'
 import HomeRiskPreviewMap from '../components/HomeRiskPreviewMap.vue'
-import HomeHeroThreeBackdrop from '../components/HomeHeroThreeBackdrop.vue'
 import { fetchRealtimeHazards } from '../services/hazardApi'
 import { fetchCommunityReports } from '../services/communityReportApi'
 import { fetchKnowledgeArticles } from '../services/knowledgeApi'
@@ -212,10 +211,9 @@ onUnmounted(() => {
     <section class="home-hero">
       <div class="home-hero__media">
         <img
-          alt="Golden mountain trail through Victorian bushland"
-          src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=2200&q=82"
+          alt="Dramatic mountain landscape with cloudy sky"
+          src="https://images.pexels.com/photos/34724001/pexels-photo-34724001.jpeg?auto=compress&cs=tinysrgb&w=2400"
         />
-        <HomeHeroThreeBackdrop />
       </div>
       <div class="home-hero__overlay"></div>
       <div class="home-hero__content">
@@ -528,14 +526,13 @@ onUnmounted(() => {
   height: 100%;
   object-fit: cover;
   transform: scale(1.02);
-  opacity: 0.34;
 }
 
 .home-hero__overlay {
   z-index: 1;
   background:
-    linear-gradient(90deg, rgba(13, 35, 29, 0.9) 0%, rgba(13, 35, 29, 0.62) 42%, rgba(13, 35, 29, 0.16) 100%),
-    linear-gradient(0deg, rgba(13, 35, 29, 0.72), transparent 44%);
+    linear-gradient(90deg, rgba(13, 35, 29, 0.88) 0%, rgba(13, 35, 29, 0.64) 43%, rgba(13, 35, 29, 0.28) 100%),
+    linear-gradient(0deg, rgba(13, 35, 29, 0.76), rgba(13, 35, 29, 0.14) 48%, rgba(13, 35, 29, 0.08));
 }
 
 .home-hero__content {
