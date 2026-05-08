@@ -10,6 +10,7 @@ Architecture and design documentation for the HikeShield hiking safety platform.
 ## Key Features
 
 - **Plan Safe Route** — Pick two points on a map, get multiple route candidates ranked by safety. Each route is scored against live hazards (fire, flood, storm, heat) and terrain conditions.
+- **Mobile Route Planner** — On phones and tablets, route search, point reset, planning, history, and route summary controls are available from a bottom sheet over the Leaflet map.
 - **Risk Map** — Interactive map showing active hazards across Victoria with severity zones.
 - **Community Reports** — Crowd-sourced hazard reports with photo upload and 24-hour TTL.
 - **Knowledge Hub** — Educational articles on hiking safety.

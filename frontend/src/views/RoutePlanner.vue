@@ -717,13 +717,19 @@ h1 {
   .planner-layout {
     grid-template-columns: 1fr;
     min-height: var(--mobile-safe-height);
+    overflow: hidden;
   }
 
   .planner-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
     border-right: 0;
     border-top: 1px solid rgba(33, 72, 59, 0.14);
     padding: 0 1rem 1rem;
     background: rgba(255, 250, 242, 0.96);
+    z-index: 700;
   }
 
   .planner-mobile-actions {
