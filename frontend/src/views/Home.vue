@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import SiteFooter from '../components/SiteFooter.vue'
 import HomeRiskPreviewMap from '../components/HomeRiskPreviewMap.vue'
-import TrailMotionShowcase from '../components/TrailMotionShowcase.vue'
+import HomeHeroThreeBackdrop from '../components/HomeHeroThreeBackdrop.vue'
 import { fetchRealtimeHazards } from '../services/hazardApi'
 import { fetchCommunityReports } from '../services/communityReportApi'
 import { fetchKnowledgeArticles } from '../services/knowledgeApi'
@@ -215,6 +215,7 @@ onUnmounted(() => {
           alt="Golden mountain trail through Victorian bushland"
           src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=2200&q=82"
         />
+        <HomeHeroThreeBackdrop />
       </div>
       <div class="home-hero__overlay"></div>
       <div class="home-hero__content">
@@ -257,8 +258,6 @@ onUnmounted(() => {
         </div>
       </div>
     </section>
-
-    <TrailMotionShowcase />
 
     <!-- Risk Map Preview & Hazard Bento -->
     <section class="px-4 md:px-8 max-w-7xl mx-auto">
@@ -529,6 +528,7 @@ onUnmounted(() => {
   height: 100%;
   object-fit: cover;
   transform: scale(1.02);
+  opacity: 0.34;
 }
 
 .home-hero__overlay {
