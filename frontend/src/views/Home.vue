@@ -280,19 +280,6 @@ onUnmounted(() => {
           </div>
         </div>
         <div class="home-hero__interaction" aria-label="Interactive hiking safety overview">
-          <div class="home-hero__behance-embed" aria-label="Embedded Behance interaction reference">
-            <iframe
-              title="Redefine homepage with interaction on Behance"
-              src="https://www.behance.net/embed/project/222748235?ilo0=1"
-              height="316"
-              width="404"
-              allowfullscreen
-              loading="lazy"
-              frameborder="0"
-              allow="clipboard-write"
-              referrerpolicy="strict-origin-when-cross-origin"
-            ></iframe>
-          </div>
           <div class="home-hero__halo" aria-hidden="true"></div>
           <div class="home-hero__cursor-tag" aria-hidden="true">
             <span class="material-symbols-outlined">near_me</span>
@@ -735,33 +722,11 @@ onUnmounted(() => {
   opacity: 0.94;
 }
 
-.home-hero__behance-embed {
-  position: absolute;
-  z-index: 6;
-  top: 0;
-  right: 0;
-  width: min(100%, 25.25rem);
-  aspect-ratio: 404 / 316;
-  border: 1px solid rgba(255, 250, 242, 0.64);
-  border-radius: 1.15rem;
-  overflow: hidden;
-  background: rgba(255, 250, 242, 0.86);
-  box-shadow: 0 28px 76px rgba(0, 0, 0, 0.22);
-  transform: translateZ(150px) rotate(1.4deg);
-}
-
-.home-hero__behance-embed iframe {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border: 0;
-}
-
 .home-hero__cursor-tag {
   position: absolute;
   z-index: 5;
-  top: 50%;
-  right: 4%;
+  top: 24%;
+  right: 16%;
   display: inline-flex;
   align-items: center;
   gap: 0.42rem;
@@ -791,7 +756,7 @@ onUnmounted(() => {
 
 .home-hero__radar {
   position: absolute;
-  inset: 10.8rem 0.8rem auto auto;
+  inset: 6.8rem 0.8rem auto auto;
   width: min(72vw, 24rem);
   aspect-ratio: 1;
   border-radius: 50%;
@@ -882,7 +847,7 @@ onUnmounted(() => {
 }
 
 .home-hero__trail-card--route {
-  top: 56%;
+  top: 20%;
   left: 0;
   transform: translateZ(90px) rotate(-4deg);
   animation: hero-float-a 5.8s ease-in-out infinite;
@@ -900,7 +865,7 @@ onUnmounted(() => {
   z-index: 4;
   left: 8%;
   right: 10%;
-  bottom: 5%;
+  bottom: 13%;
   display: grid;
   gap: 0.8rem;
   border: 1px solid rgba(255, 250, 242, 0.28);
@@ -1024,7 +989,7 @@ onUnmounted(() => {
   }
 
   .home-hero__radar {
-    inset: 12rem 0 auto auto;
+    inset: 2rem 0 auto auto;
     width: min(82vw, 22rem);
   }
 
@@ -1061,7 +1026,7 @@ onUnmounted(() => {
 
   .home-hero__trail-card--route {
     left: 0;
-    top: 46%;
+    top: 14%;
   }
 
   .home-hero__trail-card--weather {
@@ -1074,18 +1039,12 @@ onUnmounted(() => {
     left: auto;
     right: auto;
     bottom: auto;
-    margin-top: 13rem;
-    transform: none;
-  }
-
-  .home-hero__behance-embed {
-    position: relative;
-    width: min(100%, 25.25rem);
+    margin-top: 8.5rem;
     transform: none;
   }
 
   .home-hero__cursor-tag {
-    top: 14rem;
+    top: 7.5rem;
     right: 1.2rem;
     transform: scale(0.86);
     transform-origin: right top;
@@ -1099,7 +1058,6 @@ onUnmounted(() => {
   .home-hero__radar,
   .home-hero__radar span,
   .home-hero__trail-card,
-  .home-hero__behance-embed,
   .home-hero__cursor-tag {
     animation: none;
     transition: none;

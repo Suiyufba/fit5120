@@ -10,7 +10,7 @@ Architecture and design documentation for the HikeShield hiking safety platform.
 ## Key Features
 
 - **Plan Safe Route** — Pick two points on a map, get multiple route candidates ranked by safety. Each route is scored against live hazards (fire, flood, storm, heat) and terrain conditions.
-- **Interactive Homepage Hero** — The landing hero uses pointer-driven parallax, a layered radar visualization, floating safety cards, and an embedded Behance interaction reference to preview live route, weather, and hazard intelligence without adding a new API.
+- **Interactive Homepage Hero** — The landing hero uses pointer-driven parallax, a layered radar visualization, and floating safety cards to preview live route, weather, and hazard intelligence without adding a new API.
 - **Mobile Route Planner** — On phones and tablets, route search, point reset, planning, history, and route summary controls are available from a bottom sheet over the Leaflet map.
 - **Risk Map** — Interactive map showing active hazards across Victoria with severity zones.
 - **Community Reports** — Crowd-sourced hazard reports with photo upload and 24-hour TTL.
