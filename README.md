@@ -77,7 +77,6 @@ hikeshield/
 ├── frontend/          # Vue 3 SPA (Vercel)
 ├── backend/           # Express API server (Railway)
 ├── ai-service/        # AI route narration (Railway)
-├── worker/            # Async jobs (placeholder)
 ├── shared/            # TypeScript type definitions
 ├── docs/              # Architecture & risk model docs
 └── .env.example       # Shared environment variables

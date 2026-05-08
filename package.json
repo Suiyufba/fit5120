@@ -6,7 +6,6 @@
     "frontend",
     "backend",
     "ai-service",
-    "worker",
     "shared"
   ],
   "scripts": {

@@ -49,7 +49,6 @@ Architecture and design documentation for the HikeShield hiking safety platform.
 │       └── shared/                  # HTTP fetch utilities
 ├── ai-service/        # AI route narration service
 ├── shared/            # TypeScript type definitions
-├── worker/            # Async jobs (placeholder)
 └── docs/              # Architecture and design docs
 ```
 
