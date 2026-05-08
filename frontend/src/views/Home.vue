@@ -11,10 +11,6 @@ const router = useRouter()
 const previewLoading = ref(false)
 const previewUpdatedAt = ref(null)
 const previewHazards = ref([])
-const heroTiltX = ref(0)
-const heroTiltY = ref(0)
-const heroPointerX = ref(50)
-const heroPointerY = ref(42)
 const HOME_PREVIEW_REFRESH_MS = 60_000
 let previewTimer
 
@@ -60,13 +56,6 @@ const knowledgePreviewCards = computed(() => {
   const filtered = featured ? source.filter((item) => item.id !== featured.id) : source
   return filtered.slice(0, 2)
 })
-
-const heroInteractionStyle = computed(() => ({
-  '--hero-tilt-x': `${heroTiltX.value.toFixed(2)}deg`,
-  '--hero-tilt-y': `${heroTiltY.value.toFixed(2)}deg`,
-  '--hero-pointer-x': `${heroPointerX.value.toFixed(2)}%`,
-  '--hero-pointer-y': `${heroPointerY.value.toFixed(2)}%`,
-}))
 
 function formatTimeAgo(input) {
   const ts = input instanceof Date ? input.getTime() : Date.parse(String(input || ''))
@@ -147,26 +136,6 @@ function getKnowledgeAccent(topic) {
   }
 }
 
-function handleHeroPointer(event) {
-  if (!event.currentTarget || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-
-  const bounds = event.currentTarget.getBoundingClientRect()
-  const x = ((event.clientX - bounds.left) / bounds.width) * 100
-  const y = ((event.clientY - bounds.top) / bounds.height) * 100
-
-  heroPointerX.value = Math.min(100, Math.max(0, x))
-  heroPointerY.value = Math.min(100, Math.max(0, y))
-  heroTiltX.value = ((50 - heroPointerY.value) / 50) * 4.5
-  heroTiltY.value = ((heroPointerX.value - 50) / 50) * 5.5
-}
-
-function resetHeroPointer() {
-  heroTiltX.value = 0
-  heroTiltY.value = 0
-  heroPointerX.value = 50
-  heroPointerY.value = 42
-}
-
 async function loadCommunityAlerts() {
   communityReportsLoading.value = true
   communityReportsError.value = ''
@@ -239,12 +208,7 @@ onUnmounted(() => {
   <div>
   <main class="space-y-12 md:space-y-16 pb-16 md:pb-20">
     <!-- Hero Section -->
-    <section
-      class="home-hero"
-      :style="heroInteractionStyle"
-      @pointermove="handleHeroPointer"
-      @pointerleave="resetHeroPointer"
-    >
+    <section class="home-hero">
       <div class="home-hero__media">
         <img
           alt="Golden mountain trail through Victorian bushland"
@@ -278,38 +242,16 @@ onUnmounted(() => {
             </button>
           </div>
         </div>
-        <div class="home-hero__interaction" aria-label="Interactive hiking safety overview">
-          <div class="home-hero__halo" aria-hidden="true"></div>
-          <div class="home-hero__radar" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
+        <div class="home-hero__panel">
+          <div>
+            <p>Live safety pulse</p>
+            <strong>{{ previewHazards.length }}</strong>
+            <span>active signals</span>
           </div>
-          <div class="home-hero__trail-card home-hero__trail-card--route">
-            <span class="material-symbols-outlined" aria-hidden="true">route</span>
-            <div>
-              <p>Route clarity</p>
-              <strong>3 safer lines</strong>
-            </div>
-          </div>
-          <div class="home-hero__trail-card home-hero__trail-card--weather">
-            <span class="material-symbols-outlined" aria-hidden="true">thunderstorm</span>
-            <div>
-              <p>Weather watch</p>
-              <strong>{{ previewTypeSummary.storm + previewTypeSummary.heat }} signals</strong>
-            </div>
-          </div>
-          <div class="home-hero__panel">
-            <div>
-              <p>Live safety pulse</p>
-              <strong>{{ previewHazards.length }}</strong>
-              <span>active signals</span>
-            </div>
-            <div>
-              <p>Highest category</p>
-              <strong>{{ topPreviewHazards[0]?.severity ? severityMeta[topPreviewHazards[0].severity]?.label : 'Clear' }}</strong>
-              <span>{{ previewUpdatedAt ? `updated ${previewUpdatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'syncing data' }}</span>
-            </div>
+          <div>
+            <p>Highest category</p>
+            <strong>{{ topPreviewHazards[0]?.severity ? severityMeta[topPreviewHazards[0].severity]?.label : 'Clear' }}</strong>
+            <span>{{ previewUpdatedAt ? `updated ${previewUpdatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'syncing data' }}</span>
           </div>
         </div>
       </div>
@@ -565,17 +507,12 @@ onUnmounted(() => {
 <style scoped>
 .home-hero {
   position: relative;
-  --hero-tilt-x: 0deg;
-  --hero-tilt-y: 0deg;
-  --hero-pointer-x: 50%;
-  --hero-pointer-y: 42%;
   min-height: clamp(620px, calc(100vh - 72px), 820px);
   display: flex;
   align-items: flex-end;
   overflow: hidden;
   isolation: isolate;
   margin-bottom: 1.5rem;
-  perspective: 1200px;
 }
 
 .home-hero__media,
@@ -588,18 +525,12 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scale(1.08) translate3d(
-    calc((50% - var(--hero-pointer-x)) * 0.035),
-    calc((50% - var(--hero-pointer-y)) * 0.028),
-    0
-  );
-  transition: transform 0.35s ease-out;
+  transform: scale(1.02);
 }
 
 .home-hero__overlay {
   z-index: 1;
   background:
-    radial-gradient(circle at var(--hero-pointer-x) var(--hero-pointer-y), rgba(217, 232, 207, 0.28), transparent 21rem),
     linear-gradient(90deg, rgba(13, 35, 29, 0.9) 0%, rgba(13, 35, 29, 0.62) 42%, rgba(13, 35, 29, 0.16) 100%),
     linear-gradient(0deg, rgba(13, 35, 29, 0.72), transparent 44%);
 }
@@ -619,7 +550,6 @@ onUnmounted(() => {
 .home-hero__copy {
   max-width: 48rem;
   color: #fffaf2;
-  animation: hero-copy-rise 0.85s cubic-bezier(0.2, 0.78, 0.22, 1) both;
 }
 
 .home-hero__kicker {
@@ -668,139 +598,7 @@ onUnmounted(() => {
   margin-top: 2rem;
 }
 
-.home-hero__interaction {
-  position: relative;
-  min-height: 31rem;
-  transform-style: preserve-3d;
-  transform: rotateX(var(--hero-tilt-x)) rotateY(var(--hero-tilt-y));
-  transition: transform 0.28s ease-out;
-  animation: hero-stage-enter 1s cubic-bezier(0.2, 0.78, 0.22, 1) 0.08s both;
-}
-
-.home-hero__halo {
-  position: absolute;
-  inset: 8% -5% 2% 4%;
-  border-radius: 2rem;
-  background:
-    radial-gradient(circle at 36% 32%, rgba(255, 250, 242, 0.58), transparent 7rem),
-    radial-gradient(circle at 70% 74%, rgba(143, 174, 131, 0.44), transparent 9rem),
-    linear-gradient(150deg, rgba(255, 250, 242, 0.22), rgba(33, 72, 59, 0.1));
-  filter: blur(0.2px);
-  transform: translateZ(-45px) rotate(-3deg);
-  opacity: 0.94;
-}
-
-.home-hero__radar {
-  position: absolute;
-  inset: 4.5rem 1.2rem auto auto;
-  width: min(72vw, 24rem);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 250, 242, 0.3);
-  background:
-    conic-gradient(from 112deg, transparent 0 72%, rgba(217, 232, 207, 0.4) 82%, transparent 92%),
-    repeating-radial-gradient(circle, rgba(255, 250, 242, 0.16) 0 1px, transparent 1px 3.8rem),
-    linear-gradient(135deg, rgba(23, 59, 49, 0.28), rgba(255, 250, 242, 0.12));
-  box-shadow:
-    inset 0 0 46px rgba(255, 250, 242, 0.16),
-    0 28px 80px rgba(0, 0, 0, 0.28);
-  transform: translateZ(30px) rotateX(58deg) rotateZ(-18deg);
-  animation: hero-radar-sweep 7s linear infinite;
-}
-
-.home-hero__radar span {
-  position: absolute;
-  width: 0.62rem;
-  height: 0.62rem;
-  border-radius: 999px;
-  background: #f0aa59;
-  box-shadow: 0 0 0 0 rgba(240, 170, 89, 0.44);
-  animation: hero-signal-pulse 2.4s ease-out infinite;
-}
-
-.home-hero__radar span:nth-child(1) {
-  top: 28%;
-  left: 36%;
-}
-
-.home-hero__radar span:nth-child(2) {
-  top: 58%;
-  left: 63%;
-  background: #d95d4f;
-  animation-delay: 0.35s;
-}
-
-.home-hero__radar span:nth-child(3) {
-  top: 42%;
-  left: 74%;
-  background: #9ecf8a;
-  animation-delay: 0.7s;
-}
-
-.home-hero__trail-card {
-  position: absolute;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  gap: 0.72rem;
-  width: max-content;
-  max-width: min(18rem, 72vw);
-  border: 1px solid rgba(255, 250, 242, 0.36);
-  border-radius: 1rem;
-  background: rgba(255, 250, 242, 0.84);
-  padding: 0.78rem 0.9rem;
-  color: #173b31;
-  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.22);
-  backdrop-filter: blur(18px);
-}
-
-.home-hero__trail-card .material-symbols-outlined {
-  display: inline-grid;
-  place-items: center;
-  width: 2.45rem;
-  height: 2.45rem;
-  border-radius: 0.82rem;
-  background: #173b31;
-  color: #fffaf2;
-}
-
-.home-hero__trail-card p {
-  margin: 0;
-  color: #687d72;
-  font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  line-height: 1.1;
-  text-transform: uppercase;
-}
-
-.home-hero__trail-card strong {
-  display: block;
-  margin-top: 0.18rem;
-  font-size: 0.94rem;
-  line-height: 1.1;
-}
-
-.home-hero__trail-card--route {
-  top: 12%;
-  left: 2%;
-  transform: translateZ(90px) rotate(-4deg);
-  animation: hero-float-a 5.8s ease-in-out infinite;
-}
-
-.home-hero__trail-card--weather {
-  right: 2%;
-  bottom: 8%;
-  transform: translateZ(110px) rotate(3deg);
-  animation: hero-float-b 6.3s ease-in-out infinite;
-}
-
 .home-hero__panel {
-  position: absolute;
-  z-index: 4;
-  left: 8%;
-  right: 10%;
-  bottom: 14%;
   display: grid;
   gap: 0.8rem;
   border: 1px solid rgba(255, 250, 242, 0.28);
@@ -810,7 +608,6 @@ onUnmounted(() => {
   color: #173b31;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(18px);
-  transform: translateZ(130px);
 }
 
 .home-hero__panel div {
@@ -838,64 +635,6 @@ onUnmounted(() => {
   color: #173b31;
 }
 
-@keyframes hero-copy-rise {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes hero-stage-enter {
-  from {
-    opacity: 0;
-    transform: translateY(34px) rotateX(8deg) rotateY(-8deg);
-  }
-  to {
-    opacity: 1;
-    transform: rotateX(var(--hero-tilt-x)) rotateY(var(--hero-tilt-y));
-  }
-}
-
-@keyframes hero-radar-sweep {
-  to {
-    transform: translateZ(30px) rotateX(58deg) rotateZ(342deg);
-  }
-}
-
-@keyframes hero-signal-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(240, 170, 89, 0.44);
-  }
-  72%,
-  100% {
-    box-shadow: 0 0 0 1.3rem rgba(240, 170, 89, 0);
-  }
-}
-
-@keyframes hero-float-a {
-  0%,
-  100% {
-    margin-top: 0;
-  }
-  50% {
-    margin-top: -0.65rem;
-  }
-}
-
-@keyframes hero-float-b {
-  0%,
-  100% {
-    margin-bottom: 0;
-  }
-  50% {
-    margin-bottom: 0.72rem;
-  }
-}
-
 @media (max-width: 900px) {
   .home-hero {
     min-height: auto;
@@ -906,21 +645,8 @@ onUnmounted(() => {
     padding-top: 7rem;
   }
 
-  .home-hero__interaction {
-    min-height: 26rem;
-    transform: none;
-  }
-
-  .home-hero__radar {
-    inset: 2rem 0 auto auto;
-    width: min(82vw, 22rem);
-  }
-
   .home-hero__panel {
-    left: 0;
-    right: auto;
-    bottom: 2rem;
-    width: min(100%, 28rem);
+    max-width: 28rem;
   }
 }
 
@@ -937,46 +663,6 @@ onUnmounted(() => {
 
   .home-hero__actions {
     flex-direction: column;
-  }
-
-  .home-hero__interaction {
-    min-height: 23rem;
-  }
-
-  .home-hero__trail-card {
-    max-width: min(17rem, calc(100vw - 2rem));
-  }
-
-  .home-hero__trail-card--route {
-    left: 0;
-    top: 8%;
-  }
-
-  .home-hero__trail-card--weather {
-    right: 0;
-    bottom: 1rem;
-  }
-
-  .home-hero__panel {
-    position: relative;
-    left: auto;
-    right: auto;
-    bottom: auto;
-    margin-top: 7.5rem;
-    transform: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-hero__media img,
-  .home-hero__interaction,
-  .home-hero__copy,
-  .home-hero__radar,
-  .home-hero__radar span,
-  .home-hero__trail-card {
-    animation: none;
-    transition: none;
-    transform: none;
   }
 }
 </style>
