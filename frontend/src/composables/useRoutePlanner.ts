@@ -1,4 +1,4 @@
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   clearRoutePlanHistory,
@@ -134,9 +134,31 @@ export function useRoutePlanner() {
     endInput.value = ''; endSuggestions.value = []
   }
 
+  function pointMatches(a: any, b: any): boolean {
+    if (!a || !b) return false
+    return a.lat === b.lat && a.lng === b.lng
+  }
+
+  async function reverseLookupPointName(type: string, pt: { lat: number; lng: number }) {
+    if (!pt) return null
+    const ctrl = new AbortController()
+    const reqId = type === 'start' ? ++startReverseLookupRequestId : ++endReverseLookupRequestId
+    if (type === 'start') { startReverseLookupController?.abort(); startReverseLookupController = ctrl }
+    else { endReverseLookupController?.abort(); endReverseLookupController = ctrl }
+    try {
+      const result = await (reverseLocation as any)(pt.lat, pt.lng, { signal: ctrl.signal })
+      return { result, requestId: reqId }
+    } catch { return null }
+  }
+
   async function applyPointFromMap(type: string, point: any) {
     applyPointSelection(type, { lat: point.lat, lng: point.lng, displayName: 'Dropped pin location' })
-    // reverse lookup omitted for brevity — keeps original behavior
+    const reversePayload = await reverseLookupPointName(type, point)
+    if (!reversePayload?.result?.displayName) return
+    const currentPoint = type === 'start' ? startPoint.value : endPoint.value
+    const activeRequestId = type === 'start' ? startReverseLookupRequestId : endReverseLookupRequestId
+    if (!pointMatches(currentPoint, point) || reversePayload.requestId !== activeRequestId) return
+    applyPointSelection(type, { lat: point.lat, lng: point.lng, displayName: reversePayload.result.displayName })
   }
 
   function handleMapClick(point: any) {
