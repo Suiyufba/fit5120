@@ -1,6 +1,6 @@
 # HikeShield Design Direction
 
-This project uses a blended design direction documented in the root `DESIGN.md`.
+This project uses a blended design direction summarized in this document.
 
 ## Selected References
 
@@ -15,8 +15,6 @@ HikeShield is a Victorian hiking safety platform, so the interface should feel w
 
 ## Implementation Notes
 
-- Use `DESIGN.md` before making UI changes.
-- Keep original reference files in `airbnb/`, `apple/`, `ibm/`, and `linear.app/`.
 - Treat trail green as the main journey action color and reserve teal/semantic colors for system and safety information.
 - Prefer stable, compact map and planner controls over decorative layout elements.
 
