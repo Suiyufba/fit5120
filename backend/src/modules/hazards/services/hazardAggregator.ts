@@ -66,12 +66,14 @@ async function pullProviders(): Promise<HazardSnapshot> {
   });
 
   if (!dedupedHazards.length) {
+    // All providers failed — fall back to last known snapshot if available
+    const hasStaleSnapshot = latestSnapshot && latestSnapshot.hazards.length > 0;
     return {
-      hazards: [],
-      fetchedAt: new Date().toISOString(),
-      fromFallback: false,
+      hazards: hasStaleSnapshot ? latestSnapshot.hazards : [],
+      fetchedAt: hasStaleSnapshot ? latestSnapshot.fetchedAt : new Date().toISOString(),
+      fromFallback: hasStaleSnapshot,
       sourceStatus,
-      lastError: 'All providers unavailable or returned empty payloads',
+      lastError: 'All providers unavailable — serving stale snapshot',
     };
   }
 

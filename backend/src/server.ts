@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { config } from './config/index.js';
 import { apiRouter } from './routes/index.js';
+import { logger } from './shared/logger.js';
 import { startScheduler } from './modules/hazards/services/hazardAggregator.js';
 import { initHazardSnapshotStore } from './infrastructure/db/hazardSnapshotRepository.js';
 import { initUserStore } from './modules/auth/repositories/userRepository.js';
@@ -93,6 +94,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     res.status(403).json({ error: 'Request origin is not allowed' });
     return;
   }
+  next();
+});
+
+// Request logging
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    logger.request(req.method, req.originalUrl, res.statusCode, Date.now() - start);
+  });
   next();
 });
 
