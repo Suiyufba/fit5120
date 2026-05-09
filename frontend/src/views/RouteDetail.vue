@@ -908,23 +908,22 @@ onUnmounted(() => {
   height: calc(100vh - 72px);
   height: var(--mobile-safe-height);
   background:
-    radial-gradient(circle at 0% 0%, rgba(143, 174, 131, 0.24), transparent 26rem),
-    linear-gradient(130deg, #fffaf2 0%, #f2eee5 48%, #e7eee4 100%);
+    linear-gradient(130deg, #ffffff 0%, #f7f7f7 52%, #eef3ef 100%);
   position: relative;
 }
 
 .detail-map-wrap {
   position: relative;
   padding: 0.85rem;
-  background: #dfe8dd;
+  background: #eef3ef;
 }
 
 .detail-map {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-radius: 1.15rem;
-  box-shadow: inset 0 0 0 1px rgba(33, 72, 59, 0.08), 0 20px 60px rgba(23, 59, 49, 0.12);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px rgba(31, 41, 51, 0.08), 0 20px 60px rgba(17, 24, 39, 0.12);
 }
 
 .map-init-error {
@@ -944,8 +943,8 @@ onUnmounted(() => {
 
 .detail-panel {
   --mobile-sheet-peek: 255px;
-  border-left: 1px solid rgba(33, 72, 59, 0.14);
-  background: rgba(255, 250, 242, 0.88);
+  border-left: 1px solid rgba(31, 41, 51, 0.1);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(18px);
   padding: 1rem;
   overflow: auto;
@@ -968,20 +967,20 @@ onUnmounted(() => {
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-size: 0.7rem;
-  color: #6f897b;
+  color: #0f62fe;
   font-weight: 900;
 }
 
 h1 {
   font-size: 2rem;
   line-height: 1;
-  color: #173b31;
+  color: #111827;
   font-weight: 700;
 }
 
 .route-picker {
-  border: 1px solid rgba(33, 72, 59, 0.12);
-  border-radius: 1rem;
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.9);
   padding: 0.8rem;
   display: grid;
@@ -992,7 +991,7 @@ h1 {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.66rem;
-  color: #3c6558;
+  color: #0f62fe;
   font-weight: 800;
 }
 
@@ -1003,10 +1002,10 @@ h1 {
 }
 
 .route-picker__card {
-  border: 1px solid rgba(33, 72, 59, 0.12);
-  border-radius: 0.9rem;
-  background: #fffaf2;
-  color: #2f4f45;
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f2933;
   text-align: left;
   padding: 0.48rem;
   transition: all 0.2s ease;
@@ -1014,9 +1013,9 @@ h1 {
 }
 
 .route-picker__card--active {
-  border-color: rgba(33, 72, 59, 0.34);
-  background: #f2f7ee;
-  box-shadow: 0 0 0 3px rgba(46, 125, 107, 0.13);
+  border-color: rgba(255, 56, 92, 0.34);
+  background: #ffe8ed;
+  box-shadow: 0 0 0 3px rgba(255, 56, 92, 0.12);
 }
 
 .route-picker__title {
@@ -1044,8 +1043,8 @@ h1 {
 }
 
 .metric-grid article {
-  border: 1px solid rgba(33, 72, 59, 0.12);
-  border-radius: 0.9rem;
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.88);
   padding: 0.7rem;
 }
@@ -1054,14 +1053,14 @@ h1 {
   font-size: 0.64rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #4f6a63;
+  color: #5f6b7a;
   font-weight: 700;
 }
 
 .metric-grid strong {
   display: block;
   margin-top: 0.2rem;
-  color: #23433b;
+  color: #111827;
 }
 
 .status-tag {
@@ -1081,24 +1080,24 @@ h1 {
 }
 
 .detail-explain {
-  color: #43605a;
+  color: #5f6b7a;
   line-height: 1.45;
   font-size: 0.9rem;
 }
 
 .risk-block h2 {
   font-size: 0.92rem;
-  color: #28473f;
+  color: #111827;
   font-weight: 800;
   margin-bottom: 0.45rem;
 }
 
 .risk-item,
 .tip-item {
-  border: 1px solid rgba(33, 72, 59, 0.12);
-  border-radius: 0.9rem;
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 8px;
   padding: 0.56rem;
-  background: #fffaf2;
+  background: #ffffff;
   margin-bottom: 0.45rem;
 }
 
@@ -1120,19 +1119,19 @@ h1 {
 
 .back-btn {
   margin-top: 0.5rem;
-  border: 1px solid rgba(33, 72, 59, 0.16);
+  border: 1px solid rgba(31, 41, 51, 0.12);
   border-radius: 999px;
   background: #fff;
   padding: 0.66rem;
   font-weight: 700;
-  color: #285046;
+  color: #111827;
 }
 
 .share-btn {
   border: 0;
   border-radius: 999px;
-  background: linear-gradient(135deg, #173b31, #2f604e 68%, #7f9b75);
-  color: #fffaf2;
+  background: #ff385c;
+  color: #ffffff;
   padding: 0.66rem;
   font-weight: 700;
 }

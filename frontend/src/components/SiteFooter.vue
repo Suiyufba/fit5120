@@ -37,11 +37,11 @@
 
 <style scoped>
 .site-footer {
-  border-top: 1px solid rgba(33, 72, 59, 0.12);
+  border-top: 1px solid rgba(31, 41, 51, 0.1);
   background:
-    linear-gradient(135deg, rgba(23, 59, 49, 0.96), rgba(38, 76, 62, 0.92)),
+    linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(31, 41, 51, 0.9)),
     var(--hs-hero-image) center/cover;
-  color: #fffaf2;
+  color: #ffffff;
   padding: clamp(3rem, 6vw, 5rem) 1rem;
 }
 
@@ -61,7 +61,7 @@
 }
 
 .site-footer__wordmark {
-  font-family: "Fraunces", "Georgia", serif;
+  font-family: "Manrope", system-ui, sans-serif;
   font-size: clamp(2rem, 5vw, 3.4rem);
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -70,7 +70,7 @@
 
 .site-footer p {
   max-width: 27rem;
-  color: rgba(255, 250, 242, 0.72);
+  color: rgba(255, 255, 255, 0.7);
   line-height: 1.7;
 }
 
@@ -79,10 +79,10 @@
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
-  border: 1px solid rgba(255, 250, 242, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
   padding: 0.55rem 0.85rem;
-  color: rgba(255, 250, 242, 0.86);
+  color: rgba(255, 255, 255, 0.86);
   font-size: 0.78rem;
   font-weight: 800;
 }
@@ -91,8 +91,8 @@
   width: 0.55rem;
   height: 0.55rem;
   border-radius: 999px;
-  background: #b8d9a8;
-  box-shadow: 0 0 0 6px rgba(184, 217, 168, 0.14);
+  background: #ff385c;
+  box-shadow: 0 0 0 6px rgba(255, 56, 92, 0.16);
 }
 
 .site-footer__links {
@@ -111,11 +111,11 @@
   font-weight: 900;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 250, 242, 0.92);
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .site-footer__links a {
-  color: rgba(255, 250, 242, 0.62);
+  color: rgba(255, 255, 255, 0.64);
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
@@ -123,7 +123,7 @@
 }
 
 .site-footer__links a:hover {
-  color: #fffaf2;
+  color: #ffffff;
 }
 
 @media (max-width: 820px) {

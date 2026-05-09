@@ -106,11 +106,11 @@ function goAccount() {
   position: sticky;
   top: 0;
   z-index: 3000;
-  border-bottom: 1px solid rgba(33, 72, 59, 0.12);
-  background: rgba(255, 250, 242, 0.82);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-  box-shadow: 0 12px 36px rgba(25, 56, 45, 0.08);
+  border-bottom: 1px solid rgba(31, 41, 51, 0.09);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.05);
 }
 
 .site-nav__inner {
@@ -135,7 +135,7 @@ function goAccount() {
   width: 2.45rem;
   height: 2.45rem;
   object-fit: contain;
-  filter: drop-shadow(0 10px 20px rgba(32, 70, 56, 0.2));
+  filter: drop-shadow(0 8px 18px rgba(255, 56, 92, 0.16));
 }
 
 .brand-text {
@@ -144,12 +144,11 @@ function goAccount() {
 }
 
 .brand-wordmark {
-  font-family: "Fraunces", "Georgia", serif;
-  font-size: 1.46rem;
-  font-weight: 700;
-  font-variation-settings: "opsz" 48, "SOFT" 50;
-  letter-spacing: -0.015em;
-  color: #173b31;
+  font-family: "Manrope", system-ui, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: #111827;
   line-height: 1;
 }
 
@@ -158,23 +157,23 @@ function goAccount() {
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #6e8578;
+  color: #8a94a3;
 }
 
 .desktop-nav {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  border: 1px solid rgba(33, 72, 59, 0.12);
+  border: 1px solid rgba(31, 41, 51, 0.1);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.52);
+  background: rgba(247, 247, 247, 0.82);
   padding: 0.28rem;
 }
 
 .desktop-nav__link {
   border-radius: 999px;
   padding: 0.58rem 0.9rem;
-  color: #4d6259;
+  color: #5f6b7a;
   font-family: "IBM Plex Sans", system-ui, sans-serif;
   font-size: 0.86rem;
   font-weight: 700;
@@ -185,9 +184,13 @@ function goAccount() {
 
 .desktop-nav__link:hover,
 .desktop-nav__link--active {
-  background: #173b31;
-  color: #fffaf2;
-  box-shadow: 0 10px 22px rgba(23, 59, 49, 0.18);
+  background: #ffffff;
+  color: #111827;
+  box-shadow: 0 8px 22px rgba(17, 24, 39, 0.08);
+}
+
+.desktop-nav__link--active {
+  color: #ff385c;
 }
 
 .nav-actions {
@@ -202,10 +205,10 @@ function goAccount() {
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  border: 1px solid rgba(33, 72, 59, 0.14);
+  border: 1px solid rgba(31, 41, 51, 0.12);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.65);
-  color: #21483b;
+  background: rgba(255, 255, 255, 0.78);
+  color: #1f2933;
   transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
 }
 
@@ -231,7 +234,7 @@ function goAccount() {
 .account-btn:hover,
 .menu-btn:hover {
   background: #ffffff;
-  border-color: rgba(33, 72, 59, 0.26);
+  border-color: rgba(255, 56, 92, 0.28);
   transform: translateY(-1px);
 }
 
@@ -244,16 +247,16 @@ function goAccount() {
 
 .mobile-nav__link {
   display: block;
-  border-radius: 0.9rem;
+  border-radius: 0.8rem;
   padding: 0.9rem 1rem;
-  color: #405a51;
+  color: #5f6b7a;
   font-weight: 800;
   text-decoration: none;
 }
 
 .mobile-nav__link--active {
-  background: #173b31;
-  color: #fffaf2;
+  background: #ffe8ed;
+  color: #ff385c;
 }
 
 @media (max-width: 640px) {

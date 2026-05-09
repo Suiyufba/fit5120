@@ -481,8 +481,7 @@ watch(filteredHazards, () => {
   height: calc(100vh - 72px);
   height: var(--mobile-safe-height);
   background:
-    radial-gradient(circle at 0% 0%, rgba(143, 174, 131, 0.26), transparent 24rem),
-    linear-gradient(140deg, #fffaf2 0%, #f4efe6 46%, #e7eee4 100%);
+    linear-gradient(140deg, #ffffff 0%, #f7f7f7 54%, #eef3ef 100%);
   overflow: hidden;
   position: relative;
 }
@@ -490,8 +489,8 @@ watch(filteredHazards, () => {
 .risk-map-sidebar {
   --mobile-sheet-peek: 240px;
   padding: 1.2rem;
-  border-right: 1px solid rgba(33, 72, 59, 0.14);
-  background: rgba(255, 250, 242, 0.84);
+  border-right: 1px solid rgba(31, 41, 51, 0.1);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(18px);
   display: flex;
   flex-direction: column;
@@ -515,7 +514,7 @@ watch(filteredHazards, () => {
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-weight: 900;
-  color: #6f897b;
+  color: #0f62fe;
 }
 
 .risk-map-title {
@@ -523,13 +522,13 @@ watch(filteredHazards, () => {
   font-size: 2rem;
   line-height: 1;
   font-weight: 700;
-  color: #173b31;
+  color: #111827;
 }
 
 .risk-map-subtitle {
   margin-top: 0.45rem;
   font-size: 0.86rem;
-  color: #4f625f;
+  color: #5f6b7a;
   line-height: 1.45;
 }
 
@@ -538,10 +537,10 @@ watch(filteredHazards, () => {
 .risk-map-summary,
 .risk-map-feed {
   background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(33, 72, 59, 0.12);
-  border-radius: 1rem;
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 8px;
   padding: 0.95rem;
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.015), 0 2px 8px rgba(0,0,0,0.035), 0 12px 28px rgba(25,56,45,0.06);
+  box-shadow: 0 10px 28px rgba(17, 24, 39, 0.05);
 }
 
 .risk-map-block-title {
@@ -549,7 +548,7 @@ watch(filteredHazards, () => {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: #536f63;
+  color: #5f6b7a;
 }
 
 .risk-map-layer-list {
@@ -563,16 +562,16 @@ watch(filteredHazards, () => {
   align-items: center;
   gap: 0.55rem;
   border-radius: 999px;
-  border: 1px solid rgba(33, 72, 59, 0.12);
+  border: 1px solid rgba(31, 41, 51, 0.1);
   padding: 0.48rem 0.62rem;
   font-size: 0.8rem;
-  color: #3b4f49;
-  background: #fffaf2;
+  color: #1f2933;
+  background: #ffffff;
 }
 
 .risk-map-layer-btn--active {
-  border-color: rgba(33, 72, 59, 0.26);
-  background: #f4f8f1;
+  border-color: rgba(255, 56, 92, 0.32);
+  background: #ffe8ed;
   font-weight: 700;
 }
 
@@ -596,7 +595,7 @@ watch(filteredHazards, () => {
 .risk-map-subline {
   margin-top: 0.55rem;
   font-size: 0.8rem;
-  color: #48605a;
+  color: #5f6b7a;
 }
 
 .risk-map-filter-label {
@@ -655,8 +654,8 @@ watch(filteredHazards, () => {
 
 .risk-map-feed-item {
   text-align: left;
-  border: 1px solid rgba(33, 72, 59, 0.12);
-  border-radius: 0.9rem;
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 8px;
   padding: 0.72rem;
   background: #ffffff;
   display: grid;
@@ -667,25 +666,25 @@ watch(filteredHazards, () => {
 
 .risk-map-feed-item:hover {
   transform: translateY(-1px);
-  border-color: rgba(33, 72, 59, 0.24);
-  box-shadow: 0 10px 22px rgba(25, 56, 45, 0.08);
+  border-color: rgba(15, 98, 254, 0.28);
+  box-shadow: 0 10px 22px rgba(17, 24, 39, 0.08);
 }
 
 .risk-map-feed-item--active {
-  border-color: rgba(33, 72, 59, 0.34);
-  background: #f4f8f1;
+  border-color: rgba(255, 56, 92, 0.38);
+  background: #fff4f6;
 }
 
 .risk-map-feed-severity {
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #4f7061;
+  color: #0f62fe;
   font-weight: 800;
 }
 
 .risk-map-feed-item strong {
-  color: #1b3832;
+  color: #111827;
 }
 
 .risk-map-feed-item small {
@@ -699,17 +698,17 @@ watch(filteredHazards, () => {
   min-height: 0;
   padding: 0.9rem;
   background:
-    linear-gradient(135deg, rgba(23, 59, 49, 0.18), rgba(143, 174, 131, 0.12)),
-    #dfe8dd;
+    linear-gradient(135deg, rgba(15, 98, 254, 0.08), rgba(255, 56, 92, 0.06)),
+    #eef3ef;
 }
 
 .risk-map-canvas {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  border-radius: 1.15rem;
-  background: #dfe8dd;
-  box-shadow: inset 0 0 0 1px rgba(33, 72, 59, 0.1), 0 24px 70px rgba(23, 59, 49, 0.18);
+  border-radius: 14px;
+  background: #eef3ef;
+  box-shadow: inset 0 0 0 1px rgba(31, 41, 51, 0.1), 0 24px 70px rgba(17, 24, 39, 0.14);
 }
 
 .risk-map-canvas::after {
@@ -729,18 +728,18 @@ watch(filteredHazards, () => {
   display: inline-flex;
   align-items: center;
   gap: 0.42rem;
-  border: 1px solid rgba(33, 72, 59, 0.16);
+  border: 1px solid rgba(31, 41, 51, 0.12);
   border-radius: 999px;
   padding: 0.5rem 0.72rem;
-  background: rgba(255, 250, 242, 0.9);
-  color: #173b31;
-  box-shadow: 0 14px 34px rgba(23, 59, 49, 0.14);
+  background: rgba(255, 255, 255, 0.92);
+  color: #111827;
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.12);
   backdrop-filter: blur(14px);
 }
 
 .risk-map-map-status .material-symbols-outlined {
   font-size: 1.05rem;
-  color: #2f604e;
+  color: #0f62fe;
 }
 
 .risk-map-map-status strong,
@@ -762,20 +761,20 @@ watch(filteredHazards, () => {
   width: 2.45rem;
   height: 2.45rem;
   border-radius: 999px;
-  border: 1px solid rgba(33, 72, 59, 0.14);
-  background: rgba(255, 250, 242, 0.94);
-  color: #173b31;
+  border: 1px solid rgba(31, 41, 51, 0.12);
+  background: rgba(255, 255, 255, 0.94);
+  color: #111827;
   display: grid;
   place-items: center;
-  box-shadow: 0 12px 26px rgba(24, 63, 50, 0.15);
+  box-shadow: 0 12px 26px rgba(17, 24, 39, 0.12);
   backdrop-filter: blur(12px);
   transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
 }
 
 .risk-map-control-btn:hover {
   transform: translateY(-1px);
-  border-color: rgba(33, 72, 59, 0.28);
-  background: #fffaf2;
+  border-color: rgba(255, 56, 92, 0.28);
+  background: #ffffff;
 }
 
 .risk-map-control-btn:disabled {
@@ -794,11 +793,11 @@ watch(filteredHazards, () => {
   z-index: 500;
   display: inline-flex;
   gap: 0.3rem;
-  border: 1px solid rgba(33, 72, 59, 0.14);
+  border: 1px solid rgba(31, 41, 51, 0.12);
   border-radius: 999px;
   padding: 0.25rem;
-  background: rgba(255, 250, 242, 0.92);
-  box-shadow: 0 14px 34px rgba(24, 63, 50, 0.14);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.12);
   backdrop-filter: blur(14px);
 }
 
@@ -807,23 +806,23 @@ watch(filteredHazards, () => {
   border-radius: 999px;
   padding: 0.42rem 0.68rem;
   background: transparent;
-  color: #405a51;
+  color: #5f6b7a;
   font-size: 0.72rem;
   font-weight: 850;
 }
 
 .risk-map-style-btn--active {
-  background: #173b31;
-  color: #fffaf2;
-  box-shadow: 0 8px 18px rgba(23, 59, 49, 0.22);
+  background: #ff385c;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(255, 56, 92, 0.22);
 }
 
 .risk-map-canvas :deep(.hs-map-popup .leaflet-popup-content-wrapper) {
-  border: 1px solid rgba(33, 72, 59, 0.14);
-  border-radius: 0.9rem;
-  background: rgba(255, 250, 242, 0.96);
-  color: #173b31;
-  box-shadow: 0 18px 44px rgba(23, 59, 49, 0.18);
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #111827;
+  box-shadow: 0 18px 44px rgba(17, 24, 39, 0.16);
   backdrop-filter: blur(14px);
 }
 
@@ -832,7 +831,7 @@ watch(filteredHazards, () => {
 }
 
 .risk-map-canvas :deep(.hs-map-popup .leaflet-popup-tip) {
-  background: rgba(255, 250, 242, 0.96);
+  background: rgba(255, 255, 255, 0.96);
 }
 
 @media (max-width: 1024px) {
@@ -843,9 +842,9 @@ watch(filteredHazards, () => {
 
   .risk-map-sidebar {
     border-right: none;
-    border-top: 1px solid rgba(33, 72, 59, 0.14);
+    border-top: 1px solid rgba(31, 41, 51, 0.1);
     padding: 0 1rem 1rem;
-    background: rgba(255, 250, 242, 0.96);
+    background: rgba(255, 255, 255, 0.96);
   }
 
   .risk-map-feed-list {

@@ -107,11 +107,11 @@ function formatPointCoordinates(point) {
 }
 
 .point-card {
-  border: 1px solid rgba(33, 72, 59, 0.12);
-  border-radius: 1rem;
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 8px;
   padding: 0.82rem;
   background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.012), 0 2px 8px rgba(0,0,0,0.03), 0 10px 24px rgba(25,56,45,0.05);
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.05);
   display: grid;
   gap: 0.38rem;
   position: relative;
@@ -121,35 +121,35 @@ function formatPointCoordinates(point) {
   text-transform: uppercase;
   letter-spacing: 0.07em;
   font-size: 0.68rem;
-  color: #4f6b63;
+  color: #5f6b7a;
   font-weight: 700;
 }
 
 .point-card strong {
   display: block;
-  color: #213e37;
+  color: #111827;
   font-size: 0.86rem;
   word-break: break-word;
 }
 
 .point-coordinates {
-  color: #5f766d;
+  color: #8a94a3;
   font-size: 0.74rem;
 }
 
 .point-input {
-  border: 1px solid rgba(33, 72, 59, 0.14);
-  border-radius: 0.8rem;
+  border: 1px solid rgba(31, 41, 51, 0.12);
+  border-radius: 8px;
   padding: 0.58rem 0.68rem;
   background: #ffffff;
-  color: #23443a;
+  color: #1f2933;
   font-size: 0.82rem;
 }
 
 .point-input:focus {
   outline: none;
-  border-color: #2e7d6b;
-  box-shadow: 0 0 0 2px rgba(46, 125, 107, 0.12);
+  border-color: #ff385c;
+  box-shadow: 0 0 0 2px rgba(255, 56, 92, 0.12);
 }
 
 .point-suggestions {
@@ -164,7 +164,7 @@ function formatPointCoordinates(point) {
   border: 1px solid #d7e5dd;
   border-radius: 0.5rem;
   background: #ffffff;
-  color: #32574b;
+  color: #1f2933;
   text-align: left;
   font-size: 0.76rem;
   padding: 0.36rem 0.45rem;

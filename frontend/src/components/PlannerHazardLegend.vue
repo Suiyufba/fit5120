@@ -20,8 +20,8 @@ defineProps({
 
 <style scoped>
 .hazard-legend {
-  border: 1px solid rgba(33, 72, 59, 0.12);
-  border-radius: 1rem;
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 8px;
   padding: 0.78rem;
   background: rgba(255, 255, 255, 0.86);
 }
@@ -29,7 +29,7 @@ defineProps({
 .hazard-legend p {
   font-size: 0.68rem;
   font-weight: 800;
-  color: #3d6658;
+  color: #0f62fe;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -49,7 +49,7 @@ defineProps({
   border-radius: 999px;
   padding: 0.2rem 0.45rem;
   font-size: 0.72rem;
-  color: #35574b;
+  color: #1f2933;
   background: #ffffff;
 }
 

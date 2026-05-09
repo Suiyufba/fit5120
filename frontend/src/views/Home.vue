@@ -206,158 +206,139 @@ onUnmounted(() => {
 
 <template>
   <div>
-  <main class="space-y-12 md:space-y-16 pb-16 md:pb-20">
-    <!-- Hero Section -->
+  <main class="home-page">
     <section class="home-hero">
-      <div class="home-hero__media">
-        <img
-          alt="Dramatic mountain landscape with cloudy sky"
-          src="https://images.pexels.com/photos/34724001/pexels-photo-34724001.jpeg?auto=compress&cs=tinysrgb&w=2400"
-        />
-      </div>
-      <div class="home-hero__overlay"></div>
       <div class="home-hero__content">
         <div class="home-hero__copy">
-          <span class="home-hero__kicker">
-            <span></span>Premium Victorian Safety Guide
-          </span>
-          <h1>
-            Hike Victoria with quiet <span>confidence.</span>
-          </h1>
+          <p class="home-hero__kicker">Victoria hiking safety</p>
+          <h1>Find the safer trail before you leave home.</h1>
           <p>
-            Plan safer routes, read live risk layers, and move through the outdoors with official data and community intelligence in one refined trail companion.
+            HikeShield blends live hazard feeds, route intelligence, and community reports into one calm planning surface for Victorian walkers.
           </p>
-          <div class="home-hero__actions">
-            <button
-              class="hs-button-primary px-6 md:px-8 py-4"
-              @click="router.push('/risk-map')"
-            >
-              <span class="material-symbols-outlined">map</span> Check Risk Map
+          <div class="home-hero__search" role="group" aria-label="Primary planning actions">
+            <button class="home-hero__search-main" @click="router.push('/route-planner')">
+              <span class="material-symbols-outlined" aria-hidden="true">route</span>
+              Plan a safe route
             </button>
-            <button
-              class="hs-button-secondary px-6 md:px-8 py-4"
-              @click="router.push('/route-planner')"
-            >
-              <span class="material-symbols-outlined">route</span> Plan My Route
+            <button class="home-hero__search-icon" aria-label="Open risk map" @click="router.push('/risk-map')">
+              <span class="material-symbols-outlined" aria-hidden="true">map</span>
             </button>
+          </div>
+          <div class="home-hero__stats" aria-label="Live safety summary">
+            <div>
+              <span>{{ previewHazards.length }}</span>
+              <p>active signals</p>
+            </div>
+            <div>
+              <span>{{ topPreviewHazards[0]?.severity ? severityMeta[topPreviewHazards[0].severity]?.label : 'Clear' }}</span>
+              <p>highest category</p>
+            </div>
+            <div>
+              <span>{{ previewUpdatedAt ? previewUpdatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--' }}</span>
+              <p>last sync</p>
+            </div>
           </div>
         </div>
-        <div class="home-hero__panel">
-          <div>
-            <p>Live safety pulse</p>
-            <strong>{{ previewHazards.length }}</strong>
-            <span>active signals</span>
-          </div>
-          <div>
-            <p>Highest category</p>
-            <strong>{{ topPreviewHazards[0]?.severity ? severityMeta[topPreviewHazards[0].severity]?.label : 'Clear' }}</strong>
-            <span>{{ previewUpdatedAt ? `updated ${previewUpdatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'syncing data' }}</span>
+
+        <div class="home-hero__media" aria-label="Victorian trail preview">
+          <img
+            alt="Sunlit mountain trail in Victoria"
+            src="https://images.pexels.com/photos/34724001/pexels-photo-34724001.jpeg?auto=compress&cs=tinysrgb&w=1600"
+          />
+          <div class="home-hero__route-card">
+            <p>Recommended check</p>
+            <strong>Route + risk together</strong>
+            <span>Review fire, storm, heat, and trail alerts before committing.</span>
           </div>
         </div>
       </div>
     </section>
 
     <!-- Risk Map Preview & Hazard Bento -->
-    <section class="px-4 md:px-8 max-w-7xl mx-auto">
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div class="md:col-span-8 hs-card rounded-[1.25rem] p-4 flex flex-col gap-6 group">
-          <div class="flex justify-between items-center px-4 pt-2">
-            <h2 class="font-display text-[1.7rem] sm:text-[2rem] font-semibold tracking-[-0.012em]">Live Risk Map Preview</h2>
-            <div class="flex items-center gap-3">
-              <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                {{ previewLoading ? 'Syncing…' : `Updated ${previewUpdatedAt ? previewUpdatedAt.toLocaleTimeString() : '--'}` }}
-              </span>
-              <span class="material-symbols-outlined text-primary cursor-pointer" @click="router.push('/risk-map')">open_in_full</span>
-            </div>
+    <section class="home-section home-risk">
+      <div class="home-section__header">
+        <div>
+          <p class="home-eyebrow">Live risk intelligence</p>
+          <h2>Map first. Warnings second. Guesswork never.</h2>
+        </div>
+        <button class="home-link-btn" @click="router.push('/risk-map')">
+          Open full map
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        </button>
+      </div>
+
+      <div class="home-risk__grid">
+        <div class="home-map-card">
+          <div class="home-map-card__top">
+            <span>{{ previewLoading ? 'Syncing live feeds' : `Updated ${previewUpdatedAt ? previewUpdatedAt.toLocaleTimeString() : '--'}` }}</span>
+            <button aria-label="Open risk map" @click="router.push('/risk-map')">
+              <span class="material-symbols-outlined" aria-hidden="true">open_in_full</span>
+            </button>
           </div>
-          <div class="relative w-full h-[320px] sm:h-[380px] md:h-[420px] rounded-[1rem] overflow-hidden bg-surface-dim border border-white/60">
+          <div class="home-map-card__map">
             <HomeRiskPreviewMap :hazards="previewHazards" />
-            <div class="absolute inset-x-4 bottom-4 bg-white/90 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/70">
-              <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-[#31544a] mb-2">Top Active Hazards</p>
-              <div v-if="topPreviewHazards.length" class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div class="home-map-card__feed">
+              <p>Top active hazards</p>
+              <div v-if="topPreviewHazards.length" class="home-map-card__hazards">
                 <div
                   v-for="hazard in topPreviewHazards"
                   :key="hazard.id"
-                  class="bg-white rounded-lg border border-slate-200 px-3 py-2 flex items-start justify-between gap-3"
+                  class="home-map-card__hazard"
                 >
                   <div class="min-w-0">
-                    <p class="text-[12px] font-semibold text-slate-800 truncate">{{ hazard.title }}</p>
-                    <p class="text-[10px] text-slate-500 uppercase tracking-wide">
+                    <strong>{{ hazard.title }}</strong>
+                    <span>
                       {{ hazard.type === 'other' ? 'Other' : hazard.type }} · {{ hazard.source }}
-                    </p>
+                    </span>
                   </div>
                   <span
-                    class="text-[10px] font-bold px-2 py-1 rounded-full uppercase whitespace-nowrap"
+                    class="home-severity-pill"
                     :class="severityMeta[hazard.severity]?.pill || severityMeta.low.pill"
                   >
                     {{ severityMeta[hazard.severity]?.label || 'Low' }}
                   </span>
                 </div>
               </div>
-              <p v-else class="text-xs text-slate-500">No active hazards available from upstream sources right now.</p>
+              <p v-else class="home-empty">No active hazards available from upstream sources right now.</p>
             </div>
           </div>
-          <div class="flex gap-4 px-4 pb-2 overflow-x-auto">
-            <span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap">
-              <span class="w-2 h-2 rounded-full bg-error"></span> Fire {{ previewTypeSummary.fire }}
-            </span>
-            <span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap">
-              <span class="w-2 h-2 rounded-full bg-blue-500"></span> Flood {{ previewTypeSummary.flood }}
-            </span>
-            <span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap">
-              <span class="w-2 h-2 rounded-full bg-violet-500"></span> Storm {{ previewTypeSummary.storm }}
-            </span>
-            <span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap">
-              <span class="w-2 h-2 rounded-full bg-amber-500"></span> Heat {{ previewTypeSummary.heat }}
-            </span>
-            <span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap">
-              <span class="w-2 h-2 rounded-full bg-stone-500"></span> Trail {{ previewTypeSummary.trail }}
-            </span>
-            <span class="flex items-center gap-2 text-xs font-medium py-2 px-4 bg-surface-container-high rounded-full whitespace-nowrap">
-              <span class="w-2 h-2 rounded-full bg-emerald-600"></span> Other {{ previewTypeSummary.other }}
-            </span>
+          <div class="home-risk-chips">
+            <span><i style="background:#D84727"></i> Fire {{ previewTypeSummary.fire }}</span>
+            <span><i style="background:#2165B5"></i> Flood {{ previewTypeSummary.flood }}</span>
+            <span><i style="background:#5A4B81"></i> Storm {{ previewTypeSummary.storm }}</span>
+            <span><i style="background:#D08817"></i> Heat {{ previewTypeSummary.heat }}</span>
+            <span><i style="background:#6B5C4F"></i> Trail {{ previewTypeSummary.trail }}</span>
+            <span><i style="background:#2E7D6B"></i> Other {{ previewTypeSummary.other }}</span>
           </div>
         </div>
 
-        <div class="md:col-span-4 flex flex-col gap-4">
-          <!-- Dominant hazard tile: Bushfire is the defining risk for Victorian summer hikes -->
-          <article class="relative p-6 rounded-[1rem] bg-[#fff4ed] border border-[#f1cdb8] overflow-hidden shadow-sm">
-            <div class="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-error/10 blur-2xl pointer-events-none"></div>
-            <div class="relative flex items-start justify-between gap-3 mb-4">
-              <span class="material-symbols-outlined text-[2.75rem] text-error leading-none" style="font-variation-settings: 'FILL' 1">local_fire_department</span>
-              <span class="text-[10px] font-bold px-2.5 py-1 bg-error text-white rounded-full uppercase tracking-[0.12em]">High Risk</span>
+        <div class="home-safety-stack">
+          <article class="home-warning-card">
+            <div>
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">local_fire_department</span>
+              <small>High risk</small>
             </div>
-            <p class="font-display text-2xl font-semibold text-[#5a1f12] leading-tight mb-1">Bushfire</p>
-            <p class="text-[12.5px] text-[#7e3b2a] leading-relaxed">
+            <h3>Bushfire readiness</h3>
+            <p>
               Fire Danger Ratings dominate trail access from Oct–Apr. Check VicEmergency before you head out.
             </p>
           </article>
 
-          <!-- Quieter row of secondary hazards — no repeated card template -->
-          <ul class="divide-y divide-[#dce7dd] border border-[#dce7dd] rounded-[1rem] bg-white overflow-hidden shadow-sm">
-            <li class="flex items-center gap-4 px-5 py-4">
-              <span class="material-symbols-outlined text-[1.75rem] text-blue-500 shrink-0" style="font-variation-settings: 'FILL' 1">rainy</span>
-              <div class="min-w-0 flex-1">
-                <p class="font-headline font-semibold text-[15px] text-on-surface">Heavy Rain</p>
-                <p class="text-[11px] text-slate-500">Creek crossings, slippery rock</p>
-              </div>
-              <span class="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full uppercase tracking-wider">Moderate</span>
+          <ul class="home-signal-list">
+            <li>
+              <span class="material-symbols-outlined" style="color:#2165B5">rainy</span>
+              <div><strong>Heavy rain</strong><p>Creek crossings, slippery rock</p></div>
+              <small>Moderate</small>
             </li>
-            <li class="flex items-center gap-4 px-5 py-4">
-              <span class="material-symbols-outlined text-[1.75rem] text-yellow-600 shrink-0" style="font-variation-settings: 'FILL' 1">thermostat</span>
-              <div class="min-w-0 flex-1">
-                <p class="font-headline font-semibold text-[15px] text-on-surface">Heat</p>
-                <p class="text-[11px] text-slate-500">Exposed ridges, hydrate early</p>
-              </div>
-              <span class="text-[10px] font-bold px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full uppercase tracking-wider">Moderate</span>
+            <li>
+              <span class="material-symbols-outlined" style="color:#D08817">thermostat</span>
+              <div><strong>Heat</strong><p>Exposed ridges, hydrate early</p></div>
+              <small>Moderate</small>
             </li>
-            <li class="flex items-center gap-4 px-5 py-4">
-              <span class="material-symbols-outlined text-[1.75rem] text-slate-500 shrink-0" style="font-variation-settings: 'FILL' 1">ac_unit</span>
-              <div class="min-w-0 flex-1">
-                <p class="font-headline font-semibold text-[15px] text-on-surface">Cold Weather</p>
-                <p class="text-[11px] text-slate-500">Alpine wind chill, rapid storms</p>
-              </div>
-              <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full uppercase tracking-wider">Low</span>
+            <li>
+              <span class="material-symbols-outlined" style="color:#6B7280">ac_unit</span>
+              <div><strong>Cold weather</strong><p>Alpine wind chill, rapid storms</p></div>
+              <small>Low</small>
             </li>
           </ul>
         </div>
@@ -365,134 +346,118 @@ onUnmounted(() => {
     </section>
 
     <!-- Community Alerts -->
-    <section class="px-4 md:px-8 max-w-7xl mx-auto">
-      <div class="flex items-baseline justify-between mb-8">
-        <h2 class="font-display text-[2rem] sm:text-[2.4rem] font-semibold tracking-[-0.012em]">Recent Community Alerts</h2>
-        <button class="text-primary font-bold text-sm hover:underline" @click="router.push('/community-reports')">View all reports</button>
+    <section class="home-section">
+      <div class="home-section__header">
+        <div>
+          <p class="home-eyebrow">Community intelligence</p>
+          <h2>Recent reports from the trail.</h2>
+        </div>
+        <button class="home-link-btn" @click="router.push('/community-reports')">View all reports</button>
       </div>
-      <div v-if="communityReportsLoading" class="rounded-2xl border border-[#dce7dd] bg-white px-6 py-5 text-sm text-slate-500">
+      <div v-if="communityReportsLoading" class="home-state">
         Loading recent community alerts from the database...
       </div>
-      <div v-else-if="communityReportsError" class="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-5 text-sm text-rose-700">
+      <div v-else-if="communityReportsError" class="home-state home-state--error">
         {{ communityReportsError }}
       </div>
-      <div v-else-if="!communityAlerts.length" class="rounded-2xl border border-[#dce7dd] bg-white px-6 py-5 text-sm text-slate-500">
+      <div v-else-if="!communityAlerts.length" class="home-state">
         No community alerts have been submitted yet.
       </div>
-      <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div v-else class="home-alert-grid">
         <article
           v-for="alert in communityAlerts"
           :key="alert.id"
-          class="bg-white p-6 rounded-2xl border border-[#dce7dd] shadow-sm hover:shadow-md transition-shadow"
+          class="home-alert-card"
         >
-          <div class="flex items-center justify-between mb-3">
+          <div class="home-alert-card__top">
             <span
-              class="text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider"
+              class="home-severity-pill"
               :class="severityMeta[alert.severity]?.pill || severityMeta.low.pill"
             >
               {{ severityMeta[alert.severity]?.label || 'Low' }}
             </span>
-            <span class="text-[10px] text-slate-400 font-medium">{{ alert.timeAgo }}</span>
+            <span>{{ alert.timeAgo }}</span>
           </div>
-          <h3 class="font-bold text-[1.02rem] leading-tight text-[#213d36]">{{ alert.title }}</h3>
-          <p class="mt-2 text-xs text-[#4f6a62]">{{ alert.details }}</p>
-          <div class="mt-4 space-y-2">
-            <p class="text-[11px] font-semibold text-[#39594f] uppercase tracking-wide">{{ alert.location }}</p>
-            <p class="text-[11px] text-slate-500">{{ alert.status }}</p>
+          <h3>{{ alert.title }}</h3>
+          <p>{{ alert.details }}</p>
+          <div class="home-alert-card__meta">
+            <strong>{{ alert.location }}</strong>
+            <span>{{ alert.status }}</span>
           </div>
-          <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <span class="flex items-center gap-1">
-              <span class="material-symbols-outlined text-sm">chat</span>
+          <div class="home-alert-card__footer">
+            <span>
+              <span class="material-symbols-outlined">chat</span>
               {{ alert.replies }} updates
             </span>
-            <button class="font-semibold text-primary hover:underline" @click="router.push('/community-reports')">Open Thread</button>
+            <button @click="router.push('/community-reports')">Open Thread</button>
           </div>
         </article>
       </div>
-      <div class="mt-6 md:mt-8 flex justify-center">
-        <button
-          class="flex items-center justify-center gap-2 w-full sm:w-auto px-8 md:px-12 py-4 bg-surface-container-high rounded-full font-bold text-primary hover:bg-surface-container-highest transition-all"
-          @click="router.push('/report-hazard')"
-        >
-          <span class="material-symbols-outlined">add_circle</span> Report a Hazard
-        </button>
-      </div>
+      <button class="home-report-btn" @click="router.push('/report-hazard')">
+        <span class="material-symbols-outlined">add_circle</span> Report a Hazard
+      </button>
     </section>
 
     <!-- Knowledge Hub Preview -->
-    <section class="bg-surface-container-low py-16 md:py-20 px-4 md:px-8">
-      <div class="max-w-7xl mx-auto">
-        <div class="mb-12 text-center md:text-left">
-          <h2 class="font-display text-[2rem] sm:text-[2.4rem] font-semibold tracking-[-0.012em] mb-4">Knowledge Hub</h2>
-          <p class="text-on-surface-variant max-w-xl">Live articles from your database, surfaced on the homepage instead of placeholder content.</p>
+    <section class="home-knowledge">
+      <div class="home-section">
+        <div class="home-section__header">
+          <div>
+            <p class="home-eyebrow">Knowledge Hub</p>
+            <h2>Read before the route gets real.</h2>
+          </div>
+          <p>Live articles from your database, surfaced on the homepage instead of placeholder content.</p>
         </div>
-        <div v-if="knowledgeLoading" class="rounded-[2rem] border border-[#dce7dd] bg-white px-6 py-5 text-sm text-slate-500">
+        <div v-if="knowledgeLoading" class="home-state">
           Loading knowledge articles...
         </div>
-        <div v-else-if="knowledgeError" class="rounded-[2rem] border border-rose-200 bg-rose-50 px-6 py-5 text-sm text-rose-700">
+        <div v-else-if="knowledgeError" class="home-state home-state--error">
           {{ knowledgeError }}
         </div>
-        <div v-else-if="!knowledgeArticles.length" class="rounded-[2rem] border border-[#dce7dd] bg-white px-6 py-5 text-sm text-slate-500">
+        <div v-else-if="!knowledgeArticles.length" class="home-state">
           No knowledge articles have been published yet.
         </div>
-        <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div v-else class="home-knowledge-grid">
           <div
             v-for="article in knowledgePreviewCards"
             :key="article.id"
-            class="relative rounded-[2rem] overflow-hidden min-h-[320px] shadow-sm hover:translate-y-[-4px] transition-transform group"
+            class="home-knowledge-card"
           >
             <img
               v-if="article.imageUrl"
               :src="article.imageUrl"
               :alt="article.title"
-              class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+              class="home-knowledge-card__image"
             />
-            <div v-else class="absolute inset-0 bg-[radial-gradient(circle_at_top,#d9ece2_0%,#8db7a5_35%,#31544a_100%)]"></div>
-            <div class="absolute inset-0 bg-gradient-to-t from-[#17352d]/95 via-[#21453b]/72 to-[#21453b]/25"></div>
-            <div class="relative z-10 flex h-full flex-col justify-end p-8">
-              <div
-                class="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-white/18 backdrop-blur-sm"
-              >
-                <span
-                  class="material-symbols-outlined text-white"
-                >
-                  {{ getKnowledgeAccent(article.topic).icon }}
-                </span>
-              </div>
-              <p class="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75">
-                {{ article.topic }}
-              </p>
-              <h3 class="mb-4 font-headline text-xl font-bold text-white">{{ article.title }}</h3>
-              <p class="mb-8 flex-1 text-sm leading-relaxed text-white/82">
-                {{ article.summary }}
-              </p>
-              <button
-                class="flex items-center gap-2 text-left text-sm font-bold text-white group-hover:text-white"
-                @click="router.push('/knowledge-hub')"
-              >
+            <div v-else class="home-knowledge-card__image home-knowledge-card__image--empty"></div>
+            <div class="home-knowledge-card__body">
+              <span>{{ article.topic }}</span>
+              <h3>{{ article.title }}</h3>
+              <p>{{ article.summary }}</p>
+              <button @click="router.push('/knowledge-hub')">
                 {{ getKnowledgeAccent(article.topic).cta }}
-                <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                <span class="material-symbols-outlined">arrow_forward</span>
               </button>
             </div>
           </div>
 
-          <div class="relative rounded-[2rem] overflow-hidden group h-full min-h-[320px]">
+          <div class="home-knowledge-feature">
             <img
               v-if="heroKnowledgeArticle?.imageUrl"
-              class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              class="home-knowledge-feature__image"
               :alt="heroKnowledgeArticle?.title || 'Knowledge article cover'"
               :src="heroKnowledgeArticle.imageUrl"
             />
-            <div v-else class="absolute inset-0 bg-[radial-gradient(circle_at_top,#8db7a5_0%,#3f6a5a_45%,#203d35_100%)]"></div>
-            <div class="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent flex flex-col justify-end p-8">
-              <p class="text-white/70 text-[11px] font-semibold uppercase tracking-[0.18em] mb-3">
+            <div v-else class="home-knowledge-feature__image home-knowledge-card__image--empty"></div>
+            <div class="home-knowledge-feature__body">
+              <p>
                 {{ heroKnowledgeArticle?.topic || 'Featured Article' }}
               </p>
-              <h3 class="text-white font-headline font-bold text-xl mb-2">{{ heroKnowledgeArticle?.title || 'Database spotlight' }}</h3>
-              <p class="text-white/80 text-sm mb-6">
+              <h3>{{ heroKnowledgeArticle?.title || 'Database spotlight' }}</h3>
+              <span>
                 {{ heroKnowledgeArticle?.summary || 'Homepage hero now points to a real article from your Knowledge Hub.' }}
-              </p>
-              <button class="bg-white text-primary px-6 py-3 rounded-full font-bold text-sm w-fit" @click="router.push('/knowledge-hub')">Read Stories</button>
+              </span>
+              <button @click="router.push('/knowledge-hub')">Read Stories</button>
             </div>
           </div>
         </div>
@@ -505,164 +470,742 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.home-page {
+  display: grid;
+  gap: clamp(3rem, 7vw, 5.5rem);
+  padding-bottom: clamp(3rem, 6vw, 5rem);
+}
+
 .home-hero {
-  position: relative;
-  min-height: clamp(620px, calc(100vh - 72px), 820px);
-  display: flex;
-  align-items: flex-end;
-  overflow: hidden;
-  isolation: isolate;
-  margin-bottom: 1.5rem;
-}
-
-.home-hero__media,
-.home-hero__overlay {
-  position: absolute;
-  inset: 0;
-}
-
-.home-hero__media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scale(1.02);
-}
-
-.home-hero__overlay {
-  z-index: 1;
+  padding: clamp(1.4rem, 4vw, 3rem) 1rem 0;
   background:
-    linear-gradient(90deg, rgba(13, 35, 29, 0.88) 0%, rgba(13, 35, 29, 0.64) 43%, rgba(13, 35, 29, 0.28) 100%),
-    linear-gradient(0deg, rgba(13, 35, 29, 0.76), rgba(13, 35, 29, 0.14) 48%, rgba(13, 35, 29, 0.08));
+    linear-gradient(180deg, #ffffff 0%, #ffffff 68%, #f7f7f7 100%);
 }
 
 .home-hero__content {
-  position: relative;
-  z-index: 2;
   width: min(1220px, calc(100% - 2rem));
   margin: 0 auto;
-  padding: clamp(2rem, 5vw, 5rem) 0;
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(280px, 0.34fr);
-  gap: clamp(1.25rem, 4vw, 4rem);
-  align-items: end;
+  grid-template-columns: minmax(0, 0.88fr) minmax(360px, 0.76fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: center;
 }
 
 .home-hero__copy {
-  max-width: 48rem;
-  color: #fffaf2;
+  max-width: 44rem;
 }
 
 .home-hero__kicker {
   display: inline-flex;
   align-items: center;
-  gap: 0.7rem;
-  margin-bottom: 1.3rem;
+  gap: 0.55rem;
+  margin-bottom: 1.1rem;
   font-size: 0.73rem;
-  font-weight: 900;
-  letter-spacing: 0.2em;
+  font-weight: 800;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 250, 242, 0.82);
-}
-
-.home-hero__kicker span {
-  width: 2rem;
-  height: 1px;
-  background: currentColor;
+  color: #0f62fe;
 }
 
 .home-hero h1 {
-  max-width: 54rem;
   margin: 0;
-  color: #fffaf2;
-  font-size: clamp(3.1rem, 6.8vw, 6.55rem);
-  line-height: 1.04;
-  letter-spacing: -0.035em;
+  max-width: 46rem;
+  color: #111827;
+  font-size: clamp(3rem, 6.6vw, 6rem);
+  line-height: 0.98;
+  letter-spacing: 0;
 }
 
-.home-hero h1 span {
-  color: #d9e8cf;
-}
-
-.home-hero p {
-  max-width: 39rem;
-  margin-top: 1.5rem;
-  color: rgba(255, 250, 242, 0.78);
-  font-size: clamp(1rem, 1.35vw, 1.18rem);
+.home-hero__copy > p:not(.home-hero__kicker) {
+  max-width: 38rem;
+  margin-top: 1.35rem;
+  color: #5f6b7a;
+  font-size: clamp(1.02rem, 1.35vw, 1.18rem);
   line-height: 1.7;
 }
 
-.home-hero__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.85rem;
+.home-hero__search {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 2rem;
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 999px;
+  background: #ffffff;
+  padding: 0.45rem;
+  box-shadow: 0 18px 48px rgba(17, 24, 39, 0.1);
+}
+
+.home-hero__search-main,
+.home-hero__search-icon {
+  border: 0;
+  cursor: pointer;
+}
+
+.home-hero__search-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border-radius: 999px;
+  background: #ffffff;
+  padding: 0.9rem 1.25rem;
+  color: #111827;
+  font-weight: 800;
+}
+
+.home-hero__search-icon {
+  display: grid;
+  place-items: center;
+  width: 3.1rem;
+  height: 3.1rem;
+  border-radius: 999px;
+  background: #ff385c;
+  color: #ffffff;
+  box-shadow: 0 14px 30px rgba(255, 56, 92, 0.24);
+}
+
+.home-hero__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  max-width: 36rem;
   margin-top: 2rem;
 }
 
-.home-hero__panel {
-  display: grid;
-  gap: 0.8rem;
-  border: 1px solid rgba(255, 250, 242, 0.28);
-  border-radius: 1.25rem;
-  background: rgba(255, 250, 242, 0.82);
+.home-hero__stats div {
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 14px;
+  background: #ffffff;
   padding: 1rem;
-  color: #173b31;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+}
+
+.home-hero__stats span {
+  display: block;
+  color: #111827;
+  font-size: clamp(1.4rem, 2.6vw, 2.1rem);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.home-hero__stats p {
+  margin-top: 0.45rem;
+  color: #8a94a3;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.home-hero__media {
+  position: relative;
+  min-height: clamp(420px, 52vw, 680px);
+  overflow: hidden;
+  border-radius: 28px;
+  background: #f1f3f5;
+  box-shadow: 0 30px 80px rgba(17, 24, 39, 0.16);
+}
+
+.home-hero__media img {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  object-fit: cover;
+}
+
+.home-hero__route-card {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 1rem;
   backdrop-filter: blur(18px);
+  box-shadow: 0 18px 50px rgba(17, 24, 39, 0.16);
 }
 
-.home-hero__panel div {
-  border-radius: 0.9rem;
-  background: rgba(255, 255, 255, 0.64);
+.home-hero__route-card p,
+.home-hero__route-card span {
+  color: #5f6b7a;
+  font-size: 0.82rem;
+}
+
+.home-hero__route-card p {
+  margin: 0 0 0.25rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #0f62fe;
+}
+
+.home-hero__route-card strong {
+  display: block;
+  color: #111827;
+  font-size: 1.15rem;
+}
+
+.home-section {
+  width: min(1220px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.home-section__header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.4rem;
+}
+
+.home-section__header h2 {
+  max-width: 42rem;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.04;
+}
+
+.home-section__header > p,
+.home-section__header div + p {
+  max-width: 28rem;
+  color: #5f6b7a;
+  line-height: 1.65;
+}
+
+.home-eyebrow {
+  margin-bottom: 0.5rem;
+  color: #0f62fe;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.home-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(31, 41, 51, 0.12);
+  border-radius: 999px;
+  background: #ffffff;
+  padding: 0.72rem 1rem;
+  color: #111827;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.home-risk__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.7fr);
+  gap: 1.2rem;
+}
+
+.home-map-card,
+.home-warning-card,
+.home-signal-list,
+.home-alert-card,
+.home-knowledge-card,
+.home-knowledge-feature {
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 14px 36px rgba(17, 24, 39, 0.07);
+}
+
+.home-map-card {
   padding: 1rem;
 }
 
-.home-hero__panel p,
-.home-hero__panel span {
-  margin: 0;
-  color: #687d72;
-  font-size: 0.72rem;
+.home-map-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.2rem 0.8rem;
+  color: #8a94a3;
+  font-size: 0.74rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.home-hero__panel strong {
+.home-map-card__top button {
+  display: grid;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #ff385c;
+}
+
+.home-map-card__map {
+  position: relative;
+  height: clamp(360px, 44vw, 500px);
+  overflow: hidden;
+  border-radius: 12px;
+  background: #eef3ef;
+}
+
+.home-map-card__feed {
+  position: absolute;
+  inset-inline: 1rem;
+  bottom: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.85rem;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.12);
+}
+
+.home-map-card__feed > p {
+  margin: 0 0 0.65rem;
+  color: #0f62fe;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.home-map-card__hazards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.home-map-card__hazard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: start;
+  border: 1px solid rgba(31, 41, 51, 0.08);
+  border-radius: 10px;
+  padding: 0.65rem;
+  background: #ffffff;
+}
+
+.home-map-card__hazard strong {
   display: block;
-  margin: 0.25rem 0;
-  font-family: "Fraunces", Georgia, serif;
-  font-size: clamp(2rem, 4vw, 3.4rem);
-  line-height: 1;
-  color: #173b31;
+  overflow: hidden;
+  color: #111827;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-map-card__hazard span {
+  display: block;
+  margin-top: 0.2rem;
+  color: #8a94a3;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.home-severity-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.28rem 0.52rem;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.home-empty {
+  color: #5f6b7a;
+  font-size: 0.82rem;
+}
+
+.home-risk-chips {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+  overflow-x: auto;
+  padding-bottom: 0.1rem;
+}
+
+.home-risk-chips span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(31, 41, 51, 0.08);
+  border-radius: 999px;
+  background: #f7f7f7;
+  padding: 0.55rem 0.75rem;
+  color: #5f6b7a;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.home-risk-chips i {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+}
+
+.home-safety-stack {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.home-warning-card {
+  padding: 1.25rem;
+  background: #fff4f1;
+  border-color: #ffd1c8;
+}
+
+.home-warning-card div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.home-warning-card .material-symbols-outlined {
+  color: #da1e28;
+  font-size: 2.4rem;
+}
+
+.home-warning-card small,
+.home-signal-list small {
+  border-radius: 999px;
+  background: #da1e28;
+  padding: 0.26rem 0.55rem;
+  color: #ffffff;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.home-warning-card h3 {
+  margin-top: 1rem;
+  color: #5a1f12;
+  font-size: 1.35rem;
+}
+
+.home-warning-card p {
+  margin-top: 0.45rem;
+  color: #7e3b2a;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.home-signal-list {
+  overflow: hidden;
+}
+
+.home-signal-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(31, 41, 51, 0.08);
+}
+
+.home-signal-list li:last-child {
+  border-bottom: 0;
+}
+
+.home-signal-list strong {
+  color: #111827;
+  font-size: 0.92rem;
+}
+
+.home-signal-list p {
+  color: #8a94a3;
+  font-size: 0.78rem;
+}
+
+.home-signal-list small {
+  background: #f1f3f5;
+  color: #5f6b7a;
+}
+
+.home-alert-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.home-alert-card {
+  padding: 1.15rem;
+}
+
+.home-alert-card__top,
+.home-alert-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.home-alert-card__top > span:last-child {
+  color: #8a94a3;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.home-alert-card h3 {
+  margin-top: 1rem;
+  color: #111827;
+  font-size: 1.02rem;
+}
+
+.home-alert-card > p {
+  margin-top: 0.55rem;
+  color: #5f6b7a;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.home-alert-card__meta {
+  display: grid;
+  gap: 0.2rem;
+  margin-top: 1rem;
+}
+
+.home-alert-card__meta strong {
+  color: #1f2933;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.home-alert-card__meta span {
+  color: #8a94a3;
+  font-size: 0.78rem;
+}
+
+.home-alert-card__footer {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(31, 41, 51, 0.08);
+  color: #8a94a3;
+  font-size: 0.78rem;
+}
+
+.home-alert-card__footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.home-alert-card__footer .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+.home-alert-card__footer button,
+.home-knowledge-card button,
+.home-knowledge-feature button {
+  border: 0;
+  background: transparent;
+  color: #ff385c;
+  font-weight: 800;
+}
+
+.home-report-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: fit-content;
+  margin: 1.25rem auto 0;
+  border: 0;
+  border-radius: 999px;
+  background: #ffe8ed;
+  padding: 0.9rem 1.3rem;
+  color: #ff385c;
+  font-weight: 900;
+}
+
+.home-state {
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 1rem 1.15rem;
+  color: #5f6b7a;
+  font-size: 0.92rem;
+}
+
+.home-state--error {
+  border-color: #fecdd3;
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.home-knowledge {
+  background: #f7f7f7;
+  padding: clamp(3rem, 7vw, 5rem) 0;
+}
+
+.home-knowledge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.home-knowledge-card,
+.home-knowledge-feature {
+  overflow: hidden;
+}
+
+.home-knowledge-card__image,
+.home-knowledge-feature__image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  background: #eef3ef;
+}
+
+.home-knowledge-card__image--empty {
+  background:
+    linear-gradient(135deg, rgba(255, 56, 92, 0.14), rgba(15, 98, 254, 0.14)),
+    #eef3ef;
+}
+
+.home-knowledge-card__body,
+.home-knowledge-feature__body {
+  padding: 1.1rem;
+}
+
+.home-knowledge-card__body span,
+.home-knowledge-feature__body p {
+  color: #0f62fe;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.home-knowledge-card h3,
+.home-knowledge-feature h3 {
+  margin-top: 0.55rem;
+  color: #111827;
+  font-size: 1.12rem;
+}
+
+.home-knowledge-card p,
+.home-knowledge-feature span {
+  display: block;
+  margin-top: 0.55rem;
+  color: #5f6b7a;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.home-knowledge-card button,
+.home-knowledge-feature button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 1rem;
+}
+
+.home-knowledge-feature {
+  position: relative;
+  min-height: 100%;
+  background: #111827;
+}
+
+.home-knowledge-feature__image {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  filter: saturate(0.9);
+}
+
+.home-knowledge-feature::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.08), rgba(17, 24, 39, 0.86));
+}
+
+.home-knowledge-feature__body {
+  position: relative;
+  z-index: 1;
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.home-knowledge-feature h3,
+.home-knowledge-feature span,
+.home-knowledge-feature__body p {
+  color: #ffffff;
+}
+
+.home-knowledge-feature__body p {
+  opacity: 0.74;
+}
+
+.home-knowledge-feature button {
+  width: fit-content;
+  border-radius: 999px;
+  background: #ffffff;
+  padding: 0.7rem 1rem;
+  color: #111827;
 }
 
 @media (max-width: 900px) {
-  .home-hero {
-    min-height: auto;
-  }
-
   .home-hero__content {
     grid-template-columns: 1fr;
-    padding-top: 7rem;
   }
 
-  .home-hero__panel {
-    max-width: 28rem;
+  .home-risk__grid,
+  .home-alert-grid,
+  .home-knowledge-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-section__header {
+    align-items: start;
+    flex-direction: column;
   }
 }
 
 @media (max-width: 640px) {
+  .home-hero {
+    padding-inline: 0;
+  }
+
   .home-hero__content {
     width: min(100% - 1.5rem, 1220px);
-    padding-bottom: 2rem;
   }
 
   .home-hero h1 {
-    font-size: clamp(3rem, 17vw, 4.4rem);
-    line-height: 1.03;
+    font-size: clamp(2.75rem, 15vw, 4.2rem);
   }
 
-  .home-hero__actions {
-    flex-direction: column;
+  .home-hero__search {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .home-hero__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .home-map-card__hazards {
+    grid-template-columns: 1fr;
+  }
+
+  .home-map-card__feed {
+    position: static;
+    margin-top: 0.75rem;
+  }
+
+  .home-map-card__map {
+    height: 300px;
   }
 }
 </style>

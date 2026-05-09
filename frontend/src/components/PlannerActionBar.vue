@@ -44,9 +44,9 @@ const emit = defineEmits(['plan-route', 'reset'])
 }
 
 .primary-btn {
-  background: linear-gradient(135deg, #173b31, #2f604e 68%, #7f9b75);
-  color: #fffaf2;
-  box-shadow: 0 14px 30px rgba(23, 59, 49, 0.2);
+  background: #ff385c;
+  color: #ffffff;
+  box-shadow: 0 14px 30px rgba(255, 56, 92, 0.2);
 }
 
 .primary-btn:disabled {
@@ -54,8 +54,8 @@ const emit = defineEmits(['plan-route', 'reset'])
 }
 
 .ghost-btn {
-  border: 1px solid rgba(33, 72, 59, 0.16);
+  border: 1px solid rgba(31, 41, 51, 0.12);
   background: rgba(255, 255, 255, 0.86);
-  color: #21483b;
+  color: #111827;
 }
 </style>

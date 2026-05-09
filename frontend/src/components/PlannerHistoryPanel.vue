@@ -89,8 +89,8 @@ function formatDuration(durationMin) {
 
 <style scoped>
 .history-panel {
-  border: 1px solid rgba(33, 72, 59, 0.12);
-  border-radius: 1rem;
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: 8px;
   padding: 0.78rem;
   background: rgba(255, 255, 255, 0.86);
   display: grid;
@@ -107,16 +107,16 @@ function formatDuration(durationMin) {
 .history-panel__head p {
   font-size: 0.68rem;
   font-weight: 800;
-  color: #3d6658;
+  color: #0f62fe;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .history-refresh-btn {
-  border: 1px solid #bfd1c8;
+  border: 1px solid rgba(31, 41, 51, 0.12);
   border-radius: 999px;
   background: #ffffff;
-  color: #2f5448;
+  color: #111827;
   font-size: 0.72rem;
   font-weight: 700;
   padding: 0.2rem 0.55rem;
@@ -144,7 +144,7 @@ function formatDuration(durationMin) {
 
 .history-empty {
   font-size: 0.78rem;
-  color: #45645b;
+  color: #5f6b7a;
 }
 
 .history-list {
@@ -159,7 +159,7 @@ function formatDuration(durationMin) {
   border: 1px solid #dce6df;
   border-radius: 0.58rem;
   background: #ffffff;
-  color: #27493f;
+  color: #1f2933;
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 0.45rem;
@@ -182,12 +182,12 @@ function formatDuration(durationMin) {
 
 .history-item__main span {
   font-size: 0.74rem;
-  color: #49655d;
+  color: #5f6b7a;
 }
 
 .history-item__main small {
   font-size: 0.68rem;
-  color: #6a7f78;
+  color: #8a94a3;
 }
 
 .history-item__clear {

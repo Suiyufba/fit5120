@@ -622,15 +622,14 @@ onUnmounted(() => {
   height: calc(100vh - 72px);
   height: var(--mobile-safe-height);
   background:
-    radial-gradient(circle at 0% 0%, rgba(143, 174, 131, 0.24), transparent 26rem),
-    linear-gradient(130deg, #fffaf2 0%, #f2eee5 48%, #e7eee4 100%);
+    linear-gradient(130deg, #ffffff 0%, #f7f7f7 52%, #eef3ef 100%);
   position: relative;
 }
 
 .planner-panel {
   --mobile-sheet-peek: 250px;
-  border-right: 1px solid rgba(33, 72, 59, 0.14);
-  background: rgba(255, 250, 242, 0.86);
+  border-right: 1px solid rgba(31, 41, 51, 0.1);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(18px);
   padding: 1.2rem;
   display: flex;
@@ -656,7 +655,7 @@ onUnmounted(() => {
   font-size: 0.72rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #6f897b;
+  color: #0f62fe;
   font-weight: 900;
 }
 
@@ -665,11 +664,11 @@ h1 {
   font-size: 2rem;
   line-height: 1;
   font-weight: 700;
-  color: #173b31;
+  color: #111827;
 }
 
 .planner-sub {
-  color: #4c635d;
+  color: #5f6b7a;
   font-size: 0.88rem;
   margin-top: 0.4rem;
 }
@@ -684,10 +683,10 @@ h1 {
 }
 
 .planner-back-top {
-  border: 1px solid rgba(33, 72, 59, 0.16);
+  border: 1px solid rgba(31, 41, 51, 0.12);
   border-radius: 999px;
-  background: rgba(255, 250, 242, 0.96);
-  color: #21483b;
+  background: rgba(255, 255, 255, 0.96);
+  color: #111827;
   width: 2.75rem;
   height: 2.75rem;
   display: grid;
@@ -696,7 +695,7 @@ h1 {
   position: sticky;
   bottom: 0.35rem;
   margin-top: -0.25rem;
-  box-shadow: 0 14px 28px rgba(23, 59, 49, 0.16);
+  box-shadow: 0 14px 28px rgba(17, 24, 39, 0.12);
   backdrop-filter: blur(10px);
   transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
   z-index: 5;
@@ -704,7 +703,7 @@ h1 {
 
 .planner-back-top:hover {
   background: #ffffff;
-  border-color: rgba(33, 72, 59, 0.3);
+  border-color: rgba(255, 56, 92, 0.32);
   transform: translateY(-2px);
 }
 
@@ -726,9 +725,9 @@ h1 {
     right: 0;
     bottom: 0;
     border-right: 0;
-    border-top: 1px solid rgba(33, 72, 59, 0.14);
+    border-top: 1px solid rgba(31, 41, 51, 0.1);
     padding: 0 1rem 1rem;
-    background: rgba(255, 250, 242, 0.96);
+    background: rgba(255, 255, 255, 0.96);
     z-index: 700;
   }
 

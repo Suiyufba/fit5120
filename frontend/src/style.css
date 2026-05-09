@@ -7,19 +7,27 @@
   --mobile-gutter-wide: 1.25rem;
   --mobile-sheet-radius: 1.35rem;
   --mobile-safe-height: calc(100dvh - 72px);
-  --hs-ink: #132b23;
-  --hs-ink-soft: #405a51;
-  --hs-forest: #21483b;
-  --hs-forest-2: #386653;
+  --hs-primary: #ff385c;
+  --hs-primary-hover: #e00b41;
+  --hs-primary-soft: #ffe8ed;
+  --hs-safety-blue: #0f62fe;
+  --hs-route-indigo: #5e6ad2;
+  --hs-ink: #1f2933;
+  --hs-ink-strong: #111827;
+  --hs-ink-soft: #5f6b7a;
+  --hs-ink-muted: #8a94a3;
+  --hs-forest: #1f6e57;
+  --hs-forest-2: #2e7d6b;
   --hs-moss: #8fae83;
-  --hs-cream: #f7f2e9;
-  --hs-paper: #fffaf2;
-  --hs-sage: #e7eee4;
-  --hs-line: rgba(33, 72, 59, 0.14);
-  --hs-shadow: 0 24px 70px rgba(27, 55, 44, 0.14);
-  --hs-shadow-soft: 0 16px 44px rgba(27, 55, 44, 0.1);
-  --hs-radius-card: 1rem;
-  --hs-radius-panel: 1.25rem;
+  --hs-cream: #f7f7f7;
+  --hs-paper: #ffffff;
+  --hs-sage: #eef3ef;
+  --hs-line: rgba(31, 41, 51, 0.12);
+  --hs-line-strong: rgba(31, 41, 51, 0.2);
+  --hs-shadow: 0 24px 70px rgba(17, 24, 39, 0.12);
+  --hs-shadow-soft: 0 14px 36px rgba(17, 24, 39, 0.08);
+  --hs-radius-card: 14px;
+  --hs-radius-panel: 8px;
   --hs-hero-image: url("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=2200&q=82");
 }
 
@@ -33,7 +41,7 @@
 }
 
 .primary-gradient {
-  background: linear-gradient(135deg, #173b31 0%, #2f604e 58%, #88a77d 100%);
+  background: linear-gradient(135deg, #ff385c 0%, #f06f4f 52%, #0f62fe 100%);
 }
 
 /*
@@ -42,8 +50,8 @@
  * The stripe sits ~62%-92% of line height so descenders still read clearly.
  */
 .gradient-text {
-  color: #f7f2e9;
-  background-image: linear-gradient(to bottom, transparent 0%, transparent 58%, rgba(143, 174, 131, 0.62) 58%, rgba(143, 174, 131, 0.62) 92%, transparent 92%);
+  color: #ffffff;
+  background-image: linear-gradient(to bottom, transparent 0%, transparent 58%, rgba(255, 56, 92, 0.58) 58%, rgba(255, 56, 92, 0.58) 92%, transparent 92%);
   background-repeat: no-repeat;
   padding: 0 0.08em;
 }
@@ -97,26 +105,21 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at 14% 8%, rgba(185, 205, 168, 0.34), transparent 24rem),
-    linear-gradient(180deg, #fffaf2 0%, #f7f2e9 48%, #edf2ea 100%);
-  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    linear-gradient(180deg, #ffffff 0%, #f7f7f7 46%, #eef3ef 100%);
+  font-family: "IBM Plex Sans", "SF Pro Text", system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--hs-ink);
-  font-feature-settings: "ss01", "cv11";
   line-height: 1.55;
 }
 
 /*
- * Editorial headline defaults — Fraunces serif for every page's <h1>/<h2>,
- * with tighter tracking, shorter line-height, and a warmer ink color so any
- * view that drops in a plain <h1> inherits the "field guide" direction.
- * Page-scoped styles that explicitly set size/weight still win.
+ * HikeShield headlines stay crisp and practical. Consumer pages can use larger
+ * display type, while dense map panels inherit the same readable system.
  */
 h1, h2, h3 {
-  font-family: "Fraunces", "Georgia", serif;
-  color: var(--hs-ink);
-  letter-spacing: -0.012em;
+  font-family: "Manrope", "SF Pro Display", system-ui, sans-serif;
+  color: var(--hs-ink-strong);
+  letter-spacing: 0;
   line-height: 1.12;
-  font-variation-settings: "opsz" 48, "SOFT" 50;
   text-wrap: balance;
 }
 
@@ -145,7 +148,7 @@ h3 {
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--hs-forest-2);
+  color: var(--hs-safety-blue);
 }
 .u-kicker::before {
   content: "";
@@ -161,8 +164,8 @@ h3 {
  * replaces gradient-filled text (a common AI tell).
  */
 .u-highlight {
-  color: var(--hs-forest);
-  background-image: linear-gradient(to bottom, transparent 0%, transparent 60%, rgba(143, 174, 131, 0.45) 60%, rgba(143, 174, 131, 0.45) 92%, transparent 92%);
+  color: var(--hs-ink-strong);
+  background-image: linear-gradient(to bottom, transparent 0%, transparent 60%, rgba(255, 56, 92, 0.22) 60%, rgba(255, 56, 92, 0.22) 92%, transparent 92%);
   background-repeat: no-repeat;
   padding: 0 0.08em;
 }
@@ -222,13 +225,13 @@ select:focus {
 .hs-card {
   border: 1px solid var(--hs-line);
   border-radius: var(--hs-radius-card);
-  background: rgba(255, 250, 242, 0.9);
+  background: rgba(255, 255, 255, 0.94);
   box-shadow: var(--hs-shadow-soft);
 }
 
 .hs-glass {
   border: 1px solid rgba(255, 255, 255, 0.54);
-  background: rgba(255, 250, 242, 0.76);
+  background: rgba(255, 255, 255, 0.78);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   box-shadow: var(--hs-shadow-soft);
@@ -240,17 +243,17 @@ select:focus {
   justify-content: center;
   gap: 0.55rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, #173b31 0%, #2f604e 68%, #7f9b75 100%);
-  color: #fffaf2;
+  background: var(--hs-primary);
+  color: #ffffff;
   font-weight: 800;
-  box-shadow: 0 16px 36px rgba(22, 59, 49, 0.24);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  box-shadow: 0 16px 34px rgba(255, 56, 92, 0.22);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .hs-button-primary:hover {
-  filter: saturate(1.06);
+  background: var(--hs-primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 20px 42px rgba(22, 59, 49, 0.28);
+  box-shadow: 0 20px 42px rgba(255, 56, 92, 0.28);
 }
 
 .hs-button-secondary {
@@ -260,15 +263,15 @@ select:focus {
   gap: 0.55rem;
   border: 1px solid var(--hs-line);
   border-radius: 999px;
-  background: rgba(255, 250, 242, 0.88);
-  color: var(--hs-forest);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--hs-ink-strong);
   font-weight: 800;
   transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 .hs-button-secondary:hover {
   background: #ffffff;
-  border-color: rgba(33, 72, 59, 0.28);
+  border-color: var(--hs-line-strong);
   transform: translateY(-1px);
 }
 
