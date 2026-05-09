@@ -44,9 +44,9 @@ const emit = defineEmits(['plan-route', 'reset'])
 }
 
 .primary-btn {
-  background: #ff385c;
+  background: #1f6e57;
   color: #ffffff;
-  box-shadow: 0 14px 30px rgba(255, 56, 92, 0.2);
+  box-shadow: 0 14px 30px rgba(31, 110, 87, 0.2);
 }
 
 .primary-btn:disabled {

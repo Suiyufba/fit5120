@@ -504,7 +504,7 @@ onUnmounted(() => {
   font-weight: 800;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #0f62fe;
+  color: #2e7d6b;
 }
 
 .home-hero h1 {
@@ -559,9 +559,9 @@ onUnmounted(() => {
   width: 3.1rem;
   height: 3.1rem;
   border-radius: 999px;
-  background: #ff385c;
+  background: #1f6e57;
   color: #ffffff;
-  box-shadow: 0 14px 30px rgba(255, 56, 92, 0.24);
+  box-shadow: 0 14px 30px rgba(31, 110, 87, 0.24);
 }
 
 .home-hero__stats {
@@ -636,7 +636,7 @@ onUnmounted(() => {
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #0f62fe;
+  color: #2e7d6b;
 }
 
 .home-hero__route-card strong {
@@ -673,7 +673,7 @@ onUnmounted(() => {
 
 .home-eyebrow {
   margin-bottom: 0.5rem;
-  color: #0f62fe;
+  color: #2e7d6b;
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.16em;
@@ -735,7 +735,7 @@ onUnmounted(() => {
   border: 1px solid rgba(31, 41, 51, 0.1);
   border-radius: 999px;
   background: #ffffff;
-  color: #ff385c;
+  color: #1f6e57;
 }
 
 .home-map-card__map {
@@ -760,7 +760,7 @@ onUnmounted(() => {
 
 .home-map-card__feed > p {
   margin: 0 0 0.65rem;
-  color: #0f62fe;
+  color: #2e7d6b;
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -1007,7 +1007,7 @@ onUnmounted(() => {
 .home-knowledge-feature button {
   border: 0;
   background: transparent;
-  color: #ff385c;
+  color: #1f6e57;
   font-weight: 800;
 }
 
@@ -1020,9 +1020,9 @@ onUnmounted(() => {
   margin: 1.25rem auto 0;
   border: 0;
   border-radius: 999px;
-  background: #ffe8ed;
+  background: #e7f4ed;
   padding: 0.9rem 1.3rem;
-  color: #ff385c;
+  color: #1f6e57;
   font-weight: 900;
 }
 
@@ -1067,7 +1067,7 @@ onUnmounted(() => {
 
 .home-knowledge-card__image--empty {
   background:
-    linear-gradient(135deg, rgba(255, 56, 92, 0.14), rgba(15, 98, 254, 0.14)),
+    linear-gradient(135deg, rgba(31, 110, 87, 0.14), rgba(46, 125, 107, 0.14)),
     #eef3ef;
 }
 
@@ -1078,7 +1078,7 @@ onUnmounted(() => {
 
 .home-knowledge-card__body span,
 .home-knowledge-feature__body p {
-  color: #0f62fe;
+  color: #2e7d6b;
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -1126,7 +1126,7 @@ onUnmounted(() => {
   border-radius: 0;
   background: transparent;
   padding: 0;
-  color: #ff385c;
+  color: #1f6e57;
 }
 
 @media (max-width: 900px) {

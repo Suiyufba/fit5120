@@ -655,7 +655,7 @@ onUnmounted(() => {
   font-size: 0.72rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #0f62fe;
+  color: #2e7d6b;
   font-weight: 900;
 }
 
@@ -703,7 +703,7 @@ h1 {
 
 .planner-back-top:hover {
   background: #ffffff;
-  border-color: rgba(255, 56, 92, 0.32);
+  border-color: rgba(31, 110, 87, 0.32);
   transform: translateY(-2px);
 }
 

@@ -1168,7 +1168,7 @@ onUnmounted(() => {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 900;
-  color: #0f62fe;
+  color: #2e7d6b;
 }
 
 h1 {
@@ -1212,7 +1212,7 @@ h1 {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 700;
-  color: #0f62fe;
+  color: #2e7d6b;
 }
 
 .location-picker__hint {
@@ -1247,8 +1247,8 @@ h1 {
 }
 
 .locate-btn:hover:not(:disabled) {
-  background: #ffe8ed;
-  border-color: rgba(255, 56, 92, 0.32);
+  background: #e7f4ed;
+  border-color: rgba(31, 110, 87, 0.32);
 }
 
 .locate-btn:disabled {
@@ -1282,8 +1282,8 @@ h1 {
 }
 
 .address-field__clear:hover {
-  color: #ff385c;
-  background: rgba(255, 56, 92, 0.08);
+  color: #1f6e57;
+  background: rgba(31, 110, 87, 0.08);
 }
 
 .address-suggestions {
@@ -1324,8 +1324,8 @@ h1 {
 }
 
 .address-suggestion:hover {
-  background: #ffe8ed;
-  color: #ff385c;
+  background: #e7f4ed;
+  color: #1f6e57;
 }
 
 .point-card {
@@ -1371,8 +1371,8 @@ h1 {
   padding: 0.82rem 1rem;
   font-weight: 800;
   color: #ffffff;
-  background: #ff385c;
-  box-shadow: 0 14px 30px rgba(255, 56, 92, 0.2);
+  background: #1f6e57;
+  box-shadow: 0 14px 30px rgba(31, 110, 87, 0.2);
   cursor: pointer;
 }
 
@@ -1387,7 +1387,7 @@ h1 {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 800;
-  color: #0f62fe;
+  color: #2e7d6b;
 }
 
 .summary-card p {
@@ -1612,7 +1612,7 @@ h1 {
   min-height: 0;
   padding: 0.85rem;
   background:
-    linear-gradient(135deg, rgba(15, 98, 254, 0.08), rgba(255, 56, 92, 0.06)),
+    linear-gradient(135deg, rgba(46, 125, 107, 0.08), rgba(31, 110, 87, 0.06)),
     #eef3ef;
 }
 
@@ -1644,7 +1644,7 @@ h1 {
 
 .community-map-status .material-symbols-outlined {
   font-size: 1.05rem;
-  color: #0f62fe;
+  color: #2e7d6b;
 }
 
 .community-map-status strong,
@@ -1678,7 +1678,7 @@ h1 {
 
 .community-map-control-btn:hover {
   transform: translateY(-1px);
-  border-color: rgba(255, 56, 92, 0.28);
+  border-color: rgba(31, 110, 87, 0.28);
   background: #ffffff;
 }
 
@@ -1717,9 +1717,9 @@ h1 {
 }
 
 .community-map-style-btn--active {
-  background: #ff385c;
+  background: #1f6e57;
   color: #ffffff;
-  box-shadow: 0 8px 18px rgba(255, 56, 92, 0.22);
+  box-shadow: 0 8px 18px rgba(31, 110, 87, 0.22);
 }
 
 .legend-overlay {
@@ -1740,7 +1740,7 @@ h1 {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 700;
-  color: #0f62fe;
+  color: #2e7d6b;
 }
 
 .legend-item {

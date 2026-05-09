@@ -91,8 +91,8 @@
   width: 0.55rem;
   height: 0.55rem;
   border-radius: 999px;
-  background: #ff385c;
-  box-shadow: 0 0 0 6px rgba(255, 56, 92, 0.16);
+  background: #1f6e57;
+  box-shadow: 0 0 0 6px rgba(31, 110, 87, 0.16);
 }
 
 .site-footer__links {

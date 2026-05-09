@@ -107,7 +107,7 @@ function formatDuration(durationMin) {
 .history-panel__head p {
   font-size: 0.68rem;
   font-weight: 800;
-  color: #0f62fe;
+  color: #2e7d6b;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }

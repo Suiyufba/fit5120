@@ -7,10 +7,10 @@
   --mobile-gutter-wide: 1.25rem;
   --mobile-sheet-radius: 1.35rem;
   --mobile-safe-height: calc(100dvh - 72px);
-  --hs-primary: #ff385c;
-  --hs-primary-hover: #e00b41;
-  --hs-primary-soft: #ffe8ed;
-  --hs-safety-blue: #0f62fe;
+  --hs-primary: #1f6e57;
+  --hs-primary-hover: #185744;
+  --hs-primary-soft: #e7f4ed;
+  --hs-safety-blue: #2e7d6b;
   --hs-route-indigo: #5e6ad2;
   --hs-ink: #1f2933;
   --hs-ink-strong: #111827;
@@ -41,7 +41,7 @@
 }
 
 .primary-gradient {
-  background: linear-gradient(135deg, #ff385c 0%, #f06f4f 52%, #0f62fe 100%);
+  background: linear-gradient(135deg, #1f6e57 0%, #8fae83 52%, #2e7d6b 100%);
 }
 
 /*
@@ -51,7 +51,7 @@
  */
 .gradient-text {
   color: #ffffff;
-  background-image: linear-gradient(to bottom, transparent 0%, transparent 58%, rgba(255, 56, 92, 0.58) 58%, rgba(255, 56, 92, 0.58) 92%, transparent 92%);
+  background-image: linear-gradient(to bottom, transparent 0%, transparent 58%, rgba(31, 110, 87, 0.58) 58%, rgba(31, 110, 87, 0.58) 92%, transparent 92%);
   background-repeat: no-repeat;
   padding: 0 0.08em;
 }
@@ -165,7 +165,7 @@ h3 {
  */
 .u-highlight {
   color: var(--hs-ink-strong);
-  background-image: linear-gradient(to bottom, transparent 0%, transparent 60%, rgba(255, 56, 92, 0.22) 60%, rgba(255, 56, 92, 0.22) 92%, transparent 92%);
+  background-image: linear-gradient(to bottom, transparent 0%, transparent 60%, rgba(31, 110, 87, 0.22) 60%, rgba(31, 110, 87, 0.22) 92%, transparent 92%);
   background-repeat: no-repeat;
   padding: 0 0.08em;
 }
@@ -246,14 +246,14 @@ select:focus {
   background: var(--hs-primary);
   color: #ffffff;
   font-weight: 800;
-  box-shadow: 0 16px 34px rgba(255, 56, 92, 0.22);
+  box-shadow: 0 16px 34px rgba(31, 110, 87, 0.22);
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .hs-button-primary:hover {
   background: var(--hs-primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 20px 42px rgba(255, 56, 92, 0.28);
+  box-shadow: 0 20px 42px rgba(31, 110, 87, 0.28);
 }
 
 .hs-button-secondary {

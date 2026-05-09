@@ -26,7 +26,7 @@ visual_mix:
       - Generous whitespace
       - Rounded search and route cards
       - Photography-led destination moments
-      - Coral accent for primary journey actions
+      - Trail-green accent for primary journey actions
   ibm_safety_clarity:
     role: "Risk map, hazard states, scoring breakdowns, warnings, and dense factual panels."
     use:
@@ -52,11 +52,11 @@ visual_mix:
       - Alternating light and deep image sections only when content benefits
 
 colors:
-  primary: "#ff385c"
-  primary-hover: "#e00b41"
-  primary-soft: "#ffe8ed"
-  safety-blue: "#0f62fe"
-  safety-blue-hover: "#0050e6"
+  primary: "#1f6e57"
+  primary-hover: "#185744"
+  primary-soft: "#e7f4ed"
+  safety-blue: "#2e7d6b"
+  safety-blue-hover: "#246a5c"
   route-indigo: "#5e6ad2"
   route-indigo-soft: "#eef0ff"
   ink: "#1f2933"
@@ -73,7 +73,7 @@ colors:
   semantic-safe: "#24a148"
   semantic-caution: "#f1c21b"
   semantic-danger: "#da1e28"
-  semantic-info: "#0f62fe"
+  semantic-info: "#2e7d6b"
   on-primary: "#ffffff"
 
 typography:
@@ -182,8 +182,8 @@ page_guidance:
 
 do:
   - Use real place, map, terrain, or route imagery whenever possible.
-  - Reserve coral for the most important next action.
-  - Reserve IBM blue for system information, links, and safety explainers.
+  - Reserve trail green for the most important next action.
+  - Reserve teal-green for system information, links, and safety explainers.
   - Use semantic colors consistently for Safe, Caution, Dangerous, and Info states.
   - Keep map overlays readable on mobile with stable panel dimensions.
   - Prefer icon buttons for map tools and compact planner actions.

@@ -148,8 +148,8 @@ function formatPointCoordinates(point) {
 
 .point-input:focus {
   outline: none;
-  border-color: #ff385c;
-  box-shadow: 0 0 0 2px rgba(255, 56, 92, 0.12);
+  border-color: #1f6e57;
+  box-shadow: 0 0 0 2px rgba(31, 110, 87, 0.12);
 }
 
 .point-suggestions {

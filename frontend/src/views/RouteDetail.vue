@@ -967,7 +967,7 @@ onUnmounted(() => {
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-size: 0.7rem;
-  color: #0f62fe;
+  color: #2e7d6b;
   font-weight: 900;
 }
 
@@ -991,7 +991,7 @@ h1 {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.66rem;
-  color: #0f62fe;
+  color: #2e7d6b;
   font-weight: 800;
 }
 
@@ -1013,9 +1013,9 @@ h1 {
 }
 
 .route-picker__card--active {
-  border-color: rgba(255, 56, 92, 0.34);
-  background: #ffe8ed;
-  box-shadow: 0 0 0 3px rgba(255, 56, 92, 0.12);
+  border-color: rgba(31, 110, 87, 0.34);
+  background: #e7f4ed;
+  box-shadow: 0 0 0 3px rgba(31, 110, 87, 0.12);
 }
 
 .route-picker__title {
@@ -1130,7 +1130,7 @@ h1 {
 .share-btn {
   border: 0;
   border-radius: 999px;
-  background: #ff385c;
+  background: #1f6e57;
   color: #ffffff;
   padding: 0.66rem;
   font-weight: 700;

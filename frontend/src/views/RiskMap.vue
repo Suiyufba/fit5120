@@ -514,7 +514,7 @@ watch(filteredHazards, () => {
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-weight: 900;
-  color: #0f62fe;
+  color: #2e7d6b;
 }
 
 .risk-map-title {
@@ -570,8 +570,8 @@ watch(filteredHazards, () => {
 }
 
 .risk-map-layer-btn--active {
-  border-color: rgba(255, 56, 92, 0.32);
-  background: #ffe8ed;
+  border-color: rgba(31, 110, 87, 0.32);
+  background: #e7f4ed;
   font-weight: 700;
 }
 
@@ -666,12 +666,12 @@ watch(filteredHazards, () => {
 
 .risk-map-feed-item:hover {
   transform: translateY(-1px);
-  border-color: rgba(15, 98, 254, 0.28);
+  border-color: rgba(46, 125, 107, 0.28);
   box-shadow: 0 10px 22px rgba(17, 24, 39, 0.08);
 }
 
 .risk-map-feed-item--active {
-  border-color: rgba(255, 56, 92, 0.38);
+  border-color: rgba(31, 110, 87, 0.38);
   background: #fff4f6;
 }
 
@@ -679,7 +679,7 @@ watch(filteredHazards, () => {
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #0f62fe;
+  color: #2e7d6b;
   font-weight: 800;
 }
 
@@ -698,7 +698,7 @@ watch(filteredHazards, () => {
   min-height: 0;
   padding: 0.9rem;
   background:
-    linear-gradient(135deg, rgba(15, 98, 254, 0.08), rgba(255, 56, 92, 0.06)),
+    linear-gradient(135deg, rgba(46, 125, 107, 0.08), rgba(31, 110, 87, 0.06)),
     #eef3ef;
 }
 
@@ -739,7 +739,7 @@ watch(filteredHazards, () => {
 
 .risk-map-map-status .material-symbols-outlined {
   font-size: 1.05rem;
-  color: #0f62fe;
+  color: #2e7d6b;
 }
 
 .risk-map-map-status strong,
@@ -773,7 +773,7 @@ watch(filteredHazards, () => {
 
 .risk-map-control-btn:hover {
   transform: translateY(-1px);
-  border-color: rgba(255, 56, 92, 0.28);
+  border-color: rgba(31, 110, 87, 0.28);
   background: #ffffff;
 }
 
@@ -812,9 +812,9 @@ watch(filteredHazards, () => {
 }
 
 .risk-map-style-btn--active {
-  background: #ff385c;
+  background: #1f6e57;
   color: #ffffff;
-  box-shadow: 0 8px 18px rgba(255, 56, 92, 0.22);
+  box-shadow: 0 8px 18px rgba(31, 110, 87, 0.22);
 }
 
 .risk-map-canvas :deep(.hs-map-popup .leaflet-popup-content-wrapper) {

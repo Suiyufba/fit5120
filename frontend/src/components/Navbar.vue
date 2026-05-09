@@ -135,7 +135,7 @@ function goAccount() {
   width: 2.45rem;
   height: 2.45rem;
   object-fit: contain;
-  filter: drop-shadow(0 8px 18px rgba(255, 56, 92, 0.16));
+  filter: drop-shadow(0 8px 18px rgba(31, 110, 87, 0.16));
 }
 
 .brand-text {
@@ -190,7 +190,7 @@ function goAccount() {
 }
 
 .desktop-nav__link--active {
-  color: #ff385c;
+  color: #1f6e57;
 }
 
 .nav-actions {
@@ -234,7 +234,7 @@ function goAccount() {
 .account-btn:hover,
 .menu-btn:hover {
   background: #ffffff;
-  border-color: rgba(255, 56, 92, 0.28);
+  border-color: rgba(31, 110, 87, 0.28);
   transform: translateY(-1px);
 }
 
@@ -255,8 +255,8 @@ function goAccount() {
 }
 
 .mobile-nav__link--active {
-  background: #ffe8ed;
-  color: #ff385c;
+  background: #e7f4ed;
+  color: #1f6e57;
 }
 
 @media (max-width: 640px) {
