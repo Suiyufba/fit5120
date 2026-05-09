@@ -1,8 +1,7 @@
-// @ts-nocheck
 const DEFAULT_BASE_URL =
   import.meta.env.VITE_HAZARD_API_BASE_URL || 'https://backend-production-f55c.up.railway.app/api'
 
-function normalizeArticle(item, index) {
+function normalizeArticle(item: Record<string, unknown>, index: number) {
   const title = String(item?.title || '').trim()
   const content = String(item?.content || '').trim()
   if (!title || !content) return null
@@ -21,7 +20,7 @@ function normalizeArticle(item, index) {
   }
 }
 
-export async function fetchKnowledgeArticles({ topic, signal } = {}) {
+export async function fetchKnowledgeArticles({ topic, signal }: { topic?: string; signal?: AbortSignal } = {}) {
   const params = new URLSearchParams()
   if (topic && topic !== 'all') params.set('topic', topic)
   const url = params.size

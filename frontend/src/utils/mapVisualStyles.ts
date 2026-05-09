@@ -1,4 +1,3 @@
-// @ts-nocheck
 export const MAP_VISUAL_STYLES = {
   voyager: {
     label: 'Voyager',
@@ -25,8 +24,8 @@ export const MAP_VISUAL_STYLES = {
 
 export const DEFAULT_MAP_VISUAL_STYLE = 'voyager'
 
-export function createLeafletBaseLayer(L, styleId = DEFAULT_MAP_VISUAL_STYLE) {
-  const style = MAP_VISUAL_STYLES[styleId] || MAP_VISUAL_STYLES[DEFAULT_MAP_VISUAL_STYLE]
+export function createLeafletBaseLayer(L: any, styleId: string = DEFAULT_MAP_VISUAL_STYLE) {
+  const style = (MAP_VISUAL_STYLES as any)[styleId] || (MAP_VISUAL_STYLES as any)[DEFAULT_MAP_VISUAL_STYLE]
 
   return L.tileLayer(style.url, {
     maxZoom: style.maxZoom,

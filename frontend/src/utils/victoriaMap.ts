@@ -1,4 +1,4 @@
-// @ts-nocheck
+// @ts-ignore — @types/leaflet not installed
 import * as L from 'leaflet'
 import { VICTORIA_BOUNDARY_COORDINATES } from './victoriaBoundaryData'
 
@@ -13,7 +13,7 @@ export const VICTORIA_BOUNDS = L.latLngBounds(
   [-33.85, 150.05]
 )
 
-function isPointOnSegment(point, start, end, epsilon = 1e-9) {
+function isPointOnSegment(point: any, start: any, end: any, epsilon = 1e-9): boolean {
   const cross =
     (point.lng - start[0]) * (end[1] - start[1])
     - (point.lat - start[1]) * (end[0] - start[0])
@@ -33,7 +33,7 @@ function isPointOnSegment(point, start, end, epsilon = 1e-9) {
   return dot <= squaredLength
 }
 
-function isPointInRing(point, ring) {
+function isPointInRing(point: any, ring: any): boolean {
   let inside = false
 
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
@@ -58,7 +58,7 @@ function isPointInRing(point, ring) {
   return inside
 }
 
-function isPointInPolygon(point, polygonRings) {
+function isPointInPolygon(point: any, polygonRings: any): boolean {
   if (!polygonRings.length) return false
   if (!isPointInRing(point, polygonRings[0])) return false
 
@@ -71,7 +71,7 @@ function isPointInPolygon(point, polygonRings) {
   return true
 }
 
-export function clampLatLngToVictoria(latlng) {
+export function clampLatLngToVictoria(latlng: any): any {
   const nextLatLng = L.latLng(latlng)
   const southWest = VICTORIA_BOUNDS.getSouthWest()
   const northEast = VICTORIA_BOUNDS.getNorthEast()
@@ -82,7 +82,7 @@ export function clampLatLngToVictoria(latlng) {
   )
 }
 
-export function isLatLngInVictoria(latlng) {
+export function isLatLngInVictoria(latlng: any): boolean {
   const point = L.latLng(latlng)
   return VICTORIA_BOUNDS.contains(point)
     && VICTORIA_BOUNDARY_COORDINATES.some((polygonRings) => isPointInPolygon(point, polygonRings))
@@ -94,7 +94,7 @@ export function getVictoriaBbox() {
   return [southWest.lng, southWest.lat, northEast.lng, northEast.lat]
 }
 
-export function clampBoundsToVictoria(boundsLike) {
+export function clampBoundsToVictoria(boundsLike: any): any {
   const bounds = L.latLngBounds(boundsLike)
   const southWest = clampLatLngToVictoria(bounds.getSouthWest())
   const northEast = clampLatLngToVictoria(bounds.getNorthEast())
@@ -102,7 +102,7 @@ export function clampBoundsToVictoria(boundsLike) {
   return L.latLngBounds(southWest, northEast)
 }
 
-export function getMapBboxWithinVictoria(mapInstance) {
+export function getMapBboxWithinVictoria(mapInstance: any): number[] {
   if (!mapInstance) return getVictoriaBbox()
   const bounds = clampBoundsToVictoria(mapInstance.getBounds())
   return [
@@ -113,7 +113,7 @@ export function getMapBboxWithinVictoria(mapInstance) {
   ]
 }
 
-export function applyVictoriaMapConstraints(mapInstance) {
+export function applyVictoriaMapConstraints(mapInstance: any): any {
   if (!mapInstance) return
 
   const lockedZoom = mapInstance.getBoundsZoom(VICTORIA_BOUNDS, false, [24, 24])

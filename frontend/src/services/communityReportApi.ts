@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { readJsonCache, removeJsonCacheByPrefix, writeJsonCache } from './localCache'
 
 const ENV_BASE_URL = (import.meta.env.VITE_HAZARD_API_BASE_URL || '').trim()
@@ -7,7 +6,7 @@ const COMMUNITY_REPORTS_CACHE_PREFIX = 'hikeshield_cache_community_reports:'
 
 function buildCandidateBaseUrls() {
   const candidates = [ENV_BASE_URL, LEGACY_BASE_URL, '/api']
-  const uniq = []
+  const uniq: string[] = []
 
   candidates.forEach((value) => {
     const next = String(value || '').trim().replace(/\/+$/, '')
@@ -18,7 +17,7 @@ function buildCandidateBaseUrls() {
   return uniq
 }
 
-async function parseJson(response) {
+async function parseJson(response: Response) {
   try {
     return await response.json()
   } catch {
@@ -26,7 +25,7 @@ async function parseJson(response) {
   }
 }
 
-async function requestWithFallback(path, options = {}, { signal } = {}) {
+async function requestWithFallback(path: string, options: Record<string, unknown> = {}, { signal }: { signal?: AbortSignal } = {}) {
   const bases = buildCandidateBaseUrls()
   let lastError
 
@@ -48,7 +47,7 @@ async function requestWithFallback(path, options = {}, { signal } = {}) {
 
       return response
     } catch (error) {
-      if (error?.name === 'AbortError') throw error
+      if ((error as any)?.name === 'AbortError') throw error
       lastError = error
     }
   }
@@ -56,12 +55,12 @@ async function requestWithFallback(path, options = {}, { signal } = {}) {
   throw lastError || new Error('Community reports request failed')
 }
 
-function toNumber(value) {
+function toNumber(value: unknown): number {
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-function normalizeReport(raw = {}) {
+function normalizeReport(raw: Record<string, unknown> = {}) {
   return {
     id: String(raw.id || ''),
     title: String(raw.title || 'Untitled report'),
@@ -75,15 +74,15 @@ function normalizeReport(raw = {}) {
     reporterName: String(raw.reporterName || 'Anonymous Hiker'),
     likes: toNumber(raw.likes),
     views: toNumber(raw.views),
-    reportedAt: raw.reportedAt ? new Date(raw.reportedAt) : new Date(),
+    reportedAt: raw.reportedAt ? new Date(raw.reportedAt as string) : new Date(),
   }
 }
 
-function buildCommunityReportsCacheKey({ limit = 50 } = {}) {
+function buildCommunityReportsCacheKey({ limit = 50 }: { limit?: number } = {}) {
   return `${COMMUNITY_REPORTS_CACHE_PREFIX}limit=${Number(limit) || 50}`
 }
 
-function serializeCommunityReportsPayload(payload) {
+function serializeCommunityReportsPayload(payload: Record<string, unknown>) {
   return {
     reports: Array.isArray(payload?.reports)
       ? payload.reports.map((report) => ({
@@ -96,16 +95,16 @@ function serializeCommunityReportsPayload(payload) {
   }
 }
 
-function deserializeCommunityReportsPayload(rawPayload) {
+function deserializeCommunityReportsPayload(rawPayload: Record<string, unknown>) {
   if (!rawPayload || !Array.isArray(rawPayload.reports)) return null
   return {
     reports: rawPayload.reports.map(normalizeReport),
     storage: rawPayload.storage || 'unknown',
-    fetchedAt: rawPayload.fetchedAt ? new Date(rawPayload.fetchedAt) : new Date(),
+    fetchedAt: rawPayload.fetchedAt ? new Date(rawPayload.fetchedAt as string) : new Date(),
   }
 }
 
-async function requestCommunityReports({ limit = 50, signal } = {}) {
+async function requestCommunityReports({ limit = 50, signal }: { limit?: number; signal?: AbortSignal } = {}) {
   const params = new URLSearchParams({ limit: String(limit) })
 
   const response = await requestWithFallback('/community-reports?' + params.toString(), {
@@ -125,14 +124,14 @@ async function requestCommunityReports({ limit = 50, signal } = {}) {
   return {
     reports: payload.reports.map(normalizeReport),
     storage: payload?.storage || 'unknown',
-    fetchedAt: payload?.fetchedAt ? new Date(payload.fetchedAt) : new Date(),
+    fetchedAt: payload?.fetchedAt ? new Date(payload.fetchedAt as string) : new Date(),
   }
 }
 
-export async function fetchCommunityReports({ limit = 50, signal, preferCache = false, onUpdate } = {}) {
+export async function fetchCommunityReports({ limit = 50, signal, preferCache = false, onUpdate }: { limit?: number; signal?: AbortSignal; preferCache?: boolean; onUpdate?: (p: any) => void } = {}) {
   const cacheKey = buildCommunityReportsCacheKey({ limit })
   const cached = preferCache ? readJsonCache(cacheKey) : null
-  const cachedPayload = deserializeCommunityReportsPayload(cached?.data)
+  const cachedPayload = deserializeCommunityReportsPayload(cached?.data || null)
 
   const fetchAndRefresh = async () => {
     const freshPayload = await requestCommunityReports({ limit, signal })
@@ -146,13 +145,13 @@ export async function fetchCommunityReports({ limit = 50, signal, preferCache = 
       if (error?.name === 'AbortError') return
       console.error('Community reports background refresh failed:', error)
     })
-    return { ...cachedPayload, cachedAt: cached.cachedAt, isFromCache: true }
+    return { ...cachedPayload!, cachedAt: cached!.cachedAt, isFromCache: true }
   }
 
   return fetchAndRefresh()
 }
 
-export async function submitCommunityReport(input, { signal } = {}) {
+export async function submitCommunityReport(input: Record<string, unknown>, { signal }: { signal?: AbortSignal } = {}) {
   const response = await requestWithFallback('/community-reports', {
     method: 'POST',
     headers: {
@@ -193,7 +192,7 @@ export function invalidateCommunityReportsCache() {
   removeJsonCacheByPrefix(COMMUNITY_REPORTS_CACHE_PREFIX)
 }
 
-export async function uploadCommunityReportImage({ dataUrl, width, height, signal } = {}) {
+export async function uploadCommunityReportImage({ dataUrl, width, height, signal }: { dataUrl?: string; width?: number; height?: number; signal?: AbortSignal } = {}) {
   if (!dataUrl) throw new Error('dataUrl is required')
 
   const response = await requestWithFallback('/community-reports/images', {
@@ -204,8 +203,8 @@ export async function uploadCommunityReportImage({ dataUrl, width, height, signa
     },
     body: JSON.stringify({
       dataUrl,
-      width: Number.isFinite(width) ? Math.round(width) : undefined,
-      height: Number.isFinite(height) ? Math.round(height) : undefined,
+      width: Number.isFinite(width) ? Math.round(width!) : undefined,
+      height: Number.isFinite(height) ? Math.round(height!) : undefined,
     }),
   }, { signal })
 

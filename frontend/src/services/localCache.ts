@@ -1,11 +1,10 @@
-// @ts-nocheck
 const CACHE_VERSION = 1
 
 function canUseLocalStorage() {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
 }
 
-export function readJsonCache(key) {
+export function readJsonCache(key: string) {
   if (!canUseLocalStorage()) return null
 
   try {
@@ -26,7 +25,7 @@ export function readJsonCache(key) {
   }
 }
 
-export function writeJsonCache(key, data) {
+export function writeJsonCache(key: string, data: unknown) {
   if (!canUseLocalStorage()) return
 
   try {
@@ -43,7 +42,7 @@ export function writeJsonCache(key, data) {
   }
 }
 
-export function removeJsonCacheByPrefix(prefix) {
+export function removeJsonCacheByPrefix(prefix: string) {
   if (!canUseLocalStorage()) return
 
   try {

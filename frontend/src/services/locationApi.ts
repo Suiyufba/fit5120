@@ -1,8 +1,7 @@
-// @ts-nocheck
 const DEFAULT_BASE_URL =
   import.meta.env.VITE_HAZARD_API_BASE_URL || 'https://backend-production-f55c.up.railway.app/api'
 
-function normalizeLocation(item) {
+function normalizeLocation(item: Record<string, unknown>) {
   return {
     displayName: String(item?.displayName || '').trim() || 'Unnamed location',
     lat: Number(item?.lat || 0),
@@ -10,7 +9,7 @@ function normalizeLocation(item) {
   }
 }
 
-export async function searchLocations(query, { signal, limit = 6 } = {}) {
+export async function searchLocations(query: string, { signal, limit = 6 }: { signal?: AbortSignal; limit?: number } = {}) {
   const text = String(query || '').trim()
   if (text.length < 2) return []
 
@@ -30,7 +29,7 @@ export async function searchLocations(query, { signal, limit = 6 } = {}) {
   return Array.isArray(payload?.results) ? payload.results.map(normalizeLocation) : []
 }
 
-export async function reverseLocation(lat, lng, { signal } = {}) {
+export async function reverseLocation(lat: number, lng: number, { signal }: { signal?: AbortSignal } = {}) {
   const params = new URLSearchParams({
     lat: String(lat),
     lng: String(lng),

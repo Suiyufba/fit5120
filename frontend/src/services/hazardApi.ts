@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { readJsonCache, writeJsonCache } from './localCache'
 
 const DEFAULT_BASE_URL =
@@ -7,14 +6,14 @@ const REALTIME_HAZARD_PATH = '/hazards/realtime'
 const DISPLAY_SOURCE_FALLBACK = 'Victorian Safety Snapshot'
 const HAZARD_CACHE_PREFIX = 'hikeshield_cache_hazards:'
 
-function normalizeSource(rawSource) {
+function normalizeSource(rawSource: any): string {
   const source = (rawSource || '').toString().trim()
   if (!source) return DISPLAY_SOURCE_FALLBACK
   if (source.toLowerCase() === 'fallback') return DISPLAY_SOURCE_FALLBACK
   return source
 }
 
-function normalizeType(rawType) {
+function normalizeType(rawType: unknown): string {
   const value = (rawType || '').toString().toLowerCase()
   if (value.includes('fire')) return 'fire'
   if (value.includes('flood')) return 'flood'
@@ -24,7 +23,7 @@ function normalizeType(rawType) {
   return 'other'
 }
 
-function normalizeSeverity(rawSeverity) {
+function normalizeSeverity(rawSeverity: unknown): string {
   const value = (rawSeverity || '').toString().toLowerCase()
   if (['extreme', 'severe', 'emergency'].includes(value)) return 'extreme'
   if (['high', 'watch-and-act', 'warning'].includes(value)) return 'high'
@@ -32,15 +31,16 @@ function normalizeSeverity(rawSeverity) {
   return 'low'
 }
 
-function normalizeFeature(feature) {
-  if (!feature || feature.type !== 'Feature') return null
+function normalizeFeature(feature: Record<string, unknown>) {
+  const f = feature as any;
+  if (!f || f.type !== 'Feature') return null
 
-  const [lng, lat] = feature.geometry?.coordinates || []
+  const [lng, lat] = f.geometry?.coordinates || []
   if (typeof lat !== 'number' || typeof lng !== 'number') return null
 
-  const props = feature.properties || {}
+  const props = f.properties || {}
   return {
-    id: props.id || feature.id || `${lat}-${lng}-${Date.now()}`,
+    id: props.id || f.id || `${lat}-${lng}-${Date.now()}`,
     title: props.title || props.event || 'Unnamed hazard',
     riskCategory: props.riskCategory || props.category || props.incidentType || '',
     description: props.description || props.headline || 'No detail provided',
@@ -53,27 +53,28 @@ function normalizeFeature(feature) {
   }
 }
 
-function normalizeRecord(record) {
-  if (!record || !Array.isArray(record.coordinates) || record.coordinates.length !== 2) return null
+function normalizeRecord(record: Record<string, unknown>) {
+  const r = record as any;
+  if (!r || !Array.isArray(r.coordinates) || r.coordinates.length !== 2) return null
 
-  const [lat, lng] = record.coordinates
+  const [lat, lng] = r.coordinates
   if (typeof lat !== 'number' || typeof lng !== 'number') return null
 
   return {
-    id: record.id || `${lat}-${lng}-${Date.now()}`,
-    title: record.title || 'Unnamed hazard',
-    riskCategory: record.riskCategory || record.category || record.incidentType || '',
-    description: record.description || 'No detail provided',
-    source: normalizeSource(record.source || 'Official open data'),
-    sourceUrl: record.sourceUrl || '',
-    updatedAt: record.updatedAt || null,
-    type: normalizeType(record.type),
-    severity: normalizeSeverity(record.severity),
+    id: r.id || `${lat}-${lng}-${Date.now()}`,
+    title: r.title || 'Unnamed hazard',
+    riskCategory: r.riskCategory || r.category || r.incidentType || '',
+    description: r.description || 'No detail provided',
+    source: normalizeSource(r.source || 'Official open data'),
+    sourceUrl: r.sourceUrl || '',
+    updatedAt: r.updatedAt || null,
+    type: normalizeType(r.type),
+    severity: normalizeSeverity(r.severity),
     coordinates: [lat, lng],
   }
 }
 
-function normalizePayload(payload) {
+function normalizePayload(payload: Record<string, unknown>) {
   if (payload?.type === 'FeatureCollection' && Array.isArray(payload.features)) {
     return payload.features.map(normalizeFeature).filter(Boolean)
   }
@@ -85,8 +86,8 @@ function normalizePayload(payload) {
   return []
 }
 
-function normalizeFetchedAt(rawFetchedAt) {
-  const timestamp = Date.parse(rawFetchedAt || '')
+function normalizeFetchedAt(rawFetchedAt: unknown) {
+  const timestamp = Date.parse(String(rawFetchedAt || ''))
   if (Number.isNaN(timestamp)) return null
   return new Date(timestamp)
 }
@@ -98,13 +99,13 @@ export function getHazardApiConfig() {
   }
 }
 
-function buildRealtimeHazardCacheKey({ bbox, layers } = {}) {
+function buildRealtimeHazardCacheKey({ bbox, layers }: { bbox?: number[]; layers?: string[] } = {}) {
   const normalizedBbox = Array.isArray(bbox) && bbox.length === 4 ? bbox.map((value) => Number(value).toFixed(4)).join(',') : 'all'
   const normalizedLayers = Array.isArray(layers) && layers.length ? [...layers].sort().join(',') : 'all'
   return `${HAZARD_CACHE_PREFIX}bbox=${normalizedBbox}|layers=${normalizedLayers}`
 }
 
-function serializeHazardPayload(payload) {
+function serializeHazardPayload(payload: Record<string, unknown>) {
   return {
     hazards: Array.isArray(payload?.hazards) ? payload.hazards : [],
     fetchedAt: payload?.fetchedAt instanceof Date ? payload.fetchedAt.toISOString() : null,
@@ -112,7 +113,7 @@ function serializeHazardPayload(payload) {
   }
 }
 
-function deserializeHazardPayload(rawPayload) {
+function deserializeHazardPayload(rawPayload: Record<string, unknown>) {
   if (!rawPayload || !Array.isArray(rawPayload.hazards)) return null
   return {
     hazards: normalizePayload({ hazards: rawPayload.hazards }),
@@ -121,7 +122,7 @@ function deserializeHazardPayload(rawPayload) {
   }
 }
 
-async function requestRealtimeHazards({ bbox, layers, signal } = {}) {
+async function requestRealtimeHazards({ bbox, layers, signal }: { bbox?: number[]; layers?: string[]; signal?: AbortSignal } = {}) {
   const params = new URLSearchParams()
   if (bbox?.length === 4) params.set('bbox', bbox.join(','))
   if (layers?.length) params.set('layers', layers.join(','))
@@ -147,10 +148,10 @@ async function requestRealtimeHazards({ bbox, layers, signal } = {}) {
   }
 }
 
-export async function fetchRealtimeHazards({ bbox, layers, signal, preferCache = false, onUpdate } = {}) {
+export async function fetchRealtimeHazards({ bbox, layers, signal, preferCache = false, onUpdate }: { bbox?: number[]; layers?: string[]; signal?: AbortSignal; preferCache?: boolean; onUpdate?: (p: any) => void } = {}) {
   const cacheKey = buildRealtimeHazardCacheKey({ bbox, layers })
   const cached = preferCache ? readJsonCache(cacheKey) : null
-  const cachedPayload = deserializeHazardPayload(cached?.data)
+  const cachedPayload = deserializeHazardPayload(cached?.data || null)
 
   const fetchAndRefresh = async () => {
     const freshPayload = await requestRealtimeHazards({ bbox, layers, signal })
@@ -164,7 +165,7 @@ export async function fetchRealtimeHazards({ bbox, layers, signal, preferCache =
       if (error?.name === 'AbortError') return
       console.error('Realtime hazards background refresh failed:', error)
     })
-    return { ...cachedPayload, cachedAt: cached.cachedAt, isFromCache: true }
+    return { ...cachedPayload!, cachedAt: cached!.cachedAt, isFromCache: true }
   }
 
   return fetchAndRefresh()

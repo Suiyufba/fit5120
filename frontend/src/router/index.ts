@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, type RouteLocationNormalized } from 'vue-router'
 import Home from '../views/Home.vue'
 import { restoreSession, useAuthState } from '../services/authStore'
 
@@ -79,7 +78,7 @@ const router = createRouter({
   ]
 })
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to: RouteLocationNormalized) => {
   await restoreSession()
   const { isAuthenticated } = useAuthState()
 

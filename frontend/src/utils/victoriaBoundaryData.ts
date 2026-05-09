@@ -1,4 +1,3 @@
-// @ts-nocheck
 export const VICTORIA_BOUNDARY_COORDINATES = [
   [
     [
