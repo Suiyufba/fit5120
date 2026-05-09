@@ -1,9 +1,8 @@
-// @ts-nocheck
 import { config } from '../../../config/index.js';
 import { fetchJson } from '../../../shared/http/fetchJson.js';
 import { inferType, sanitizeHazard, toSeverity } from '../domain/hazardUtils.js';
 
-const toCoords = (record) => {
+const toCoords = (record: any): [number, number] | null => {
   const lat = Number.parseFloat(record.latitude || record.lat || record.LATITUDE);
   const lng = Number.parseFloat(record.longitude || record.lon || record.lng || record.LONGITUDE);
 
@@ -26,11 +25,11 @@ export async function fetchVicRoadsHazards() {
     url.searchParams.set('subscription-key', config.vicroadsApiKey);
   }
 
-  const payload = await fetchJson(url.toString(), { headers });
+  const payload: any = await fetchJson(url.toString(), { headers });
   const records = payload?.result?.records || payload?.records || [];
 
   return records
-    .map((record, index) => {
+    .map((record: any, index: number) => {
       const title = record.event_type || record.description || record.title || 'Road disruption';
       const type = inferType(`${record.event_type || ''} ${record.subcategory || ''} ${title}`);
       const coords = toCoords(record);

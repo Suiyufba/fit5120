@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { fetchJson } from '../../../shared/http/fetchJson.js';
 
 const NOMINATIM_BASE_URL = 'https://nominatim.openstreetmap.org';
@@ -13,7 +12,7 @@ const VICTORIA_BBOX = {
 };
 const searchCache = new Map();
 
-function inVictoria({ lat, lng }) {
+function inVictoria({ lat, lng }: any) {
   return lat >= VICTORIA_BBOX.minLat
     && lat <= VICTORIA_BBOX.maxLat
     && lng >= VICTORIA_BBOX.minLng
@@ -78,7 +77,7 @@ function normalizePhotonResult(feature: any) {
   };
 }
 
-function dedupeAndLimit(items, limit) {
+function dedupeAndLimit(items: any[], limit: number) {
   const seen = new Set();
   return items
     .filter(Boolean)
@@ -91,7 +90,7 @@ function dedupeAndLimit(items, limit) {
     .slice(0, limit);
 }
 
-function getCachedSearch(cacheKey) {
+function getCachedSearch(cacheKey: string) {
   const cached = searchCache.get(cacheKey);
   if (!cached || Date.now() - cached.createdAt > SEARCH_CACHE_TTL_MS) {
     searchCache.delete(cacheKey);
@@ -100,7 +99,7 @@ function getCachedSearch(cacheKey) {
   return cached.results;
 }
 
-function setCachedSearch(cacheKey, results) {
+function setCachedSearch(cacheKey: string, results: any) {
   searchCache.set(cacheKey, {
     createdAt: Date.now(),
     results,
@@ -111,7 +110,7 @@ function setCachedSearch(cacheKey, results) {
   }
 }
 
-async function searchNominatim(q, safeLimit) {
+async function searchNominatim(q: string, safeLimit: number) {
   const params = new URLSearchParams({
     q,
     format: 'jsonv2',
@@ -135,7 +134,7 @@ async function searchNominatim(q, safeLimit) {
     : [];
 }
 
-async function searchPhoton(q, safeLimit) {
+async function searchPhoton(q: string, safeLimit: number) {
   const params = new URLSearchParams({
     q,
     limit: String(safeLimit * 2),
@@ -151,12 +150,12 @@ async function searchPhoton(q, safeLimit) {
     timeoutMs: 8000,
   });
 
-  return Array.isArray(payload?.features)
-    ? payload.features.map(normalizePhotonResult)
+  return Array.isArray((payload as any)?.features)
+    ? (payload as any).features.map(normalizePhotonResult)
     : [];
 }
 
-export async function searchLocationsByText({ query, limit = 6 }) {
+export async function searchLocationsByText({ query, limit = 6 }: { query: string; limit?: number }) {
   const q = String(query || '').trim();
   if (!q) return [];
 
@@ -185,7 +184,7 @@ export async function searchLocationsByText({ query, limit = 6 }) {
   return normalized;
 }
 
-export async function reverseLocation({ lat, lng }) {
+export async function reverseLocation({ lat, lng }: { lat: number; lng: number }) {
   const parsedLat = Number(lat);
   const parsedLng = Number(lng);
   if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLng)) {
@@ -219,8 +218,8 @@ export async function reverseLocation({ lat, lng }) {
       const payload = await tryReverse(zoom);
       const displayName = buildDisplayName(payload);
       if (!displayName) continue;
-      const normalizedLat = Number(payload?.lat);
-      const normalizedLng = Number(payload?.lon);
+      const normalizedLat = Number((payload as any)?.lat);
+      const normalizedLng = Number((payload as any)?.lon);
       return {
         displayName,
         lat: Number.isFinite(normalizedLat) ? normalizedLat : parsedLat,

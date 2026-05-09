@@ -22,8 +22,8 @@ export async function getLocationSearch(req: Request, res: Response): Promise<vo
 export async function getLocationReverse(req: Request, res: Response): Promise<void> {
   try {
     const result = await reverseLocation({
-      lat: req.query?.lat as string | undefined,
-      lng: req.query?.lng as string | undefined,
+      lat: Number(req.query?.lat),
+      lng: Number(req.query?.lng),
     });
     res.json({ result: result || null });
   } catch (error) {

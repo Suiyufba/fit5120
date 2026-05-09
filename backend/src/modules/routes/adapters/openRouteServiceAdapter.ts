@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { config } from '../../../config/index.js';
 import { fetchJson } from '../../../shared/http/fetchJson.js';
 import { estimateHikingDurationMin } from '../domain/routeTiming.js';
@@ -8,11 +7,11 @@ const ORS_RETRY_ATTEMPTS = 2;
 const ORS_RETRY_DELAY_MS = 300;
 const ORS_FALLBACK_PROFILES = ['foot-walking', 'driving-car'];
 
-function sleep(ms) {
+function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function extractHttpStatus(error) {
+function extractHttpStatus(error: any) {
   const message = String(error?.message || '');
   const match = message.match(/HTTP\s+(\d{3})/i);
   if (!match) return null;
@@ -20,13 +19,13 @@ function extractHttpStatus(error) {
   return Number.isFinite(status) ? status : null;
 }
 
-function isTransientOpenRouteServiceError(error) {
+function isTransientOpenRouteServiceError(error: any) {
   if (error?.name === 'AbortError') return true;
   const status = extractHttpStatus(error);
   return status != null ? ORS_TRANSIENT_STATUS.has(status) : false;
 }
 
-function normalizeProfile(profile) {
+function normalizeProfile(profile: string) {
   const value = String(profile || '').trim().toLowerCase();
   if (value === 'foot' || value === 'walking') return 'foot-walking';
   if (value === 'hiking') return 'foot-hiking';
@@ -41,7 +40,7 @@ function buildProfileCandidates() {
     .filter((value, index, arr) => arr.indexOf(value) === index);
 }
 
-function toRouteShape(feature, index, travelProfile) {
+function toRouteShape(feature: any, index: number, travelProfile: string) {
   const summary = feature?.properties?.summary || {};
   const coordinates = feature?.geometry?.coordinates || [];
   const geometry = coordinates
@@ -67,14 +66,14 @@ function toRouteShape(feature, index, travelProfile) {
   };
 }
 
-function buildDirectionsUrl(travelProfile) {
+function buildDirectionsUrl(travelProfile: string) {
   const baseUrl = String(config.openRouteServiceApiBaseUrl || '').replace(/\/+$/, '');
   return `${baseUrl}/v2/directions/${travelProfile}/geojson`;
 }
 
 function buildDirectionsBody(points: unknown[], { alternatives }: { alternatives: boolean }) {
-  const body = {
-    coordinates: points.map((point) => [point.lng, point.lat]),
+  const body: any = {
+    coordinates: points.map((point: any) => [point.lng, point.lat]),
     instructions: false,
     preference: 'recommended',
     radiuses: points.map(() => config.openRouteServiceSnapRadiusM),
@@ -103,7 +102,7 @@ async function fetchRoutesByProfile(points: unknown[], { alternatives, travelPro
     },
     body: JSON.stringify(buildDirectionsBody(points, { alternatives })),
   });
-  const features = Array.isArray(payload?.features) ? payload.features : [];
+  const features = Array.isArray((payload as any)?.features) ? (payload as any).features : [];
   return features
     .map((feature, index) => toRouteShape(feature, index, travelProfile))
     .filter((route) => route.geometry.length >= 2);

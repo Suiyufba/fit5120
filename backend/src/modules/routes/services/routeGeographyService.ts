@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createHash } from 'node:crypto';
 import { config } from '../../../config/index.js';
 import { fetchJson } from '../../../shared/http/fetchJson.js';
@@ -8,15 +7,15 @@ import {
   upsertRouteGeographyProfile,
 } from '../repositories/routeGeographyRepository.js';
 
-function clamp(value, min, max) {
+function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-function toRad(degrees) {
+function toRad(degrees: number) {
   return (degrees * Math.PI) / 180;
 }
 
-function haversineKm([lat1, lon1], [lat2, lon2]) {
+function haversineKm([lat1, lon1]: [number, number], [lat2, lon2]: [number, number]) {
   const earthRadiusKm = 6371;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
@@ -26,11 +25,11 @@ function haversineKm([lat1, lon1], [lat2, lon2]) {
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function hashGeometry(geometry = []) {
+function hashGeometry(geometry: any[] = []) {
   return createHash('sha1').update(JSON.stringify(geometry)).digest('hex');
 }
 
-function sampleGeometry(geometry = [], maxPoints = 80) {
+function sampleGeometry(geometry: any[] = [], maxPoints = 80) {
   if (!Array.isArray(geometry) || geometry.length <= maxPoints) return geometry;
   const stride = Math.max(1, Math.ceil(geometry.length / maxPoints));
   const sampled = geometry.filter((_, index) => index % stride === 0);
@@ -39,7 +38,7 @@ function sampleGeometry(geometry = [], maxPoints = 80) {
   return sampled;
 }
 
-function bboxFromGeometry(geometry = []) {
+function bboxFromGeometry(geometry: any[] = []) {
   let south = 90;
   let north = -90;
   let west = 180;
@@ -62,7 +61,7 @@ function bboxFromGeometry(geometry = []) {
   };
 }
 
-function mode(values, fallback = 'unknown') {
+function mode(values: any[], fallback = 'unknown') {
   const counts = new Map();
   values.filter(Boolean).forEach((value) => {
     counts.set(value, (counts.get(value) || 0) + 1);
@@ -108,7 +107,7 @@ function isMeaningfulGeographyProfile(profile: Record<string, unknown> = {}) {
   ].some((value) => value > 0);
 }
 
-function buildElevationProfileFromPoints(points = []) {
+function buildElevationProfileFromPoints(points: any[] = []) {
   const cleanPoints = points.filter((item) =>
     Number.isFinite(item.lat) && Number.isFinite(item.lng) && Number.isFinite(item.elevation)
   );
@@ -158,7 +157,7 @@ function buildElevationProfileFromPoints(points = []) {
   };
 }
 
-async function fetchElevationPointsFromOpenTopoData(sampledGeometry) {
+async function fetchElevationPointsFromOpenTopoData(sampledGeometry: any[]) {
   const chunks = [];
   for (let index = 0; index < sampledGeometry.length; index += 40) {
     chunks.push(sampledGeometry.slice(index, index + 40));
@@ -175,7 +174,7 @@ async function fetchElevationPointsFromOpenTopoData(sampledGeometry) {
     const payload = await fetchJson(url.toString(), {
       timeoutMs: Math.max(config.requestTimeoutMs, 15000),
     });
-    const results = Array.isArray(payload?.results) ? payload.results : [];
+    const results = Array.isArray((payload as any)?.results) ? (payload as any).results : [];
     results.forEach((item, index) => {
       points.push({
         lat: chunk[index]?.[0],
@@ -188,7 +187,7 @@ async function fetchElevationPointsFromOpenTopoData(sampledGeometry) {
   return points;
 }
 
-async function fetchElevationPointsFromOpenMeteo(sampledGeometry) {
+async function fetchElevationPointsFromOpenMeteo(sampledGeometry: any[]) {
   const chunks = [];
   for (let index = 0; index < sampledGeometry.length; index += 80) {
     chunks.push(sampledGeometry.slice(index, index + 80));
@@ -203,7 +202,7 @@ async function fetchElevationPointsFromOpenMeteo(sampledGeometry) {
     const payload = await fetchJson(url.toString(), {
       timeoutMs: Math.max(config.requestTimeoutMs, 15000),
     });
-    const elevations = Array.isArray(payload?.elevation) ? payload.elevation : [];
+    const elevations = Array.isArray((payload as any)?.elevation) ? (payload as any).elevation : [];
     elevations.forEach((elevation, index) => {
       points.push({
         lat: chunk[index]?.[0],
@@ -216,7 +215,7 @@ async function fetchElevationPointsFromOpenMeteo(sampledGeometry) {
   return points;
 }
 
-async function fetchElevationProfile(sampledGeometry, routeHash = '') {
+async function fetchElevationProfile(sampledGeometry: any[], routeHash = '') {
   try {
     const points = await fetchElevationPointsFromOpenTopoData(sampledGeometry);
     const profile = buildElevationProfileFromPoints(points);
@@ -250,24 +249,25 @@ async function fetchElevationProfile(sampledGeometry, routeHash = '') {
   return buildElevationProfileFromPoints([]);
 }
 
-function pointForElement(element: Record<string, unknown>) {
-  if (Number.isFinite((element as any)?.lat) && Number.isFinite((element as any)?.lon)) {
-    return [element.lat, element.lon];
+function pointForElement(element: any) {
+  const e: any = element;
+  if (Number.isFinite(e?.lat) && Number.isFinite(e?.lon)) {
+    return [e.lat, e.lon] as [number, number];
   }
-  if (Number.isFinite(element?.center?.lat) && Number.isFinite(element?.center?.lon)) {
-    return [element.center.lat, element.center.lon];
+  if (Number.isFinite(e?.center?.lat) && Number.isFinite(e?.center?.lon)) {
+    return [e.center.lat, e.center.lon] as [number, number];
   }
-  const geometry = Array.isArray(element?.geometry) ? element.geometry : [];
+  const geometry = Array.isArray(e?.geometry) ? e.geometry : [];
   if (geometry.length) {
     const mid = geometry[Math.floor(geometry.length / 2)];
     if (Number.isFinite(mid?.lat) && Number.isFinite(mid?.lon)) {
-      return [mid.lat, mid.lon];
+      return [mid.lat, mid.lon] as [number, number];
     }
   }
   return null;
 }
 
-async function fetchTerrainConstraints(geometry) {
+async function fetchTerrainConstraints(geometry: any) {
   const bbox = bboxFromGeometry(geometry);
   const query = `
 [out:json][timeout:25];
@@ -296,7 +296,7 @@ out center geom tags;
     timeoutMs: Math.max(config.requestTimeoutMs, 25000),
   });
 
-  const elements = Array.isArray(payload?.elements) ? payload.elements : [];
+  const elements = Array.isArray((payload as any)?.elements) ? (payload as any).elements : [];
   const closeTrailWays = [];
   let riverCrossingCount = 0;
   let cliffExposureCount = 0;
@@ -338,7 +338,7 @@ out center geom tags;
   };
 }
 
-export async function getRouteGeographyProfileForRoute(route) {
+export async function getRouteGeographyProfileForRoute(route: any) {
   const geometry = Array.isArray(route?.geometry) ? route.geometry : [];
   if (geometry.length < 2) {
     return {

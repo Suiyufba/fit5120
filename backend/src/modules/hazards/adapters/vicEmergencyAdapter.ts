@@ -1,10 +1,9 @@
-// @ts-nocheck
 import { config } from '../../../config/index.js';
 import { fetchJson } from '../../../shared/http/fetchJson.js';
 import { fetchText } from '../../../shared/http/fetchText.js';
 import { inferType, sanitizeHazard, toSeverity } from '../domain/hazardUtils.js';
 
-const rssTag = (block, tagName) => {
+const rssTag = (block: string, tagName: string): string => {
   const regex = new RegExp(`<${tagName}>([\\s\\S]*?)<\\/${tagName}>`, 'i');
   const match = block.match(regex);
   return match ? match[1].trim() : '';
@@ -18,7 +17,7 @@ const decodeHtml = (value = '') =>
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'");
 
-const toPlainText = (value = '') =>
+const toPlainText = (value = ''): string =>
   decodeHtml(value)
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/p>/gi, '\n')
@@ -110,11 +109,11 @@ export async function fetchVicEmergencyHazards() {
     : {};
 
   try {
-    const payload = await fetchJson(config.vicEmergencyFeedUrl, { headers });
+    const payload: any = await fetchJson(config.vicEmergencyFeedUrl, { headers });
     const items = payload?.hazards || payload?.events || payload?.features || [];
 
     return items
-      .map((item, index) => {
+      .map((item: any, index: number) => {
         const point = item.coordinates || item?.geometry?.coordinates;
         if (!Array.isArray(point) || point.length < 2) return null;
 
@@ -138,7 +137,7 @@ export async function fetchVicEmergencyHazards() {
       })
       .filter(Boolean);
   } catch (_jsonError) {
-    const xml = await fetchText(config.vicEmergencyFeedUrl, { headers });
+    const xml: string = await fetchText(config.vicEmergencyFeedUrl, { headers }) as string;
     return parseVicEmergencyRss(xml);
   }
 }
