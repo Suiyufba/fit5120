@@ -1,4 +1,3 @@
-// @ts-nocheck
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildRouteIntroductionFallback, extractAiServiceIntro } from './routeNarrationService.js';
