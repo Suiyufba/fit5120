@@ -1110,50 +1110,23 @@ onUnmounted(() => {
 }
 
 .home-knowledge-feature {
-  position: relative;
   min-height: 100%;
-  background: #111827;
 }
 
 .home-knowledge-feature__image {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-  filter: saturate(0.9);
-}
-
-.home-knowledge-feature::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(17, 24, 39, 0.08), rgba(17, 24, 39, 0.86));
+  height: 180px;
 }
 
 .home-knowledge-feature__body {
-  position: relative;
-  z-index: 1;
-  min-height: 360px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
-.home-knowledge-feature h3,
-.home-knowledge-feature span,
-.home-knowledge-feature__body p {
-  color: #ffffff;
-}
-
-.home-knowledge-feature__body p {
-  opacity: 0.74;
+  min-height: 0;
 }
 
 .home-knowledge-feature button {
-  width: fit-content;
-  border-radius: 999px;
-  background: #ffffff;
-  padding: 0.7rem 1rem;
-  color: #111827;
+  width: auto;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  color: #ff385c;
 }
 
 @media (max-width: 900px) {
