@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Router } from 'express';
 import { hazardRoutes } from './hazardRoutes.js';
 import { healthRoutes } from './healthRoutes.js';

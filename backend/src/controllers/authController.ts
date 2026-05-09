@@ -1,4 +1,5 @@
-// @ts-nocheck
+import type { Response } from 'express';
+import type { AuthenticatedRequest } from '../modules/auth/middlewares/requireAuth.js';
 import {
   getProfileByUserId,
   loginUser,
@@ -8,7 +9,7 @@ import {
   updateSensitiveProfileByUserId
 } from '../modules/auth/services/authService.js';
 
-export async function register(req, res) {
+export async function register(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const result = await registerUser({
       email: req.body?.email,
@@ -26,7 +27,7 @@ export async function register(req, res) {
   }
 }
 
-export async function login(req, res) {
+export async function login(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const result = await loginUser({
       email: req.body?.email,
@@ -38,7 +39,7 @@ export async function login(req, res) {
   }
 }
 
-export async function me(req, res) {
+export async function me(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const user = await getProfileByUserId(req.auth.userId);
     if (!user) {
@@ -51,7 +52,7 @@ export async function me(req, res) {
   }
 }
 
-export async function resetPasswordBySecurityAnswer(req, res) {
+export async function resetPasswordBySecurityAnswer(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const result = await resetPasswordWithSecurityAnswer({
       email: req.body?.email,
@@ -65,7 +66,7 @@ export async function resetPasswordBySecurityAnswer(req, res) {
   }
 }
 
-export async function updateProfile(req, res) {
+export async function updateProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const result = await updateProfileByUserId(req.auth.userId, {
       age: req.body?.age,
@@ -79,7 +80,7 @@ export async function updateProfile(req, res) {
   }
 }
 
-export async function updateSensitiveProfile(req, res) {
+export async function updateSensitiveProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const result = await updateSensitiveProfileByUserId(req.auth.userId, {
       email: req.body?.email,

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { getPgPool } from '../../../infrastructure/db/postgresClient.js';
 
 const ROUTE_GEOGRAPHY_PROFILE_VERSION = 4;
@@ -58,7 +57,7 @@ export async function initRouteGeographyStore() {
   return true;
 }
 
-export async function getRouteGeographyProfile(routeHash) {
+export async function getRouteGeographyProfile(routeHash: string) {
   const pool = getPgPool();
   if (!pool || !routeHash) return null;
 
@@ -78,7 +77,7 @@ export async function getRouteGeographyProfile(routeHash) {
   return mapRow(result.rows[0]);
 }
 
-export async function upsertRouteGeographyProfile(routeHash, payload = {}) {
+export async function upsertRouteGeographyProfile(routeHash: string, payload: Record<string, unknown> = {}) {
   const pool = getPgPool();
   if (!pool || !routeHash) return null;
 

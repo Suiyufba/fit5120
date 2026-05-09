@@ -1,4 +1,4 @@
-// @ts-nocheck
+import type { Request, Response } from 'express';
 import { fetchKnowledgeArticles } from '../modules/knowledge/repositories/articleRepository.js';
 
 const ALLOWED_TOPICS = new Set([
@@ -9,7 +9,7 @@ const ALLOWED_TOPICS = new Set([
   'getting started',
 ]);
 
-export async function getKnowledgeArticles(req, res) {
+export async function getKnowledgeArticles(req: Request, res: Response): Promise<void> {
   try {
     const rawTopic = String(req.query?.topic || '').trim().toLowerCase();
     if (rawTopic && !ALLOWED_TOPICS.has(rawTopic)) {

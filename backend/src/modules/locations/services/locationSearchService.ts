@@ -20,7 +20,7 @@ function inVictoria({ lat, lng }) {
     && lng <= VICTORIA_BBOX.maxLng;
 }
 
-function buildDisplayName(item = {}) {
+function buildDisplayName(item: any = {}) {
   const direct = String(item?.display_name || '').trim();
   if (direct) return direct;
 
@@ -40,7 +40,7 @@ function buildDisplayName(item = {}) {
   return '';
 }
 
-function normalizeSearchResult(item) {
+function normalizeSearchResult(item: any) {
   const lat = Number(item?.lat);
   const lng = Number(item?.lon);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
@@ -53,7 +53,7 @@ function normalizeSearchResult(item) {
   };
 }
 
-function normalizePhotonResult(feature) {
+function normalizePhotonResult(feature: any) {
   const coordinates = feature?.geometry?.coordinates;
   const lng = Number(coordinates?.[0]);
   const lat = Number(coordinates?.[1]);

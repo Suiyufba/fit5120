@@ -87,7 +87,7 @@ async function loadLatestHazards(): Promise<SimpleHazard[]> {
     }),
   );
 
-  return [...official, ...manual, ...reports];
+  return [...official, ...manual, ...reports] as SimpleHazard[];
 }
 
 interface RouteShape {

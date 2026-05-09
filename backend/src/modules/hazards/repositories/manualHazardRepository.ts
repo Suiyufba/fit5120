@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { randomUUID } from 'node:crypto';
 import { getPgPool } from '../../../infrastructure/db/postgresClient.js';
 
@@ -22,36 +21,100 @@ CREATE TABLE IF NOT EXISTS manual_hazards (
 const ALLOWED_TYPES = new Set(['fire', 'flood', 'storm', 'heat', 'other']);
 const ALLOWED_SEVERITY = new Set(['low', 'moderate', 'high', 'extreme']);
 
-const memoryManualHazards = [];
+interface HazardRow {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  severity: string;
+  latitude: number;
+  longitude: number;
+  source: string;
+  created_by: string;
+  is_active: boolean;
+  updated_at: string;
+}
 
-function toNumber(value) {
+interface HazardResult {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  severity: string;
+  source: string;
+  updatedAt: string;
+  coordinates: [number, number];
+  meta: {
+    manual: boolean;
+    createdBy: string;
+    isActive: boolean;
+  };
+}
+
+interface MemoryHazard {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  severity: string;
+  latitude: number;
+  longitude: number;
+  source: string;
+  createdBy: string;
+  coordinates: [number, number];
+  updatedAt: string;
+  meta: { manual: boolean; createdBy: string; isActive: boolean };
+}
+
+interface ValidateSuccess {
+  input: {
+    title: string;
+    description: string;
+    type: string;
+    severity: string;
+    latitude: number;
+    longitude: number;
+    source: string;
+    createdBy: string;
+  };
+}
+
+interface ValidateError {
+  error: string;
+}
+
+type ValidateResult = ValidateSuccess | ValidateError;
+
+const memoryManualHazards: MemoryHazard[] = [];
+
+function toNumber(value: unknown): number | null {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function toText(value, fallback = '') {
+function toText(value: unknown, fallback = ''): string {
   return (value ?? fallback).toString().trim();
 }
 
-function mapRow(row) {
+function mapRow(row: Record<string, unknown>): HazardResult {
   return {
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    type: row.type,
-    severity: row.severity,
-    source: row.source || 'Admin Dashboard',
-    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : new Date().toISOString(),
+    id: row.id as string,
+    title: row.title as string,
+    description: row.description as string,
+    type: row.type as string,
+    severity: row.severity as string,
+    source: (row.source as string) || 'Admin Dashboard',
+    updatedAt: row.updated_at ? new Date(row.updated_at as string).toISOString() : new Date().toISOString(),
     coordinates: [Number(row.latitude), Number(row.longitude)],
     meta: {
       manual: true,
-      createdBy: row.created_by || 'admin',
+      createdBy: (row.created_by as string) || 'admin',
       isActive: Boolean(row.is_active),
     },
   };
 }
 
-export async function initManualHazardStore() {
+export async function initManualHazardStore(): Promise<boolean> {
   const pool = getPgPool();
   if (!pool) return false;
 
@@ -59,7 +122,7 @@ export async function initManualHazardStore() {
   return true;
 }
 
-export function validateManualHazard(payload = {}) {
+export function validateManualHazard(payload: Record<string, unknown> = {}): ValidateResult {
   const title = toText(payload.title);
   const description = toText(payload.description);
   const type = toText(payload.type).toLowerCase();
@@ -99,7 +162,11 @@ export function validateManualHazard(payload = {}) {
   };
 }
 
-export async function listManualHazards({ includeInactive = false } = {}) {
+interface ListManualHazardsOptions {
+  includeInactive?: boolean;
+}
+
+export async function listManualHazards({ includeInactive = false }: ListManualHazardsOptions = {}): Promise<HazardResult[]> {
   const pool = getPgPool();
   if (!pool) {
     return memoryManualHazards.filter((item) => includeInactive || item.meta?.isActive);
@@ -114,20 +181,32 @@ export async function listManualHazards({ includeInactive = false } = {}) {
     `,
     [Boolean(includeInactive)]
   );
-  return result.rows.map(mapRow);
+  return result.rows.map((row: Record<string, unknown>) => mapRow(row));
 }
 
-export async function createManualHazard(payload = {}) {
+interface CreateHazardResult {
+  error?: string;
+  hazard?: HazardResult;
+}
+
+export async function createManualHazard(payload: Record<string, unknown> = {}): Promise<CreateHazardResult> {
   const validated = validateManualHazard(payload);
-  if (validated.error) return validated;
+  if ('error' in validated && validated.error) return validated;
 
   const pool = getPgPool();
-  const input = validated.input;
+  const input = (validated as ValidateSuccess).input;
 
   if (!pool) {
-    const item = {
+    const item: MemoryHazard = {
       id: randomUUID(),
-      ...input,
+      title: input.title,
+      description: input.description,
+      type: input.type,
+      severity: input.severity,
+      latitude: input.latitude,
+      longitude: input.longitude,
+      source: input.source,
+      createdBy: input.createdBy,
       coordinates: [input.latitude, input.longitude],
       updatedAt: new Date().toISOString(),
       meta: { manual: true, createdBy: input.createdBy, isActive: true },
@@ -155,16 +234,22 @@ export async function createManualHazard(payload = {}) {
       input.createdBy,
     ]
   );
-  return { hazard: mapRow(result.rows[0]) };
+  return { hazard: mapRow(result.rows[0] as Record<string, unknown>) };
 }
 
-export async function updateManualHazard(id, payload = {}) {
+interface UpdateHazardResult {
+  error?: string;
+  ok?: boolean;
+  hazard?: HazardResult;
+}
+
+export async function updateManualHazard(id: unknown, payload: Record<string, unknown> = {}): Promise<UpdateHazardResult> {
   const hazardId = toText(id);
   if (!hazardId) return { error: 'Invalid risk id' };
 
   const validated = validateManualHazard(payload);
-  if (validated.error) return validated;
-  const input = validated.input;
+  if ('error' in validated && validated.error) return validated;
+  const input = (validated as ValidateSuccess).input;
 
   const pool = getPgPool();
   if (!pool) {
@@ -172,7 +257,14 @@ export async function updateManualHazard(id, payload = {}) {
     if (index < 0) return { ok: false };
     memoryManualHazards[index] = {
       ...memoryManualHazards[index],
-      ...input,
+      title: input.title,
+      description: input.description,
+      type: input.type,
+      severity: input.severity,
+      latitude: input.latitude,
+      longitude: input.longitude,
+      source: input.source,
+      createdBy: input.createdBy,
       coordinates: [input.latitude, input.longitude],
       updatedAt: new Date().toISOString(),
     };
@@ -207,15 +299,19 @@ export async function updateManualHazard(id, payload = {}) {
   );
 
   if (!result.rowCount) return { ok: false };
-  return { ok: true, hazard: mapRow(result.rows[0]) };
+  return { ok: true, hazard: mapRow(result.rows[0] as Record<string, unknown>) };
 }
 
-export async function archiveManualHazard(id) {
+interface ArchiveResult {
+  ok: boolean;
+}
+
+export async function archiveManualHazard(id: unknown): Promise<ArchiveResult> {
   const pool = getPgPool();
   if (!pool) {
     const index = memoryManualHazards.findIndex((item) => item.id === id);
     if (index === -1) return { ok: false };
-    memoryManualHazards[index].meta = { ...(memoryManualHazards[index].meta || {}), isActive: false };
+    memoryManualHazards[index].meta = { ...memoryManualHazards[index].meta, isActive: false };
     return { ok: true };
   }
 

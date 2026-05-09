@@ -72,7 +72,7 @@ function buildDirectionsUrl(travelProfile) {
   return `${baseUrl}/v2/directions/${travelProfile}/geojson`;
 }
 
-function buildDirectionsBody(points, { alternatives }) {
+function buildDirectionsBody(points: unknown[], { alternatives }: { alternatives: boolean }) {
   const body = {
     coordinates: points.map((point) => [point.lng, point.lat]),
     instructions: false,
@@ -92,7 +92,7 @@ function buildDirectionsBody(points, { alternatives }) {
   return body;
 }
 
-async function fetchRoutesByProfile(points, { alternatives, travelProfile }) {
+async function fetchRoutesByProfile(points: unknown[], { alternatives, travelProfile }: { alternatives: boolean; travelProfile: string }) {
   const url = buildDirectionsUrl(travelProfile);
   const payload = await fetchJson(url, {
     method: 'POST',
@@ -109,7 +109,7 @@ async function fetchRoutesByProfile(points, { alternatives, travelProfile }) {
     .filter((route) => route.geometry.length >= 2);
 }
 
-export async function fetchOpenRouteServiceRoutes(points, { alternatives = false } = {}) {
+export async function fetchOpenRouteServiceRoutes(points: unknown[], { alternatives = false }: { alternatives?: boolean } = {}) {
   const profileCandidates = buildProfileCandidates();
   const errors = [];
 

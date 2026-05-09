@@ -1,4 +1,5 @@
-// @ts-nocheck
+import type { Response } from 'express';
+import type { AuthenticatedRequest } from '../modules/auth/middlewares/requireAuth.js';
 import { planSaferRoute } from '../modules/routes/services/routePlannerService.js';
 import {
   clearRoutePlanHistory,
@@ -7,11 +8,17 @@ import {
   listRoutePlanHistory,
 } from '../modules/routes/repositories/routePlanHistoryRepository.js';
 
-function normalizeSessionId(raw) {
+function normalizeSessionId(raw: unknown): string {
   return String(raw || '').trim().slice(0, 128);
 }
 
-function routeHistoryFromRow(row) {
+function routeHistoryFromRow(row: {
+  id: string;
+  created_at: string;
+  start_point?: Record<string, unknown>;
+  end_point?: Record<string, unknown>;
+  plan_payload?: Record<string, unknown>;
+}) {
   return {
     id: row.id,
     createdAt: row.created_at,
@@ -21,7 +28,7 @@ function routeHistoryFromRow(row) {
   };
 }
 
-export async function postPlanRoute(req, res) {
+export async function postPlanRoute(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const sessionId = normalizeSessionId(req.headers['x-plan-session-id']);
     const payload = await planSaferRoute({
@@ -36,49 +43,51 @@ export async function postPlanRoute(req, res) {
       start: req.body?.start,
       end: req.body?.end,
       planPayload: payload,
-    }).catch((error) => {
+    }).catch((error: Error) => {
       console.warn('Failed to persist route plan history:', error.message);
     });
     res.json(payload);
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     const statusCode =
-      error.message?.includes('must include numeric')
-      || error.message?.includes('out of range')
-      || error.message?.includes('too far apart')
+      message.includes('must include numeric')
+      || message.includes('out of range')
+      || message.includes('too far apart')
         ? 400
-        : error.message?.includes('User not found')
+        : message.includes('User not found')
           ? 404
-          : error.message?.includes('OpenRouteService')
+          : message.includes('OpenRouteService')
             ? 503
             : 500;
 
     res.status(statusCode).json({
-      error: error.message || 'Failed to plan route'
+      error: message || 'Failed to plan route'
     });
   }
 }
 
-export async function getRoutePlanHistory(req, res) {
+export async function getRoutePlanHistory(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const sessionId = normalizeSessionId(req.headers['x-plan-session-id']);
     const rows = await listRoutePlanHistory({
       userId: req.auth?.userId,
       sessionId,
-      limit: req.query?.limit || 20,
+      limit: Number(req.query?.limit || 20),
     });
     res.json({
       history: rows.map(routeHistoryFromRow),
       fetchedAt: new Date().toISOString(),
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     res.status(500).json({
       history: [],
-      error: error.message || 'Failed to fetch route history',
+      error: message || 'Failed to fetch route history',
     });
   }
 }
 
-export async function deleteRoutePlanHistoryItem(req, res) {
+export async function deleteRoutePlanHistoryItem(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const sessionId = normalizeSessionId(req.headers['x-plan-session-id']);
     const deleted = await deleteRoutePlanHistoryEntry({
@@ -88,13 +97,14 @@ export async function deleteRoutePlanHistoryItem(req, res) {
     });
     res.json({ ok: true, deleted });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     res.status(500).json({
-      error: error.message || 'Failed to delete route history item',
+      error: message || 'Failed to delete route history item',
     });
   }
 }
 
-export async function clearRoutePlanHistoryItems(req, res) {
+export async function clearRoutePlanHistoryItems(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const sessionId = normalizeSessionId(req.headers['x-plan-session-id']);
     const deletedCount = await clearRoutePlanHistory({
@@ -106,8 +116,9 @@ export async function clearRoutePlanHistoryItems(req, res) {
       deletedCount,
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     res.status(500).json({
-      error: error.message || 'Failed to clear route history',
+      error: message || 'Failed to clear route history',
     });
   }
 }

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { getPgPool } from '../../../infrastructure/db/postgresClient.js';
 
 const CANDIDATE_TABLES = [
@@ -315,7 +314,7 @@ export async function listKnowledgeArticlesAdmin({ limit = 200 } = {}) {
   }));
 }
 
-export async function createKnowledgeArticleAdmin(payload = {}) {
+export async function createKnowledgeArticleAdmin(payload: Record<string, unknown> = {}) {
   const pool = getPgPool();
   if (!pool) return { error: 'Database is not configured' };
 
@@ -348,7 +347,7 @@ export async function createKnowledgeArticleAdmin(payload = {}) {
   return { id: String(result.rows[0].id) };
 }
 
-export async function updateKnowledgeArticleAdmin(id, payload = {}) {
+export async function updateKnowledgeArticleAdmin(id: unknown, payload: Record<string, unknown> = {}) {
   const pool = getPgPool();
   if (!pool) return { error: 'Database is not configured' };
 

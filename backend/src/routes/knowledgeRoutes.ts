@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Router } from 'express';
 import { getKnowledgeArticles } from '../controllers/knowledgeController.js';
 

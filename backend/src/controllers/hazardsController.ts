@@ -1,10 +1,10 @@
-// @ts-nocheck
+import type { Request, Response } from 'express';
 import { getHazardsForRequest } from '../modules/hazards/services/hazardAggregator.js';
 import { listHazardSnapshotHistory } from '../infrastructure/db/hazardSnapshotRepository.js';
 
 const ALLOWED_LAYERS = new Set(['fire', 'flood', 'storm', 'heat', 'trail', 'other']);
 
-function isValidBbox(bbox) {
+function isValidBbox(bbox: unknown): boolean {
   const parts = String(bbox || '')
     .split(',')
     .map((value) => Number(value.trim()));
@@ -15,7 +15,7 @@ function isValidBbox(bbox) {
   return minLng < maxLng && minLat < maxLat;
 }
 
-function isValidLayers(layers) {
+function isValidLayers(layers: unknown): boolean {
   if (!layers) return true;
   const values = String(layers)
     .split(',')
@@ -24,7 +24,7 @@ function isValidLayers(layers) {
   return values.length > 0 && values.every((value) => ALLOWED_LAYERS.has(value));
 }
 
-export async function getRealtimeHazards(req, res) {
+export async function getRealtimeHazards(req: Request, res: Response): Promise<void> {
   try {
     if (req.query?.bbox && !isValidBbox(req.query.bbox)) {
       res.status(400).json({ hazards: [], error: 'Invalid bbox format' });
@@ -36,8 +36,8 @@ export async function getRealtimeHazards(req, res) {
     }
 
     const payload = await getHazardsForRequest({
-      bboxParam: req.query.bbox,
-      layersParam: req.query.layers,
+      bboxParam: req.query.bbox as string | undefined,
+      layersParam: req.query.layers as string | undefined,
     });
 
     res.json(payload);
@@ -50,7 +50,7 @@ export async function getRealtimeHazards(req, res) {
   }
 }
 
-export async function getHazardHistory(req, res) {
+export async function getHazardHistory(req: Request, res: Response): Promise<void> {
   try {
     const limit = Number(req.query?.limit || 24);
     if (!Number.isFinite(limit) || limit <= 0) {

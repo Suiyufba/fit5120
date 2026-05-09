@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { getPgPool } from '../../../infrastructure/db/postgresClient.js';
 
 const CREATE_TABLE_SQL = `
@@ -23,7 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_route_plan_history_session_created_at
 ON route_plan_history (session_id, created_at DESC)
 `;
 
-function sanitizePoint(point = {}) {
+function sanitizePoint(point: Record<string, unknown> = {}) {
   return {
     lat: Number(point.lat),
     lng: Number(point.lng),
@@ -122,7 +121,7 @@ export async function deleteRoutePlanHistoryEntry({
   const normalizedSessionId = String(sessionId || '').trim() || null;
   if (!normalizedUserId && !normalizedSessionId) return false;
 
-  const args = [normalizedEntryId];
+  const args: (number | string | null)[] = [normalizedEntryId];
   const ownerWhere = [];
   if (normalizedUserId) {
     args.push(normalizedUserId);

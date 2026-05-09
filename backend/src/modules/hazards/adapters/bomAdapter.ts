@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { config } from '../../../config/index.js';
 import { fetchJson } from '../../../shared/http/fetchJson.js';
 import { sanitizeHazard } from '../domain/hazardUtils.js';
@@ -36,14 +35,14 @@ export async function fetchBomHazards() {
 
     if (result.status !== 'fulfilled') continue;
 
-    const weather = result.value;
-    const main = weather?.main || {};
-    const wind = weather?.wind || {};
-    const rain = weather?.rain || {};
-    const snow = weather?.snow || {};
+    const weather = result.value as Record<string, unknown>;
+    const main = (weather?.main || {}) as Record<string, unknown>;
+    const wind = (weather?.wind || {}) as Record<string, unknown>;
+    const rain = (weather?.rain || {}) as Record<string, unknown>;
+    const snow = (weather?.snow || {}) as Record<string, unknown>;
     const condition = (weather?.weather?.[0]?.main || '').toLowerCase();
     const description = weather?.weather?.[0]?.description || '';
-    const updatedAt = weather?.dt ? new Date(weather.dt * 1000).toISOString() : new Date().toISOString();
+    const updatedAt = weather?.dt ? new Date(Number(weather.dt) * 1000).toISOString() : new Date().toISOString();
     const windKmh = Number(wind.speed || 0) * 3.6;
     const rainMm = Number(rain['1h'] || rain['3h'] || snow['1h'] || snow['3h'] || 0);
     const feelsLike = Number(main.feels_like);

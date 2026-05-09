@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { getPgPool } from './postgresClient.js';
 
 const SNAPSHOT_ID = 1;

@@ -1,7 +1,7 @@
-// @ts-nocheck
+import type { Request, Response } from 'express';
 import { reverseLocation, searchLocationsByText } from '../modules/locations/services/locationSearchService.js';
 
-export async function getLocationSearch(req, res) {
+export async function getLocationSearch(req: Request, res: Response): Promise<void> {
   try {
     const query = String(req.query?.q || '').trim();
     if (!query || query.length < 2) {
@@ -10,23 +10,25 @@ export async function getLocationSearch(req, res) {
     }
     const results = await searchLocationsByText({
       query,
-      limit: req.query?.limit || 6,
+      limit: Number(req.query?.limit || 6),
     });
     res.json({ results });
   } catch (error) {
-    res.status(500).json({ results: [], error: error.message || 'Location search failed' });
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ results: [], error: message || 'Location search failed' });
   }
 }
 
-export async function getLocationReverse(req, res) {
+export async function getLocationReverse(req: Request, res: Response): Promise<void> {
   try {
     const result = await reverseLocation({
-      lat: req.query?.lat,
-      lng: req.query?.lng,
+      lat: req.query?.lat as string | undefined,
+      lng: req.query?.lng as string | undefined,
     });
     res.json({ result: result || null });
   } catch (error) {
-    const status = error.message?.includes('Invalid') || error.message?.includes('Victoria') ? 400 : 500;
-    res.status(status).json({ result: null, error: error.message || 'Location reverse lookup failed' });
+    const message = error instanceof Error ? error.message : String(error);
+    const status = message.includes('Invalid') || message.includes('Victoria') ? 400 : 500;
+    res.status(status).json({ result: null, error: message || 'Location reverse lookup failed' });
   }
 }

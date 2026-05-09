@@ -1,4 +1,4 @@
-// @ts-nocheck
+import type { Request, Response } from 'express';
 import {
   createCommunityReport,
   listCommunityReports,
@@ -8,10 +8,10 @@ import {
   findCommunityReportImage,
 } from '../modules/communityReports/repositories/communityReportImageRepository.js';
 
-export async function getCommunityReports(req, res) {
+export async function getCommunityReports(req: Request, res: Response): Promise<void> {
   try {
     const limit = req.query.limit || 50;
-    const { reports, storage } = await listCommunityReports(limit);
+    const { reports, storage } = await listCommunityReports(Number(limit));
 
     res.json({
       reports,
@@ -19,54 +19,59 @@ export async function getCommunityReports(req, res) {
       fetchedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Community reports fetch failed:', error.message);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Community reports fetch failed:', message);
     res.status(500).json({ reports: [], error: 'Failed to fetch community reports' });
   }
 }
 
-export async function postCommunityReport(req, res) {
+export async function postCommunityReport(req: Request, res: Response): Promise<void> {
   try {
     const result = await createCommunityReport(req.body || {});
 
-    if (result.error) {
-      res.status(400).json({ error: result.error });
+    if ('error' in result && result.error) {
+      res.status(400).json({ error: String(result.error) });
       return;
     }
 
-    res.status(201).json({ report: result.report, storage: result.storage });
+    const success = result as { report: Record<string, unknown>; storage: string };
+    res.status(201).json({ report: success.report, storage: success.storage });
   } catch (error) {
-    console.error('Community report create failed:', error.message);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Community report create failed:', message);
     res.status(500).json({ error: 'Failed to submit community report' });
   }
 }
 
-function buildImagePublicUrl(req, imageId) {
+function buildImagePublicUrl(req: Request, imageId: string): string {
   const proto = req.protocol;
   const host = req.get('host');
   return `${proto}://${host}/api/community-reports/images/${imageId}`;
 }
 
-export async function postCommunityReportImage(req, res) {
+export async function postCommunityReportImage(req: Request, res: Response): Promise<void> {
   try {
     const result = await createCommunityReportImage(req.body || {});
-    if (result.error) {
-      res.status(400).json({ error: result.error });
+    if ('error' in result && result.error) {
+      res.status(400).json({ error: String(result.error) });
       return;
     }
 
+    const success = result as { id: string; byteSize: number; storage: string };
     res.status(201).json({
-      id: result.id,
-      url: buildImagePublicUrl(req, result.id),
-      byteSize: result.byteSize,
-      storage: result.storage,
+      id: success.id,
+      url: buildImagePublicUrl(req, success.id),
+      byteSize: success.byteSize,
+      storage: success.storage,
     });
   } catch (error) {
-    console.error('Community report image upload failed:', error.message);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Community report image upload failed:', message);
     res.status(500).json({ error: 'Failed to upload report image' });
   }
 }
 
-export async function getCommunityReportImage(req, res) {
+export async function getCommunityReportImage(req: Request, res: Response): Promise<void> {
   try {
     const record = await findCommunityReportImage(req.params.id);
     if (!record) {
@@ -79,7 +84,8 @@ export async function getCommunityReportImage(req, res) {
     res.set('Cross-Origin-Resource-Policy', 'cross-origin');
     res.send(record.buffer);
   } catch (error) {
-    console.error('Community report image fetch failed:', error.message);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Community report image fetch failed:', message);
     res.status(500).json({ error: 'Failed to load report image' });
   }
 }

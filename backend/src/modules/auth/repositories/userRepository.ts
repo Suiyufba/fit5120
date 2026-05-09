@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { getPgPool } from '../../../infrastructure/db/postgresClient.js';
 
 const CREATE_USERS_TABLE_SQL = `
@@ -18,7 +17,25 @@ CREATE TABLE IF NOT EXISTS app_users (
 );
 `;
 
-export async function initUserStore() {
+interface UserResult {
+  id: string;
+  email: string;
+  age: number | null;
+  region: string | null;
+  securityQuestion: string;
+  experienceLevel: string;
+  assessmentScore: number;
+  assessmentAnswers: unknown;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface AuthUserResult extends UserResult {
+  passwordHash: string;
+  securityAnswerHash: string;
+}
+
+export async function initUserStore(): Promise<boolean> {
   const pool = getPgPool();
   if (!pool) return false;
 
@@ -28,24 +45,24 @@ export async function initUserStore() {
   return true;
 }
 
-function mapUserRow(row) {
+function mapUserRow(row: Record<string, unknown>): UserResult | null {
   if (!row) return null;
 
   return {
     id: String(row.id),
-    email: row.email,
-    age: row.age,
-    region: row.region,
-    securityQuestion: row.security_question || '',
-    experienceLevel: row.experience_level,
-    assessmentScore: row.assessment_score,
+    email: row.email as string,
+    age: row.age as number | null,
+    region: row.region as string | null,
+    securityQuestion: (row.security_question as string) || '',
+    experienceLevel: row.experience_level as string,
+    assessmentScore: row.assessment_score as number,
     assessmentAnswers: row.assessment_answers_json || {},
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
   };
 }
 
-export async function findUserByEmail(email) {
+export async function findUserByEmail(email: unknown): Promise<AuthUserResult | null> {
   const pool = getPgPool();
   if (!pool) return null;
 
@@ -60,15 +77,15 @@ export async function findUserByEmail(email) {
   );
 
   if (!result.rowCount) return null;
-  const row = result.rows[0];
+  const row = result.rows[0] as Record<string, unknown>;
   return {
     ...mapUserRow(row),
-    passwordHash: row.password_hash,
-    securityAnswerHash: row.security_answer_hash,
-  };
+    passwordHash: row.password_hash as string,
+    securityAnswerHash: row.security_answer_hash as string,
+  } as AuthUserResult;
 }
 
-export async function findUserById(userId) {
+export async function findUserById(userId: unknown): Promise<UserResult | null> {
   const pool = getPgPool();
   if (!pool) return null;
 
@@ -83,10 +100,22 @@ export async function findUserById(userId) {
   );
 
   if (!result.rowCount) return null;
-  return mapUserRow(result.rows[0]);
+  return mapUserRow(result.rows[0] as Record<string, unknown>);
 }
 
-export async function createUser({ email, passwordHash, age, region, securityQuestion, securityAnswerHash, level, score, answers }) {
+interface CreateUserInput {
+  email: string;
+  passwordHash: string;
+  age?: number | null;
+  region?: string | null;
+  securityQuestion?: string;
+  securityAnswerHash?: string;
+  level?: string;
+  score?: number;
+  answers?: unknown;
+}
+
+export async function createUser({ email, passwordHash, age, region, securityQuestion, securityAnswerHash, level, score, answers }: CreateUserInput): Promise<UserResult | null> {
   const pool = getPgPool();
   if (!pool) return null;
 
@@ -111,10 +140,15 @@ export async function createUser({ email, passwordHash, age, region, securityQue
     ]
   );
 
-  return mapUserRow(result.rows[0]);
+  return mapUserRow(result.rows[0] as Record<string, unknown>);
 }
 
-export async function updateUserPasswordByEmail({ email, passwordHash }) {
+interface UpdatePasswordInput {
+  email: string;
+  passwordHash: string;
+}
+
+export async function updateUserPasswordByEmail({ email, passwordHash }: UpdatePasswordInput): Promise<UserResult | null> {
   const pool = getPgPool();
   if (!pool) return null;
 
@@ -130,14 +164,20 @@ export async function updateUserPasswordByEmail({ email, passwordHash }) {
   );
 
   if (!result.rowCount) return null;
-  return mapUserRow(result.rows[0]);
+  return mapUserRow(result.rows[0] as Record<string, unknown>);
 }
 
-export async function updateOwnProfileById(userId, { age, region }) {
+interface UpdateProfileResult {
+  error?: string;
+  ok?: boolean;
+  user?: UserResult;
+}
+
+export async function updateOwnProfileById(userId: unknown, { age, region }: { age: unknown; region: unknown }): Promise<UpdateProfileResult | null> {
   const pool = getPgPool();
   if (!pool) return null;
 
-  const ageNumber = Number.parseInt(age, 10);
+  const ageNumber = Number.parseInt(String(age), 10);
   const normalizedRegion = String(region || '').trim();
 
   if (Number.isNaN(ageNumber) || ageNumber < 10 || ageNumber > 100) {
@@ -162,10 +202,16 @@ export async function updateOwnProfileById(userId, { age, region }) {
   );
 
   if (!result.rowCount) return { ok: false };
-  return { ok: true, user: mapUserRow(result.rows[0]) };
+  return { ok: true, user: mapUserRow(result.rows[0] as Record<string, unknown>) };
 }
 
-export async function updateOwnCredentialsById(userId, { email, passwordHash }) {
+interface UpdateCredentialsResult {
+  error?: string;
+  ok?: boolean;
+  user?: UserResult;
+}
+
+export async function updateOwnCredentialsById(userId: unknown, { email, passwordHash }: { email: unknown; passwordHash: unknown }): Promise<UpdateCredentialsResult | null> {
   const pool = getPgPool();
   if (!pool) return null;
 
@@ -192,16 +238,20 @@ export async function updateOwnCredentialsById(userId, { email, passwordHash }) 
     );
 
     if (!result.rowCount) return { ok: false };
-    return { ok: true, user: mapUserRow(result.rows[0]) };
-  } catch (error) {
-    if (String(error?.message || '').toLowerCase().includes('unique')) {
+    return { ok: true, user: mapUserRow(result.rows[0] as Record<string, unknown>) };
+  } catch (error: unknown) {
+    if (String(error instanceof Error ? error.message : String(error)).toLowerCase().includes('unique')) {
       return { error: 'email already exists' };
     }
     throw error;
   }
 }
 
-export async function listUsers({ limit = 200 } = {}) {
+interface ListUsersOptions {
+  limit?: number;
+}
+
+export async function listUsers({ limit = 200 }: ListUsersOptions = {}): Promise<UserResult[]> {
   const pool = getPgPool();
   if (!pool) return [];
 
@@ -216,10 +266,10 @@ export async function listUsers({ limit = 200 } = {}) {
     `,
     [safeLimit]
   );
-  return result.rows.map(mapUserRow);
+  return result.rows.map((row: Record<string, unknown>) => mapUserRow(row) as UserResult);
 }
 
-export async function deleteUserById(userId) {
+export async function deleteUserById(userId: unknown): Promise<boolean> {
   const pool = getPgPool();
   if (!pool) return false;
 
@@ -227,7 +277,20 @@ export async function deleteUserById(userId) {
   return result.rowCount > 0;
 }
 
-export async function updateUserById(userId, { email, region, experienceLevel, assessmentScore }) {
+interface UpdateUserInput {
+  email: unknown;
+  region: unknown;
+  experienceLevel: unknown;
+  assessmentScore: unknown;
+}
+
+interface UpdateUserResult {
+  error?: string;
+  ok?: boolean;
+  user?: UserResult;
+}
+
+export async function updateUserById(userId: unknown, { email, region, experienceLevel, assessmentScore }: UpdateUserInput): Promise<UpdateUserResult | null> {
   const pool = getPgPool();
   if (!pool) return null;
 
@@ -265,9 +328,9 @@ export async function updateUserById(userId, { email, region, experienceLevel, a
     );
 
     if (!result.rowCount) return { ok: false };
-    return { ok: true, user: mapUserRow(result.rows[0]) };
-  } catch (error) {
-    if (String(error?.message || '').toLowerCase().includes('unique')) {
+    return { ok: true, user: mapUserRow(result.rows[0] as Record<string, unknown>) };
+  } catch (error: unknown) {
+    if (String(error instanceof Error ? error.message : String(error)).toLowerCase().includes('unique')) {
       return { error: 'email already exists' };
     }
     throw error;

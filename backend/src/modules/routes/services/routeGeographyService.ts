@@ -78,11 +78,11 @@ function mode(values, fallback = 'unknown') {
   return best;
 }
 
-function isTrailWay(tags = {}) {
+function isTrailWay(tags: Record<string, unknown> = {}) {
   return ['path', 'track', 'footway', 'bridleway', 'steps'].includes(String(tags.highway || '').toLowerCase());
 }
 
-function isMeaningfulGeographyProfile(profile = {}) {
+function isMeaningfulGeographyProfile(profile: Record<string, unknown> = {}) {
   const hasElevationSignal = [
     Number(profile.totalAscentM || 0),
     Number(profile.totalDescentM || 0),
@@ -250,8 +250,8 @@ async function fetchElevationProfile(sampledGeometry, routeHash = '') {
   return buildElevationProfileFromPoints([]);
 }
 
-function pointForElement(element) {
-  if (Number.isFinite(element?.lat) && Number.isFinite(element?.lon)) {
+function pointForElement(element: Record<string, unknown>) {
+  if (Number.isFinite((element as any)?.lat) && Number.isFinite((element as any)?.lon)) {
     return [element.lat, element.lon];
   }
   if (Number.isFinite(element?.center?.lat) && Number.isFinite(element?.center?.lon)) {

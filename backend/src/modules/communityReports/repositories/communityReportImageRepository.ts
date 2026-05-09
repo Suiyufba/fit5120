@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { randomUUID } from 'node:crypto';
 import { getPgPool } from '../../../infrastructure/db/postgresClient.js';
 
@@ -21,14 +20,14 @@ const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 // small JPEG/WebP before upload, so anything larger than ~512KB is suspicious.
 const MAX_THUMBNAIL_BYTES = 512 * 1024;
 
-const memoryImages = new Map();
+const memoryImages = new Map<string, Record<string, unknown>>();
 
-function normalizeMime(value) {
+function normalizeMime(value: unknown): string {
   const mime = String(value || '').trim().toLowerCase();
   return ALLOWED_MIME.has(mime) ? mime : '';
 }
 
-function decodeDataUrl(dataUrl) {
+function decodeDataUrl(dataUrl: unknown): { mime: string; buffer: Buffer } | null {
   const raw = String(dataUrl || '').trim();
   const match = raw.match(/^data:([\w./+-]+);base64,(.+)$/i);
   if (!match) return null;
@@ -36,7 +35,7 @@ function decodeDataUrl(dataUrl) {
   const mime = normalizeMime(match[1]);
   if (!mime) return null;
 
-  let buffer;
+  let buffer: Buffer;
   try {
     buffer = Buffer.from(match[2], 'base64');
   } catch (_error) {
@@ -48,14 +47,21 @@ function decodeDataUrl(dataUrl) {
   return { mime, buffer };
 }
 
-export async function initCommunityReportImageStore() {
+interface CreateImageResult {
+  error?: string;
+  id?: string;
+  storage?: string;
+  byteSize?: number;
+}
+
+export async function initCommunityReportImageStore(): Promise<boolean> {
   const pool = getPgPool();
   if (!pool) return false;
   await pool.query(CREATE_TABLE_SQL);
   return true;
 }
 
-export async function createCommunityReportImage(payload = {}) {
+export async function createCommunityReportImage(payload: Record<string, unknown> = {}): Promise<CreateImageResult> {
   const decoded = decodeDataUrl(payload.dataUrl);
   if (!decoded) {
     return { error: 'Image must be a base64 data URL (image/jpeg, image/png or image/webp) under 512KB.' };
@@ -91,7 +97,15 @@ export async function createCommunityReportImage(payload = {}) {
   return { id, storage: 'database', byteSize: decoded.buffer.length };
 }
 
-export async function findCommunityReportImage(imageId) {
+interface ImageResult {
+  id: string;
+  mime: string;
+  buffer: Buffer;
+  width: number | null;
+  height: number | null;
+}
+
+export async function findCommunityReportImage(imageId: unknown): Promise<ImageResult | null> {
   const id = String(imageId || '').trim();
   if (!id) return null;
 
@@ -100,11 +114,11 @@ export async function findCommunityReportImage(imageId) {
     const record = memoryImages.get(id);
     if (!record) return null;
     return {
-      id: record.id,
-      mime: record.mime,
-      buffer: record.buffer,
-      width: record.width,
-      height: record.height,
+      id: record.id as string,
+      mime: record.mime as string,
+      buffer: record.buffer as Buffer,
+      width: record.width as number | null,
+      height: record.height as number | null,
     };
   }
 
@@ -119,12 +133,12 @@ export async function findCommunityReportImage(imageId) {
   );
   if (!result.rowCount) return null;
 
-  const row = result.rows[0];
+  const row = result.rows[0] as Record<string, unknown>;
   return {
-    id: row.id,
-    mime: row.mime_type,
-    buffer: Buffer.isBuffer(row.thumbnail) ? row.thumbnail : Buffer.from(row.thumbnail || ''),
-    width: row.width,
-    height: row.height,
+    id: row.id as string,
+    mime: row.mime_type as string,
+    buffer: Buffer.isBuffer(row.thumbnail) ? row.thumbnail as Buffer : Buffer.from(String(row.thumbnail || '')),
+    width: row.width as number | null,
+    height: row.height as number | null,
   };
 }

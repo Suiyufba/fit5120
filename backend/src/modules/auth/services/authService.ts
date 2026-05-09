@@ -326,7 +326,7 @@ export async function getRouteContextByUserId(userId: string): Promise<RouteCont
     email: user.email,
     age: user.age ?? null,
     region: user.region || '',
-    experienceLevel: user.experienceLevel,
+    experienceLevel: (user.experienceLevel || 'newcomer') as UserLevel,
     assessmentScore: Number(user.assessmentScore || 0),
     assessmentAnswers: (user.assessmentAnswers || {}) as Record<string, unknown>,
   };

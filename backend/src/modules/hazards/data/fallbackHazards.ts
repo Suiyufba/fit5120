@@ -1,5 +1,16 @@
-// @ts-nocheck
-export const fallbackHazards = [
+export interface FallbackHazard {
+  id: string;
+  type: string;
+  severity: string;
+  title: string;
+  description: string;
+  source: string;
+  sourceUrl: string;
+  updatedAt: string;
+  coordinates: [number, number];
+}
+
+export const fallbackHazards: FallbackHazard[] = [
   {
     id: 'fallback-fire-1',
     type: 'fire',

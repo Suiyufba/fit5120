@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared types
+        run: npm --workspace shared run build
+
+      - name: Typecheck backend
+        run: npm --workspace backend run typecheck
+
+      - name: Test backend
+        run: npm --workspace backend run test
+
+      - name: Typecheck frontend
+        run: npm --workspace frontend run typecheck
+
+      - name: Build frontend
+        run: npm --workspace frontend run build

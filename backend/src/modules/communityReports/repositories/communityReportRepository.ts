@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { randomUUID } from 'node:crypto';
 import { getPgPool } from '../../../infrastructure/db/postgresClient.js';
 
@@ -125,7 +124,7 @@ function normalizeImageUrl(value) {
   }
 }
 
-function normalizeInput(payload = {}) {
+function normalizeInput(payload: Record<string, unknown> = {}) {
   const title = text(payload.title);
   const description = text(payload.description);
   const locationName = text(payload.locationName);
