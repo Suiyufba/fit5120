@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useRoutePlanner, layerMeta } from '../composables/useRoutePlanner'
 import PlannerMap from '../components/PlannerMap.vue'
 import PlannerPointSearch from '../components/PlannerPointSearch.vue'

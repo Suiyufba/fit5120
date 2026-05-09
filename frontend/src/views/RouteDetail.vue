@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useRouteDetail } from '../composables/useRouteDetail'
 import { useRouter } from 'vue-router'
 

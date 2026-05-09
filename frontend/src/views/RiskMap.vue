@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useRiskMap, layerMeta } from '../composables/useRiskMap'
 import { MAP_VISUAL_STYLES } from '../utils/mapVisualStyles'
