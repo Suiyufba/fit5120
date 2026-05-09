@@ -94,6 +94,21 @@ hikeshield/
 | AI | Gemini 2.5 Flash (generative language API) |
 | Deploy | Vercel (frontend), Railway (backend + AI) |
 
+## Testing & CI
+
+```bash
+# Run all 61 tests (47 unit + 14 API integration)
+npm --workspace backend run test
+
+# Type-check both workspaces
+npm --workspace backend run typecheck
+npm --workspace frontend run typecheck
+```
+
+GitHub Actions CI runs on every push: shared build → backend typecheck → test → frontend typecheck → build.
+
+See [`docs/testing.md`](docs/testing.md) for the full testing guide.
+
 ## Quick Start
 
 ```bash
@@ -127,3 +142,12 @@ before starting.
 - **Shared**: TypeScript type definitions shared across the monorepo —
   see `shared/README.md`
 - **Worker**: Reserved for async jobs (not yet implemented)
+
+## Documentation
+
+- [`docs/deployment.md`](docs/deployment.md) — Vercel + Railway deployment guide
+- [`docs/api.md`](docs/api.md) — Full API reference with request/response schemas
+- [`docs/testing.md`](docs/testing.md) — Test structure, running tests, writing new ones
+- [`docs/architecture.md`](docs/architecture.md) — Architecture decisions and diagrams
+- [`docs/risk-scoring.md`](docs/risk-scoring.md) — Three-layer risk scoring model
+- [`docs/known-limitations.md`](docs/known-limitations.md) — Important safety disclaimers
