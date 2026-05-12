@@ -10,7 +10,9 @@ import type {
 } from 'hikeshield-shared'
 
 const DEFAULT_BASE_URL =
-  import.meta.env.VITE_HAZARD_API_BASE_URL || 'https://backend-production-f55c.up.railway.app/api'
+  import.meta.env.VITE_HAZARD_API_BASE_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://backend-production-f55c.up.railway.app/api'
 const PLAN_SESSION_KEY = 'hikeshield_plan_session_id'
 
 function randomId(): string {
@@ -113,6 +115,7 @@ export async function planSafeRoute({ start, end, token, signal }: PlanSafeRoute
   try {
     response = await fetch(`${DEFAULT_BASE_URL}/routes/plan`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
@@ -175,6 +178,7 @@ export async function fetchRoutePlanHistory(
 
   const response = await fetch(url.toString(), {
     method: 'GET',
+    credentials: 'include',
     headers: {
       Accept: 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -224,6 +228,7 @@ export async function deleteRoutePlanHistoryItem(
   const sessionId = getOrCreatePlanSessionId()
   const response = await fetch(`${DEFAULT_BASE_URL}/routes/history/${encodeURIComponent(String(id || ''))}`, {
     method: 'DELETE',
+    credentials: 'include',
     headers: {
       Accept: 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -252,6 +257,7 @@ export async function clearRoutePlanHistory(
   const sessionId = getOrCreatePlanSessionId()
   const response = await fetch(`${DEFAULT_BASE_URL}/routes/history`, {
     method: 'DELETE',
+    credentials: 'include',
     headers: {
       Accept: 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

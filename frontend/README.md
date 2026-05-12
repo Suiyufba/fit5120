@@ -28,7 +28,7 @@
 - **Framework**: Vue 3 + Vue Router (Composition API)
 - **Styling**: Tailwind CSS + custom CSS variables (HS design tokens)
 - **Maps**: Leaflet (2D), Mapbox GL JS (3D terrain)
-- **State**: Reactive stores (`authStore`, `routePlanStore`) with sessionStorage persistence
+- **State**: Reactive stores; auth uses backend HttpOnly cookies, route plans use sessionStorage
 - **Build**: Vite
 - **Deploy**: Vercel
 
@@ -59,7 +59,7 @@ frontend/
 │   │   ├── routeApi.ts             # Route planning API client
 │   │   ├── routePlanStore.ts       # Session-persisted route plan state
 │   │   ├── authApi.ts              # Auth API client
-│   │   ├── authStore.ts            # Reactive auth state with sessionStorage persistence
+│   │   ├── authStore.ts            # Reactive auth state backed by HttpOnly cookie session
 │   │   ├── communityReportApi.ts   # Community report CRUD
 │   │   ├── knowledgeApi.ts         # Knowledge article fetching
 │   │   ├── locationApi.ts          # Geocoding / reverse geocoding
@@ -91,13 +91,14 @@ Copy `.env.example` to `.env`:
 
 ```env
 VITE_HAZARD_API_BASE_URL=http://localhost:8080/api
-VITE_SITE_ACCESS_PASSWORD=gkd
+VITE_SITE_ACCESS_PASSWORD=replace-with-preview-password
 ```
 
 - `VITE_HAZARD_API_BASE_URL` — Backend API base URL. The frontend appends
   path segments (`/hazards/realtime`, `/routes/plan`, etc.).
 - `VITE_SITE_ACCESS_PASSWORD` — Site-wide access gate password shown on first
-  visit. Defaults to `gkd` if omitted.
+  visit. The app fails closed if omitted. This value is bundled into client
+  JavaScript, so it is only a preview gate and not a replacement for backend auth.
 
 ## API Integration
 
@@ -110,10 +111,10 @@ GET /hazards/realtime?bbox=west,south,east,north&layers=fire,flood,storm,heat
 Route planning supports both authenticated and anonymous users:
 
 ```
-POST /routes/plan   (optional header: Authorization: Bearer <token>)
+POST /routes/plan   (auth cookie optional)
 ```
 
-Anonymous users are tracked via `X-Plan-Session-Id` (UUID in sessionStorage).
+Anonymous route history is tracked via `X-Plan-Session-Id` (UUID in sessionStorage).
 
 ## Design Tokens
 

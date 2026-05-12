@@ -15,13 +15,14 @@ community reports, knowledge articles, and geocoding.
 ### Authentication
 - `POST /api/auth/register`
 - `POST /api/auth/login`
-- `GET /api/auth/me` (JWT required)
-- `PUT /api/auth/profile` (JWT required)
-- `PUT /api/auth/profile/sensitive` (JWT required)
+- `POST /api/auth/logout`
+- `GET /api/auth/me` (auth cookie required)
+- `PUT /api/auth/profile` (auth cookie required)
+- `PUT /api/auth/profile/sensitive` (auth cookie required)
 - `POST /api/auth/password-reset/security`
 
 ### Route Planning
-- `POST /api/routes/plan` (optional JWT — anonymous users tracked via `X-Plan-Session-Id`)
+- `POST /api/routes/plan` (auth cookie optional — anonymous history tied via `X-Plan-Session-Id`)
 - `GET /api/routes/history` (optional JWT)
 - `DELETE /api/routes/history` (optional JWT)
 - `DELETE /api/routes/history/:id` (optional JWT)
@@ -159,9 +160,9 @@ Default address: `http://localhost:8080/api/health`
 
 `GET /api/auth/me`
 
-Header: `Authorization: Bearer <token>`
+Requires the HttpOnly auth cookie set by login/register. Legacy bearer auth is still accepted for API clients.
 
-`PUT /api/auth/profile` (JWT required)
+`PUT /api/auth/profile` (auth cookie required)
 
 ```json
 {
@@ -170,7 +171,7 @@ Header: `Authorization: Bearer <token>`
 }
 ```
 
-`PUT /api/auth/profile/sensitive` (JWT required)
+`PUT /api/auth/profile/sensitive` (auth cookie required)
 
 ```json
 {
@@ -196,7 +197,7 @@ Header: `Authorization: Bearer <token>`
 
 `POST /api/routes/plan`
 
-Header (optional): `Authorization: Bearer <token>`
+Auth cookie optional. If present, route risk is personalized to the signed-in user.
 
 ```json
 {
@@ -216,7 +217,7 @@ Notes:
 - `durationMin` uses hiking-semantic estimation (Tobler's function + Naismith's rule), not driving time
 - Risk inputs merge official hazards, manual hazards, and community reports
 - Geography profiles are cached in PostgreSQL by route geometry hash
-- Anonymous users tracked via `X-Plan-Session-Id` header (UUID stored in sessionStorage)
+- Anonymous route history is tied via `X-Plan-Session-Id` header (UUID stored in sessionStorage). Rate limiting does not trust this header.
 - Three-layer risk scoring: base risk × environmental multiplier + interaction penalty, adjusted by user profile factor
 - Extra-long hiking routes trigger a No-Go flag to prevent unreasonably low risk scores
 
@@ -299,9 +300,11 @@ Optional (recommended for production):
 - `VIC_EMERGENCY_API_KEY=...` (if the feed requires authentication)
 - `REDIS_URL=...` (if using Railway Redis plugin)
 - `REDIS_TTL_SECONDS=90`
+- `PUBLIC_API_ORIGIN=https://<railway-domain>`
 - `AI_SERVICE_URL=http://localhost:8090`
 - `AI_SERVICE_AUTH_TOKEN=...`
 - `AI_SERVICE_REQUEST_TIMEOUT_MS=5000`
+- `KNOWLEDGE_ARTICLE_TABLE=knowledge_articles` (optional)
 
 ### Public URL
 

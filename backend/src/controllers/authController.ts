@@ -1,5 +1,5 @@
 import type { Response } from 'express';
-import type { AuthenticatedRequest } from '../modules/auth/middlewares/requireAuth.js';
+import { AUTH_COOKIE_NAME, type AuthenticatedRequest } from '../modules/auth/middlewares/requireAuth.js';
 import {
   getProfileByUserId,
   loginUser,
@@ -8,6 +8,29 @@ import {
   updateProfileByUserId,
   updateSensitiveProfileByUserId
 } from '../modules/auth/services/authService.js';
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+function setAuthCookie(res: Response, token: string): void {
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.cookie(AUTH_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    path: '/',
+    maxAge: SEVEN_DAYS_MS,
+  });
+}
+
+function clearAuthCookie(res: Response): void {
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.clearCookie(AUTH_COOKIE_NAME, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    path: '/',
+  });
+}
 
 export async function register(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
@@ -20,7 +43,8 @@ export async function register(req: AuthenticatedRequest, res: Response): Promis
       securityAnswer: req.body?.securityAnswer,
       assessmentAnswers: req.body?.assessmentAnswers || {},
     });
-    res.status(201).json(result);
+    setAuthCookie(res, result.token);
+    res.status(201).json({ user: result.user });
   } catch (error) {
     const isConflict = error.message === 'Email already registered';
     res.status(isConflict ? 409 : 400).json({ error: error.message || 'Failed to register' });
@@ -33,7 +57,8 @@ export async function login(req: AuthenticatedRequest, res: Response): Promise<v
       email: req.body?.email,
       password: req.body?.password,
     });
-    res.json(result);
+    setAuthCookie(res, result.token);
+    res.json({ user: result.user });
   } catch (error) {
     res.status(401).json({ error: error.message || 'Login failed' });
   }
@@ -78,6 +103,11 @@ export async function updateProfile(req: AuthenticatedRequest, res: Response): P
     const status = message === 'User not found' ? 404 : 400;
     res.status(status).json({ error: message });
   }
+}
+
+export async function logout(_req: AuthenticatedRequest, res: Response): Promise<void> {
+  clearAuthCookie(res);
+  res.json({ ok: true });
 }
 
 export async function updateSensitiveProfile(req: AuthenticatedRequest, res: Response): Promise<void> {

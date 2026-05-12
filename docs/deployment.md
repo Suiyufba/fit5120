@@ -6,7 +6,7 @@
 ┌──────────┐     ┌──────────┐     ┌──────────┐
 │  Vercel  │────▶│ Railway  │────▶│ Railway  │
 │ Frontend │     │ Backend  │     │ai-service│
-│  (Vite)  │     │(Express) │     │ (Python) │
+│  (Vite)  │     │(Express) │     │(Express) │
 └──────────┘     └────┬─────┘     └──────────┘
                       │
                  ┌────┴─────┐
@@ -15,9 +15,9 @@
                  └──────────┘
 ```
 
-- **Frontend** — Vite + Vue 3, deployed on **Vercel**. Connects to backend via `VITE_API_BASE_URL`.
+- **Frontend** — Vite + Vue 3, deployed on **Vercel**. Connects to backend via `VITE_HAZARD_API_BASE_URL`.
 - **Backend** — Express + TypeScript, deployed on **Railway**. Aggregates hazard data, handles auth, serves API.
-- **AI Service** — Python (FastAPI), deployed on **Railway** (separate service). Provides route narration via Gemini.
+- **AI Service** — Node.js + Express, deployed on **Railway** (separate service). Provides route narration via Gemini.
 - **Database** — PostgreSQL, provisioned inside Railway alongside the backend.
 
 ## Local Development
@@ -50,8 +50,11 @@ All services default to `localhost` ports listed above. Copy `.env.example` to `
 | `CORS_ORIGIN` | Backend | Comma-separated origins, no wildcard |
 | `AUTH_JWT_SECRET` | Backend | Min 32 characters |
 | `OPENROUTESERVICE_API_KEY` | Backend | Route planning API |
+| `PUBLIC_API_ORIGIN` | Backend | Canonical backend origin, e.g. `https://hikeshield-backend.railway.app` |
+| `AI_SERVICE_AUTH_TOKEN` | Backend + AI-Service | Same shared token on both services, min 16 characters |
 | `GEMINI_API_KEY` | AI-Service | Route narration |
-| `VITE_API_BASE_URL` | Frontend | Backend public URL |
+| `VITE_HAZARD_API_BASE_URL` | Frontend | Backend public API URL, including `/api` |
+| `VITE_SITE_ACCESS_PASSWORD` | Frontend | Preview gate password; client-visible, not backend auth |
 
 ### Recommended for production
 
@@ -61,7 +64,7 @@ All services default to `localhost` ports listed above. Copy `.env.example` to `
 | `REDIS_URL` | Backend | Rate limiting and caching |
 | `OPENWEATHER_API_KEY` | Backend | Weather hazard layer |
 | `VIC_EMERGENCY_FEED_URL` | Backend | Victoria emergency feed |
-| `AI_SERVICE_AUTH_TOKEN` | Backend | Protect ai-service endpoints |
+| `KNOWLEDGE_ARTICLE_TABLE` | Backend | Explicit table for knowledge articles, skips auto-discovery |
 
 See `.env.example` for the full list with defaults.
 
@@ -72,7 +75,8 @@ See `.env.example` for the full list with defaults.
 3. Set **Build Command**: `npm run build` (Vercel auto-detects Vite).
 4. Set **Output Directory**: `dist`.
 5. Add environment variable in Vercel dashboard:
-   - `VITE_API_BASE_URL` = your Railway backend URL (e.g. `https://hikeshield-backend.railway.app`)
+   - `VITE_HAZARD_API_BASE_URL` = your Railway backend API URL (e.g. `https://hikeshield-backend.railway.app/api`)
+   - `VITE_SITE_ACCESS_PASSWORD` = preview gate password
 
 ## Railway (Backend)
 
@@ -87,7 +91,7 @@ See `.env.example` for the full list with defaults.
 
 1. Create a **separate Railway service** from the same GitHub repo.
 2. Set **Root Directory** to `ai-service`.
-3. Set **Start Command** as defined in the ai-service `Procfile` or `package.json`.
+3. Set **Start Command**: `npm start` (runs `node src/server.js`).
 4. Add `GEMINI_API_KEY` and an `AI_SERVICE_AUTH_TOKEN` of your choice.
 5. Set the same `AI_SERVICE_AUTH_TOKEN` in the backend's environment variables.
 

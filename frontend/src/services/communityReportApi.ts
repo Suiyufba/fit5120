@@ -1,6 +1,10 @@
 import { readJsonCache, removeJsonCacheByPrefix, writeJsonCache } from './localCache'
 
-const ENV_BASE_URL = (import.meta.env.VITE_HAZARD_API_BASE_URL || '').trim()
+const ENV_BASE_URL = (
+  import.meta.env.VITE_HAZARD_API_BASE_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  ''
+).trim()
 const LEGACY_BASE_URL = 'https://backend-production-f55c.up.railway.app/api'
 const COMMUNITY_REPORTS_CACHE_PREFIX = 'hikeshield_cache_community_reports:'
 
@@ -33,6 +37,7 @@ async function requestWithFallback(path: string, options: Record<string, unknown
     try {
       const response = await fetch(baseUrl + path, {
         ...options,
+        credentials: 'include',
         signal,
       })
 

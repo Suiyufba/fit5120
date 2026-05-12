@@ -59,12 +59,12 @@ const h = useHome()
             </div>
           </div>
           <div class="home-risk-chips">
-            <span><i style="background:#D84727"></i> Fire {{ h.previewTypeSummary.value.fire }}</span>
-            <span><i style="background:#2165B5"></i> Flood {{ h.previewTypeSummary.value.flood }}</span>
-            <span><i style="background:#5A4B81"></i> Storm {{ h.previewTypeSummary.value.storm }}</span>
-            <span><i style="background:#D08817"></i> Heat {{ h.previewTypeSummary.value.heat }}</span>
-            <span><i style="background:#6B5C4F"></i> Trail {{ h.previewTypeSummary.value.trail }}</span>
-            <span><i style="background:#2E7D6B"></i> Other {{ h.previewTypeSummary.value.other }}</span>
+            <span><i style="background:#D84727"></i><em>Fire</em><strong>{{ h.previewTypeSummary.value.fire }}</strong></span>
+            <span><i style="background:#2165B5"></i><em>Flood</em><strong>{{ h.previewTypeSummary.value.flood }}</strong></span>
+            <span><i style="background:#5A4B81"></i><em>Storm</em><strong>{{ h.previewTypeSummary.value.storm }}</strong></span>
+            <span><i style="background:#D08817"></i><em>Heat</em><strong>{{ h.previewTypeSummary.value.heat }}</strong></span>
+            <span><i style="background:#6B5C4F"></i><em>Trail</em><strong>{{ h.previewTypeSummary.value.trail }}</strong></span>
+            <span><i style="background:#2E7D6B"></i><em>Other</em><strong>{{ h.previewTypeSummary.value.other }}</strong></span>
           </div>
         </div>
         <div class="home-safety-stack">
@@ -164,9 +164,12 @@ const h = useHome()
 .home-map-card__hazard span { display: block; margin-top: 0.2rem; color: #8a94a3; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 .home-severity-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.28rem 0.52rem; font-size: 0.64rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
 .home-empty { color: #5f6b7a; font-size: 0.82rem; }
-.home-risk-chips { display: flex; gap: 0.6rem; margin-top: 0.8rem; overflow-x: auto; padding-bottom: 0.1rem; }
-.home-risk-chips span { display: inline-flex; align-items: center; gap: 0.45rem; border: 1px solid rgba(31,41,51,0.08); border-radius: 999px; background: #f7f7f7; padding: 0.55rem 0.75rem; color: #5f6b7a; font-size: 0.78rem; font-weight: 700; white-space: nowrap; }
-.home-risk-chips i { width: 0.55rem; height: 0.55rem; border-radius: 999px; }
+.home-risk-chips { display: flex; flex-wrap: wrap; gap: 0.35rem 0.85rem; margin-top: 0.9rem; overflow-x: auto; padding-bottom: 0.1rem; }
+.home-risk-chips span { display: inline-flex; align-items: baseline; gap: 0.36rem; min-height: 1.6rem; padding-right: 0.85rem; border-right: 1px solid rgba(31,41,51,0.12); color: #5f6b7a; font-size: 0.78rem; white-space: nowrap; }
+.home-risk-chips span:last-child { border-right: 0; padding-right: 0; }
+.home-risk-chips i { align-self: center; width: 0.48rem; height: 0.48rem; border-radius: 999px; }
+.home-risk-chips em { font-style: normal; font-weight: 700; }
+.home-risk-chips strong { color: #29333f; font-weight: 850; }
 .home-safety-stack { display: grid; gap: 1rem; align-content: start; }
 .home-warning-card { padding: 1.25rem; background: #fff4f1; border-color: #ffd1c8; }
 .home-warning-card div { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }

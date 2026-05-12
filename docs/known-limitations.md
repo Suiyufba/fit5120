@@ -35,7 +35,7 @@ This document is important — especially for a safety-related project. Be trans
 
 - Password reset uses security questions (not email tokens). This is weaker than email-based reset.
 - Rate limiting is applied to auth endpoints (8 requests per 15 minutes).
-- JWT tokens expire after 7 days by default.
+- Auth cookies expire after 7 days by default.
 
 ## Database
 

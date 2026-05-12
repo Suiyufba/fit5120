@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { config } from '../config/index.js';
 import {
   createCommunityReport,
   listCommunityReports,
@@ -44,9 +45,9 @@ export async function postCommunityReport(req: Request, res: Response): Promise<
 }
 
 function buildImagePublicUrl(req: Request, imageId: string): string {
-  const proto = req.protocol;
-  const host = req.get('host');
-  return `${proto}://${host}/api/community-reports/images/${imageId}`;
+  // Use the configured canonical origin so returned URLs never embed an
+  // attacker-controlled Host header.
+  return `${config.publicApiOrigin}/api/community-reports/images/${imageId}`;
 }
 
 export async function postCommunityReportImage(req: Request, res: Response): Promise<void> {

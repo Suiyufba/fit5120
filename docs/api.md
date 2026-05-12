@@ -17,17 +17,22 @@ Register a new user.
 | securityAnswer | string | yes | Min 2 chars |
 | assessmentAnswers | object | no | Hiker risk assessment |
 
-Response `201`: `{ token, user }`  
+Response `201`: `{ user }` and sets an HttpOnly auth cookie.
 Errors: `409` email exists, `400` validation
 
 ### POST /auth/login
-Returns JWT token.
+Signs in and sets an HttpOnly auth cookie.
 
-Response `200`: `{ token, user }`  
+Response `200`: `{ user }`  
 Errors: `401`
 
+### POST /auth/logout
+Clears the auth cookie.
+
+Response `200`: `{ ok: true }`
+
 ### GET /auth/me
-Returns current user profile. Requires `Authorization: Bearer <token>`.
+Returns current user profile. Requires the auth cookie. Legacy bearer auth is still accepted for API clients.
 
 Response `200`: `{ user }`  
 Errors: `401`
@@ -55,8 +60,8 @@ Plan a safer hiking route.
 | start | { lat, lng } | yes |
 | end | { lat, lng } | yes |
 
-Header: `Authorization` (optional — enables personalized risk)  
-Header: `X-Plan-Session-Id` (optional — ties history)
+Auth cookie: optional — enables personalized risk.
+Header: `X-Plan-Session-Id` (optional — ties anonymous history, not used for rate-limit identity)
 
 Response `200`: `{ recommendedRoute, alternatives, routeOptions, userLevel }`  
 Errors: `400` invalid points/too far, `404` no user, `503` ORS down
@@ -182,7 +187,7 @@ Response `200`: `{ ok: true, service, time, fetchIntervalMs }`
 
 ## Error Format
 
-All errors follow this shape:
+Errors always include a human-readable `error` message. Some newer endpoints also include a machine-readable `code` field:
 
 ```json
 {
@@ -191,4 +196,4 @@ All errors follow this shape:
 }
 ```
 
-Error codes: `VALIDATION_ERROR`, `AUTH_UNAUTHORIZED`, `AUTH_EMAIL_EXISTS`, `AUTH_INVALID_CREDENTIALS`, `ROUTE_TOO_FAR`, `ROUTE_SERVICE_DOWN`, `NOT_FOUND`, `INTERNAL_ERROR`, `RATE_LIMITED`.
+Common error codes include: `VALIDATION_ERROR`, `AUTH_UNAUTHORIZED`, `AUTH_EMAIL_EXISTS`, `AUTH_INVALID_CREDENTIALS`, `ROUTE_TOO_FAR`, `ROUTE_SERVICE_DOWN`, `NOT_FOUND`, `INTERNAL_ERROR`, `RATE_LIMITED`.

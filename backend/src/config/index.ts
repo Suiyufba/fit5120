@@ -25,6 +25,13 @@ function parseCsv(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
+function normalizeOrigin(value: string): string {
+  const origin = String(value || '').trim().replace(/\/+$/, '');
+  if (!origin) return '';
+  const parsed = new URL(origin);
+  return parsed.origin;
+}
+
 const corsOriginRaw = isTestEnv
   ? String(process.env.CORS_ORIGIN || 'http://localhost:5173')
   : requireEnv('CORS_ORIGIN');
@@ -65,6 +72,10 @@ export interface AppConfig {
   aiServiceUrl: string;
   aiServiceAuthToken: string;
   aiServiceRequestTimeoutMs: number;
+  /** Canonical public origin for absolute URLs (redirects, image links). Required outside tests. */
+  publicApiOrigin: string;
+  /** Explicit table name for knowledge articles. When set, skips auto-discovery. */
+  knowledgeArticleTable: string;
 }
 
 export const config: AppConfig = {
@@ -99,6 +110,10 @@ export const config: AppConfig = {
   vicEmergencyFeedUrl: process.env.VIC_EMERGENCY_FEED_URL || '',
   vicEmergencyApiKey: process.env.VIC_EMERGENCY_API_KEY || '',
   aiServiceUrl: process.env.AI_SERVICE_URL || `http://localhost:${toInt(process.env.AI_SERVICE_PORT, 8090)}`,
-  aiServiceAuthToken: process.env.AI_SERVICE_AUTH_TOKEN || '',
+  aiServiceAuthToken: isTestEnv
+    ? String(process.env.AI_SERVICE_AUTH_TOKEN || '')
+    : requireEnv('AI_SERVICE_AUTH_TOKEN', { minLength: 16 }),
   aiServiceRequestTimeoutMs: toInt(process.env.AI_SERVICE_REQUEST_TIMEOUT_MS, 5000),
+  publicApiOrigin: isTestEnv ? normalizeOrigin(process.env.PUBLIC_API_ORIGIN || '') : normalizeOrigin(requireEnv('PUBLIC_API_ORIGIN')),
+  knowledgeArticleTable: process.env.KNOWLEDGE_ARTICLE_TABLE || '',
 };

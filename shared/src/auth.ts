@@ -52,7 +52,7 @@ export interface UpdateSensitiveProfileRequest {
 // ── Auth Responses ──────────────────────────────────────────────
 
 export interface AuthResponse {
-  token: string;
+  token?: string;
   user: User;
 }
 

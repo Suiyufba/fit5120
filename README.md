@@ -41,6 +41,7 @@ Express API Server (/api)
     ├── GET    /community-reports/images/:id  # Get report image
     ├── POST   /auth/register            # Create account
     ├── POST   /auth/login               # Sign in
+    ├── POST   /auth/logout              # Clear auth cookie
     ├── GET    /auth/me                  # Current user info
     ├── PUT    /auth/profile             # Update profile
     ├── PUT    /auth/profile/sensitive   # Update credentials
@@ -90,7 +91,7 @@ hikeshield/
 | Maps | Leaflet, Mapbox GL JS |
 | Backend | Node.js, Express, Helmet |
 | Database | PostgreSQL (pg), Redis (ioredis) |
-| Auth | JWT (jsonwebtoken), bcryptjs, express-rate-limit |
+| Auth | HttpOnly cookie session with JWT (jsonwebtoken), bcryptjs, express-rate-limit |
 | AI | Gemini 2.5 Flash (generative language API) |
 | Deploy | Vercel (frontend), Railway (backend + AI) |
 

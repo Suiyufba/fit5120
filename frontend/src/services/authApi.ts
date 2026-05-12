@@ -9,7 +9,9 @@ import type {
 } from 'hikeshield-shared'
 
 const DEFAULT_BASE_URL =
-  import.meta.env.VITE_HAZARD_API_BASE_URL || 'https://backend-production-f55c.up.railway.app/api'
+  import.meta.env.VITE_HAZARD_API_BASE_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://backend-production-f55c.up.railway.app/api'
 
 function buildApiUrl(path: string): string {
   return `${DEFAULT_BASE_URL}${path}`
@@ -27,6 +29,7 @@ async function requestJson<T = unknown>(path: string, { method = 'GET', token, b
   try {
     response = await fetch(url, {
       method,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -59,12 +62,16 @@ export function loginUser(payload: LoginRequest): Promise<AuthResponse> {
   return requestJson<AuthResponse>('/auth/login', { method: 'POST', body: payload })
 }
 
-export function fetchCurrentUser(token: string): Promise<MeResponse> {
+export function fetchCurrentUser(token = ''): Promise<MeResponse> {
   return requestJson<MeResponse>('/auth/me', { token })
 }
 
 export function confirmPasswordReset(payload: PasswordResetRequest): Promise<unknown> {
   return requestJson('/auth/password-reset/security', { method: 'POST', body: payload })
+}
+
+export function logoutUser(): Promise<unknown> {
+  return requestJson('/auth/logout', { method: 'POST' })
 }
 
 export function updateCurrentUserProfile(token: string, payload: UpdateProfileRequest): Promise<MeResponse> {

@@ -27,6 +27,7 @@ function applyCorsHeaders(req: Request, res: Response): void {
   const origin = req.get('origin');
   if (!origin || !allowedOrigins.has(origin)) return;
   res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Plan-Session-Id');
@@ -59,7 +60,9 @@ app.use(
 app.use((req, res, next) => {
   const proto = req.headers['x-forwarded-proto'];
   if (process.env.NODE_ENV === 'production' && proto && proto !== 'https') {
-    const host = req.headers.host;
+    // Use the configured canonical origin so redirects never embed an
+    // attacker-controlled Host header.
+    const host = new URL(config.publicApiOrigin).host;
     res.redirect(301, `https://${host}${req.originalUrl}`);
     return;
   }
@@ -77,6 +80,7 @@ app.use(
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Plan-Session-Id'],
+    credentials: true,
   }),
 );
 
@@ -87,6 +91,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
   const origin = req.get('origin');
   if (!origin) {
+    if (process.env.NODE_ENV === 'production') {
+      res.status(403).json({ error: 'Request origin is required' });
+      return;
+    }
     next();
     return;
   }

@@ -2,7 +2,9 @@
 import { computed, ref } from 'vue'
 import Navbar from './components/Navbar.vue'
 
-const ACCESS_PASSWORD = import.meta.env.VITE_SITE_ACCESS_PASSWORD || 'gkd'
+// No hard-coded fallback — the gate fails closed when the env var is missing.
+// Set VITE_SITE_ACCESS_PASSWORD in your deployment environment or local .env file.
+const ACCESS_PASSWORD = import.meta.env.VITE_SITE_ACCESS_PASSWORD
 const ACCESS_STORAGE_KEY = 'hikeshield_site_access_granted'
 
 const passwordInput = ref('')
@@ -27,6 +29,11 @@ function storeAccess() {
 }
 
 function unlockSite() {
+  if (!ACCESS_PASSWORD) {
+    accessError.value = 'Site access is not configured. Contact the administrator.'
+    return
+  }
+
   if (passwordInput.value === ACCESS_PASSWORD) {
     storeAccess()
     hasAccess.value = true

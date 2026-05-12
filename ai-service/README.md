@@ -16,7 +16,7 @@ Dedicated AI backend service for route introduction generation.
 
 ## Security
 
-- If `AI_SERVICE_AUTH_TOKEN` is set, requests must include header:
+- In production, `AI_SERVICE_AUTH_TOKEN` is required at startup. Requests must include header:
   - `x-ai-service-token: <AI_SERVICE_AUTH_TOKEN>`
 - Deploy this service privately on Railway and only allow trusted callers (your main backend).
 
@@ -25,7 +25,7 @@ Dedicated AI backend service for route introduction generation.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` / `AI_SERVICE_PORT` | `8090` | Listen port |
-| `AI_SERVICE_AUTH_TOKEN` | — | Shared secret for caller authentication (recommended) |
+| `AI_SERVICE_AUTH_TOKEN` | — | Shared secret for caller authentication (required in production) |
 | `GEMINI_API_KEY` / `GOOGLE_API_KEY` | — | Gemini API key (required for AI narration) |
 | `GEMINI_API_URL` | Google Generative Language v1beta | API base URL |
 | `GEMINI_ROUTE_NARRATION_MODEL` | `gemini-2.5-flash-lite` | Model name |

@@ -1,3 +1,4 @@
+import { config } from '../../../config/index.js';
 import { getPgPool } from '../../../infrastructure/db/postgresClient.js';
 
 const CANDIDATE_TABLES = [
@@ -130,6 +131,21 @@ function toBoolean(value) {
   return text === 'true' || text === 'yes' || text === 'y';
 }
 
+/**
+ * Only allow https: URLs for external links and images.
+ * This prevents javascript:, data:, and other unsafe schemes from being
+ * rendered as clickable links or image sources in the frontend.
+ */
+function safeUrl(raw: string): string {
+  if (!raw) return '';
+  try {
+    const parsed = new URL(raw);
+    return parsed.protocol === 'https:' ? raw : '';
+  } catch {
+    return '';
+  }
+}
+
 function rowToArticle(row, index) {
   const title = pickString(row.title || row.headline || row.name);
   const summary = pickString(row.summary || row.excerpt || row.description || row.subtitle);
@@ -141,17 +157,30 @@ function rowToArticle(row, index) {
     title,
     summary,
     content,
-    imageUrl: pickString(row.image_url || row.imageurl || row.cover_image || row.thumbnail_url || row.image),
+    imageUrl: safeUrl(pickString(row.image_url || row.imageurl || row.cover_image || row.thumbnail_url || row.image)),
     topic: pickString(row.topic || row.category || row.section || 'General'),
     readMinutes: toNumber(row.read_minutes || row.reading_time || row.read_time, 5),
     publishedAt: pickString(row.published_at || row.publish_date || row.created_at || row.updated_at),
     updatedAt: pickString(row.updated_at || row.modified_at || row.created_at),
-    sourceUrl: pickString(row.source_url || row.reference_url || row.link),
+    sourceUrl: safeUrl(pickString(row.source_url || row.reference_url || row.link)),
     isFeatured: toBoolean(row.is_featured || row.featured),
   };
 }
 
 async function findArticleTableName(pool) {
+  // Operator-configured table name overrides auto-discovery.
+  if (config.knowledgeArticleTable) {
+    const safeName = toSafeTableIdentifier(config.knowledgeArticleTable);
+    const exists = await pool.query(
+      `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)`,
+      [config.knowledgeArticleTable],
+    );
+    if (exists.rows[0]?.exists) {
+      return config.knowledgeArticleTable;
+    }
+    throw new Error(`Configured knowledge article table '${config.knowledgeArticleTable}' not found`);
+  }
+
   const directMatch = await pool.query(
     `
     SELECT table_name

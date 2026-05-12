@@ -35,6 +35,22 @@ function formatDate(dateString) {
   return new Date(ts).toLocaleDateString()
 }
 
+/**
+ * Defence-in-depth URL allowlisting for article links and images.
+ * The backend already filters non-https: URLs, but this frontend guard
+ * prevents rendering if a bad URL slips through (e.g. from a cached
+ * response or a future API version).
+ */
+function safeUrl(raw) {
+  if (!raw) return ''
+  try {
+    const parsed = new URL(raw)
+    return parsed.protocol === 'https:' ? raw : ''
+  } catch {
+    return ''
+  }
+}
+
 async function loadArticles() {
   if (inflightController) inflightController.abort()
   inflightController = new AbortController()
@@ -95,7 +111,7 @@ onUnmounted(() => {
         <section class="kb-featured">
           <img
             v-if="featuredArticle.imageUrl"
-            :src="featuredArticle.imageUrl"
+            :src="safeUrl(featuredArticle.imageUrl)"
             :alt="featuredArticle.title"
             class="kb-featured-image"
           />
@@ -104,7 +120,7 @@ onUnmounted(() => {
             <h2>
               <a
                 v-if="featuredArticle.sourceUrl"
-                :href="featuredArticle.sourceUrl"
+                :href="safeUrl(featuredArticle.sourceUrl)"
                 target="_blank"
                 rel="noreferrer"
                 class="kb-title-link"
@@ -124,13 +140,13 @@ onUnmounted(() => {
 
         <section class="kb-grid">
           <article v-for="item in regularArticles" :key="item.id" class="kb-card">
-            <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.title" class="kb-card-image" />
+            <img v-if="item.imageUrl" :src="safeUrl(item.imageUrl)" :alt="item.title" class="kb-card-image" />
             <div class="kb-card-body">
               <span class="kb-chip">{{ item.topic }}</span>
               <h3>
                 <a
                   v-if="item.sourceUrl"
-                  :href="item.sourceUrl"
+                  :href="safeUrl(item.sourceUrl)"
                   target="_blank"
                   rel="noreferrer"
                   class="kb-title-link"

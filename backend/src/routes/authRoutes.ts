@@ -2,6 +2,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import {
   login,
+  logout,
   me,
   register,
   resetPasswordBySecurityAnswer,
@@ -22,6 +23,7 @@ const authWriteLimiter = rateLimit({
 
 authRoutes.post('/auth/register', authWriteLimiter, register);
 authRoutes.post('/auth/login', authWriteLimiter, login);
+authRoutes.post('/auth/logout', logout);
 authRoutes.get('/auth/me', requireAuth, me);
 authRoutes.put('/auth/profile', requireAuth, updateProfile);
 authRoutes.put('/auth/profile/sensitive', requireAuth, updateSensitiveProfile);

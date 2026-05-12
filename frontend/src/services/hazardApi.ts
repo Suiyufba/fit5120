@@ -1,7 +1,9 @@
 import { readJsonCache, writeJsonCache } from './localCache'
 
 const DEFAULT_BASE_URL =
-  import.meta.env.VITE_HAZARD_API_BASE_URL || 'https://backend-production-f55c.up.railway.app/api'
+  import.meta.env.VITE_HAZARD_API_BASE_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://backend-production-f55c.up.railway.app/api'
 const REALTIME_HAZARD_PATH = '/hazards/realtime'
 const DISPLAY_SOURCE_FALLBACK = 'Victorian Safety Snapshot'
 const HAZARD_CACHE_PREFIX = 'hikeshield_cache_hazards:'
