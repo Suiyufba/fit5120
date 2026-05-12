@@ -32,6 +32,22 @@ function normalizeOrigin(value: string): string {
   return parsed.origin;
 }
 
+function normalizeDomainOrigin(value: string | undefined): string {
+  const domain = String(value || '').trim().replace(/\/+$/, '');
+  if (!domain) return '';
+  return normalizeOrigin(domain.startsWith('http://') || domain.startsWith('https://') ? domain : `https://${domain}`);
+}
+
+function resolvePublicApiOrigin(): string {
+  const explicit = normalizeDomainOrigin(process.env.PUBLIC_API_ORIGIN);
+  if (explicit) return explicit;
+
+  const railwayPublicDomain = normalizeDomainOrigin(process.env.RAILWAY_PUBLIC_DOMAIN);
+  if (railwayPublicDomain) return railwayPublicDomain;
+
+  return isTestEnv ? '' : requireEnv('PUBLIC_API_ORIGIN');
+}
+
 const corsOriginRaw = isTestEnv
   ? String(process.env.CORS_ORIGIN || 'http://localhost:5173')
   : requireEnv('CORS_ORIGIN');
@@ -110,10 +126,8 @@ export const config: AppConfig = {
   vicEmergencyFeedUrl: process.env.VIC_EMERGENCY_FEED_URL || '',
   vicEmergencyApiKey: process.env.VIC_EMERGENCY_API_KEY || '',
   aiServiceUrl: process.env.AI_SERVICE_URL || `http://localhost:${toInt(process.env.AI_SERVICE_PORT, 8090)}`,
-  aiServiceAuthToken: isTestEnv
-    ? String(process.env.AI_SERVICE_AUTH_TOKEN || '')
-    : requireEnv('AI_SERVICE_AUTH_TOKEN', { minLength: 16 }),
+  aiServiceAuthToken: String(process.env.AI_SERVICE_AUTH_TOKEN || '').trim(),
   aiServiceRequestTimeoutMs: toInt(process.env.AI_SERVICE_REQUEST_TIMEOUT_MS, 5000),
-  publicApiOrigin: isTestEnv ? normalizeOrigin(process.env.PUBLIC_API_ORIGIN || '') : normalizeOrigin(requireEnv('PUBLIC_API_ORIGIN')),
+  publicApiOrigin: resolvePublicApiOrigin(),
   knowledgeArticleTable: process.env.KNOWLEDGE_ARTICLE_TABLE || '',
 };

@@ -300,9 +300,9 @@ Optional (recommended for production):
 - `VIC_EMERGENCY_API_KEY=...` (if the feed requires authentication)
 - `REDIS_URL=...` (if using Railway Redis plugin)
 - `REDIS_TTL_SECONDS=90`
-- `PUBLIC_API_ORIGIN=https://<railway-domain>`
+- `PUBLIC_API_ORIGIN=https://<railway-domain>` (optional on Railway if `RAILWAY_PUBLIC_DOMAIN` is present)
 - `AI_SERVICE_URL=http://localhost:8090`
-- `AI_SERVICE_AUTH_TOKEN=...`
+- `AI_SERVICE_AUTH_TOKEN=...` (recommended; required to call a protected ai-service)
 - `AI_SERVICE_REQUEST_TIMEOUT_MS=5000`
 - `KNOWLEDGE_ARTICLE_TABLE=knowledge_articles` (optional)
 

@@ -50,9 +50,9 @@ All services default to `localhost` ports listed above. Copy `.env.example` to `
 | `CORS_ORIGIN` | Backend | Comma-separated origins, no wildcard |
 | `AUTH_JWT_SECRET` | Backend | Min 32 characters |
 | `OPENROUTESERVICE_API_KEY` | Backend | Route planning API |
-| `PUBLIC_API_ORIGIN` | Backend | Canonical backend origin, e.g. `https://hikeshield-backend.railway.app` |
-| `AI_SERVICE_AUTH_TOKEN` | Backend + AI-Service | Same shared token on both services, min 16 characters |
+| `PUBLIC_API_ORIGIN` | Backend | Canonical backend origin, e.g. `https://hikeshield-backend.railway.app`. Railway's `RAILWAY_PUBLIC_DOMAIN` is used automatically when this is unset. |
 | `GEMINI_API_KEY` | AI-Service | Route narration |
+| `AI_SERVICE_AUTH_TOKEN` | AI-Service | Shared service token, required by ai-service in production |
 | `VITE_HAZARD_API_BASE_URL` | Frontend | Backend public API URL, including `/api` |
 | `VITE_SITE_ACCESS_PASSWORD` | Frontend | Preview gate password; client-visible, not backend auth |
 
@@ -65,6 +65,7 @@ All services default to `localhost` ports listed above. Copy `.env.example` to `
 | `OPENWEATHER_API_KEY` | Backend | Weather hazard layer |
 | `VIC_EMERGENCY_FEED_URL` | Backend | Victoria emergency feed |
 | `KNOWLEDGE_ARTICLE_TABLE` | Backend | Explicit table for knowledge articles, skips auto-discovery |
+| `AI_SERVICE_AUTH_TOKEN` | Backend | Set to the same token as ai-service to enable AI narration; backend falls back when omitted |
 
 See `.env.example` for the full list with defaults.
 

@@ -10,7 +10,7 @@ The main remaining risks are production-hardening gaps rather than obvious direc
 
 ## Remediation Status
 
-Updated 2026-05-13: the findings in this report have been remediated in the working tree. Notable changes include mandatory AI service auth outside tests, rate limits on expensive public writes, mandatory `PUBLIC_API_ORIGIN` outside tests, HttpOnly cookie auth instead of browser-stored JWTs, URL allowlisting for knowledge article links/images, explicit knowledge table configuration, and dependency updates that bring `npm audit --omit=dev` to zero known vulnerabilities.
+Updated 2026-05-13: the findings in this report have been remediated in the working tree. Notable changes include mandatory AI service auth outside tests, rate limits on expensive public writes, canonical public API origin handling with Railway `RAILWAY_PUBLIC_DOMAIN` fallback, HttpOnly cookie auth instead of browser-stored JWTs, URL allowlisting for knowledge article links/images, explicit knowledge table configuration, and dependency updates that bring `npm audit --omit=dev` to zero known vulnerabilities.
 
 ## High Severity
 
