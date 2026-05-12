@@ -1,5 +1,5 @@
 {
-    "installCommand": "npm ci --include=optional",
+    "installCommand": "npm ci --include=optional && npm install @rollup/rollup-linux-x64-gnu@4.60.0 --no-save",
     "buildCommand": "npm run build",
     "rewrites": [
       {
