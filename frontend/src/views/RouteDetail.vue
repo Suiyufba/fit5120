@@ -4,12 +4,16 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const ctx = useRouteDetail()
+
+function setMapElement(el: Element | null) {
+  ctx.mapElement.value = el instanceof HTMLElement ? el : null
+}
 </script>
 
 <template>
   <main class="detail-layout">
     <section class="detail-map-wrap">
-      <div ref="ctx.mapElement.value" class="detail-map"></div>
+      <div :ref="setMapElement" class="detail-map"></div>
       <p v-if="ctx.mapInitError.value" class="map-init-error">{{ ctx.mapInitError.value }}</p>
     </section>
 
