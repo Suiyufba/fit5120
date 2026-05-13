@@ -6,6 +6,10 @@ import { MAP_VISUAL_STYLES } from '../utils/mapVisualStyles'
 const router = useRouter()
 const r = useRiskMap()
 
+function setMapElement(el: Element | null) {
+  r.mapElement.value = el instanceof HTMLElement ? el : null
+}
+
 function openLocationDetail(hazard: any) {
   r.selectHazard(hazard)
   router.push({ name: 'location-detail', params: { id: hazard.id }, query: {
@@ -57,7 +61,7 @@ function openLocationDetail(hazard: any) {
       </div>
     </aside>
     <main class="risk-map-canvas-wrap">
-      <div ref="r.mapElement.value" class="risk-map-canvas"></div>
+      <div :ref="setMapElement" class="risk-map-canvas"></div>
       <div class="risk-map-map-status"><span class="material-symbols-outlined">radar</span><strong>{{ r.statewideHazards.value.length }}</strong><span>hazards</span></div>
       <div class="risk-map-map-controls">
         <button class="risk-map-control-btn" @click="r.getMapInstance()?.zoomIn()"><span class="material-symbols-outlined">add</span></button>

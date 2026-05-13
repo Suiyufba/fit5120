@@ -5,6 +5,14 @@ import { MAP_VISUAL_STYLES } from '../utils/mapVisualStyles'
 
 const ctx = useCommunityReports()
 
+function setMapElement(el: Element | null) {
+  ctx.mapElement.value = el instanceof HTMLElement ? el : null
+}
+
+function setImageFileInput(el: Element | null) {
+  ctx.imageFileInput.value = el instanceof HTMLInputElement ? el : null
+}
+
 onMounted(async () => {
   const el = ctx.mapElement.value
   if (el) {
@@ -124,7 +132,7 @@ export default { name: 'CommunityReports' }
             <p class="image-upload__title">Photo (optional)</p>
             <p class="image-upload__hint">Attach a photo or take one on mobile.</p>
             <div class="image-upload__row">
-              <input ref="ctx.imageFileInput.value" type="file" accept="image/*" capture="environment" class="image-upload__input"
+              <input :ref="setImageFileInput" type="file" accept="image/*" capture="environment" class="image-upload__input"
                 :disabled="ctx.imageUploading.value" @change="ctx.onImageFileSelected" />
               <button v-if="ctx.imagePreviewUrl.value || ctx.form.imageUrl" type="button" class="image-upload__clear"
                 :disabled="ctx.imageUploading.value" @click="ctx.clearImageAttachment">Remove</button>
@@ -167,7 +175,7 @@ export default { name: 'CommunityReports' }
 
     <!-- Map -->
     <section class="community-map-wrap">
-      <div ref="ctx.mapElement.value" class="community-map"></div>
+      <div :ref="setMapElement" class="community-map"></div>
       <div class="community-map-status">
         <span class="material-symbols-outlined" aria-hidden="true">groups</span>
         <strong>{{ ctx.stats.value.total }}</strong>
