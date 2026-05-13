@@ -11,14 +11,15 @@ const { isAuthenticated, state } = useAuthState()
 const navItems = computed(() => [
   { name: 'Home', path: '/' },
   { name: 'Risk Map', path: '/risk-map' },
-  { name: 'Plan Route', path: '/route-planner' },
+  { name: 'Plan Route', path: '/route-planner', activePaths: ['/route-planner', '/route-detail'] },
   { name: 'Community Reports', path: '/community-reports' },
   { name: 'Knowledge Hub', path: '/knowledge-hub' },
 ])
 
-const isActive = (path) => {
-  if (path === '/') return route.path === '/'
-  return route.path.startsWith(path)
+const isActive = (item) => {
+  const activePaths = item.activePaths || [item.path]
+  if (item.path === '/') return route.path === '/'
+  return activePaths.some((path) => route.path.startsWith(path))
 }
 
 const accountLabel = computed(() => {
@@ -54,7 +55,7 @@ function goAccount() {
           :key="item.path"
           :to="item.path"
           class="desktop-nav__link"
-          :class="isActive(item.path)
+          :class="isActive(item)
             ? 'desktop-nav__link--active'
             : ''"
         >
@@ -89,7 +90,7 @@ function goAccount() {
           :key="item.path"
           :to="item.path"
           class="mobile-nav__link"
-          :class="isActive(item.path)
+          :class="isActive(item)
             ? 'mobile-nav__link--active'
             : ''"
           @click="isMenuOpen = false"
