@@ -80,8 +80,8 @@ function unlockSite() {
   <div id="app" class="font-body text-on-surface min-h-screen flex flex-col">
     <template v-if="hasAccess">
       <Navbar />
-      <router-view v-slot="{ Component, route }">
-        <transition :name="route.meta.stableMapView ? 'map-page' : 'page'" mode="out-in">
+      <router-view v-slot="{ Component }">
+        <transition name="page" mode="out-in">
           <component :is="Component" />
         </transition>
       </router-view>
@@ -214,23 +214,10 @@ function unlockSite() {
 
 .page-enter-active,
 .page-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.2s ease;
 }
-.page-enter-from {
-  opacity: 0;
-  transform: translateY(12px);
-}
+.page-enter-from,
 .page-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
-.map-page-enter-active,
-.map-page-leave-active {
-  transition: opacity 0.18s ease;
-}
-.map-page-enter-from,
-.map-page-leave-to {
   opacity: 0;
 }
 </style>
