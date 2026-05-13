@@ -8,7 +8,6 @@ import {
 } from '../services/routeApi'
 import { reverseLocation, searchLocations } from '../services/locationApi'
 import { setLatestRoutePlan } from '../services/routePlanStore'
-import { useAuthState } from '../services/authStore'
 
 const routeDifficultySlots = ['Easy', 'Moderate', 'Hard']
 
@@ -50,7 +49,6 @@ export const layerMeta: Record<string, { label: string; color: string }> = {
 
 export function useRoutePlanner() {
   const router = useRouter()
-  const { state: authState } = useAuthState()
 
   const plannerPanel = ref<HTMLElement | null>(null)
   const plannerPanelBody = ref<HTMLElement | null>(null)
@@ -179,7 +177,7 @@ export function useRoutePlanner() {
     if (inflightController) inflightController.abort()
     inflightController = new AbortController(); loading.value = true; error.value = ''
     try {
-      const payload = await planSafeRoute({ start: startPoint.value!, end: endPoint.value!, token: authState.token || '', signal: inflightController.signal })
+      const payload = await planSafeRoute({ start: startPoint.value!, end: endPoint.value!, signal: inflightController.signal })
       planResult.value = payload; selectedRouteId.value = buildRouteChoices(payload)[0]?.id || ''
       setLatestRoutePlan({ ...payload, recommendedRoute: buildRouteChoices(payload)[0] || payload.recommendedRoute, start: startPoint.value, end: endPoint.value } as any)
       isSheetExpanded.value = true
@@ -199,7 +197,7 @@ export function useRoutePlanner() {
   async function loadHistory() {
     if (historyInflightController) historyInflightController.abort()
     historyInflightController = new AbortController(); loadingHistory.value = true
-    try { const p = await fetchRoutePlanHistory({ token: authState.token || '', limit: 15, signal: historyInflightController.signal }); historyItems.value = p.history }
+    try { const p = await fetchRoutePlanHistory({ limit: 15, signal: historyInflightController.signal }); historyItems.value = p.history }
     catch (e: any) { if (e?.name !== 'AbortError') console.warn('History load failed:', e.message) }
     finally { loadingHistory.value = false }
   }
@@ -208,7 +206,7 @@ export function useRoutePlanner() {
     if (!historyItems.value.length || clearingHistory.value) return
     if (!window.confirm('Clear all route history?')) return
     clearingHistory.value = true
-    try { await clearRoutePlanHistory({ token: authState.token || '' }); historyItems.value = [] }
+    try { await clearRoutePlanHistory(); historyItems.value = [] }
     catch (e: any) { if (e?.name !== 'AbortError') error.value = e.message || 'Failed to clear history' }
     finally { clearingHistory.value = false }
   }
@@ -216,7 +214,7 @@ export function useRoutePlanner() {
   async function clearHistoryItem(itemId: string) {
     if (!itemId || deletingHistoryId.value) return
     deletingHistoryId.value = String(itemId)
-    try { await deleteRoutePlanHistoryItem({ id: itemId, token: authState.token || '' }); historyItems.value = historyItems.value.filter(i => String(i.id) !== String(itemId)) }
+    try { await deleteRoutePlanHistoryItem({ id: itemId }); historyItems.value = historyItems.value.filter(i => String(i.id) !== String(itemId)) }
     catch (e: any) { error.value = e.message || 'Failed to delete item' }
     finally { deletingHistoryId.value = '' }
   }

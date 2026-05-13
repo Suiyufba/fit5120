@@ -1,12 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useAuthState } from '../services/authStore'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const router = useRouter()
 const isMenuOpen = ref(false)
-const { isAuthenticated, state } = useAuthState()
 
 const navItems = computed(() => [
   { name: 'Home', path: '/' },
@@ -20,20 +17,6 @@ const isActive = (item) => {
   const activePaths = item.activePaths || [item.path]
   if (item.path === '/') return route.path === '/'
   return activePaths.some((path) => route.path.startsWith(path))
-}
-
-const accountLabel = computed(() => {
-  if (!isAuthenticated.value) return 'Sign In'
-  const level = state.user?.experienceLevel || 'newcomer'
-  if (level === 'advanced') return 'Profile · Advanced'
-  if (level === 'intermediate') return 'Profile · Intermediate'
-  return 'Profile · Newcomer'
-})
-
-function goAccount() {
-  if (isAuthenticated.value) {
-    router.push('/profile')
-  }
 }
 
 </script>
@@ -64,15 +47,6 @@ function goAccount() {
       </div>
 
       <div class="nav-actions">
-        <!-- Temporarily hide Sign In entry from navbar for unauthenticated users -->
-        <button
-          v-if="isAuthenticated"
-          class="account-btn"
-          @click="goAccount"
-        >
-          <span class="material-symbols-outlined">account_circle</span>
-          <span>{{ accountLabel }}</span>
-        </button>
         <button
           class="menu-btn"
           @click="isMenuOpen = !isMenuOpen"

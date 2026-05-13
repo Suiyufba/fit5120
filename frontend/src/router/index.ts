@@ -1,6 +1,5 @@
-import { createRouter, createWebHistory, type RouteLocationNormalized } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
-import { restoreSession, useAuthState } from '../services/authStore'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -54,43 +53,24 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: () => import('../views/Login.vue'),
-      meta: { guestOnly: true }
+      redirect: '/'
     },
     {
       path: '/register',
       name: 'register',
-      component: () => import('../views/Register.vue'),
-      meta: { guestOnly: true }
+      redirect: '/'
     },
     {
       path: '/forgot-password',
       name: 'forgot-password',
-      component: () => import('../views/ForgotPassword.vue'),
-      meta: { guestOnly: true }
+      redirect: '/'
     },
     {
       path: '/profile',
       name: 'profile',
-      component: () => import('../views/Profile.vue'),
-      meta: { requiresAuth: true }
+      redirect: '/'
     },
   ]
-})
-
-router.beforeEach(async (to: RouteLocationNormalized) => {
-  await restoreSession()
-  const { isAuthenticated } = useAuthState()
-
-  if (to.meta.requiresAuth && !isAuthenticated.value) {
-    return { name: 'login', query: { redirect: encodeURIComponent(to.fullPath) } }
-  }
-
-  if (to.meta.guestOnly && isAuthenticated.value) {
-    return { name: 'profile' }
-  }
-
-  return true
 })
 
 export default router
