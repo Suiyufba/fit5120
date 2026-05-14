@@ -15,7 +15,7 @@ const h = useHome()
       <div class="home-hero__content">
         <div class="home-hero__copy">
           <p class="home-hero__kicker">Victoria hiking safety</p>
-          <h1>Find the safer trail before you leave home.</h1>
+          <h1 class="home-halftone-title" data-halftone="Find the safer trail before you leave home.">Find the safer trail before you leave home.</h1>
           <p>HikeShield blends live hazard feeds, route intelligence, and community reports into one calm planning surface for Victorian walkers.</p>
           <div class="home-hero__search">
             <button class="home-hero__search-main" @click="router.push('/route-planner')"><span class="material-symbols-outlined">route</span>Plan a safe route</button>
@@ -36,7 +36,7 @@ const h = useHome()
 
     <section class="home-section home-risk">
       <div class="home-section__header">
-        <div><p class="home-eyebrow">Live risk intelligence</p><h2>Map first. Warnings second. Guesswork never.</h2></div>
+        <div><p class="home-eyebrow">Live risk intelligence</p><h2 class="home-halftone-heading" data-halftone="Map first. Warnings second. Guesswork never.">Map first. Warnings second. Guesswork never.</h2></div>
         <button class="home-link-btn" @click="router.push('/risk-map')">Open full map<span class="material-symbols-outlined">arrow_forward</span></button>
       </div>
       <div class="home-risk__grid">
@@ -82,7 +82,7 @@ const h = useHome()
     </section>
 
     <section class="home-section">
-      <div class="home-section__header"><div><p class="home-eyebrow">Community intelligence</p><h2>Recent reports from the trail.</h2></div><button class="home-link-btn" @click="router.push('/community-reports')">View all reports</button></div>
+      <div class="home-section__header"><div><p class="home-eyebrow">Community intelligence</p><h2 class="home-halftone-heading" data-halftone="Recent reports from the trail.">Recent reports from the trail.</h2></div><button class="home-link-btn" @click="router.push('/community-reports')">View all reports</button></div>
       <div v-if="h.communityReportsLoading.value" class="home-state">Loading recent community alerts...</div>
       <div v-else-if="h.communityReportsError.value" class="home-state home-state--error">{{ h.communityReportsError.value }}</div>
       <div v-else-if="!h.communityAlerts.value.length" class="home-state">No community alerts submitted yet.</div>
@@ -99,7 +99,7 @@ const h = useHome()
 
     <section class="home-knowledge">
       <div class="home-section">
-        <div class="home-section__header"><div><p class="home-eyebrow">Knowledge Hub</p><h2>Read before the route gets real.</h2></div><p>Live articles from your database, surfaced on the homepage.</p></div>
+        <div class="home-section__header"><div><p class="home-eyebrow">Knowledge Hub</p><h2 class="home-halftone-heading" data-halftone="Read before the route gets real.">Read before the route gets real.</h2></div><p>Live articles from your database, surfaced on the homepage.</p></div>
         <div v-if="h.knowledgeLoading.value" class="home-state">Loading knowledge articles...</div>
         <div v-else-if="h.knowledgeError.value" class="home-state home-state--error">{{ h.knowledgeError.value }}</div>
         <div v-else-if="!h.knowledgeArticles.value.length" class="home-state">No knowledge articles published yet.</div>
@@ -150,7 +150,7 @@ const h = useHome()
   border-radius: 999px;
   -webkit-mask-image: radial-gradient(circle, #000 0 60%, transparent 72%);
   mask-image: radial-gradient(circle, #000 0 60%, transparent 72%);
-  opacity: 0.58;
+  opacity: 0.2;
 }
 .home-hero::after {
   width: clamp(15rem, 28vw, 27rem);
@@ -162,7 +162,7 @@ const h = useHome()
   border-radius: 999px;
   -webkit-mask-image: linear-gradient(110deg, transparent 0 12%, #000 35% 74%, transparent 100%);
   mask-image: linear-gradient(110deg, transparent 0 12%, #000 35% 74%, transparent 100%);
-  opacity: 0.62;
+  opacity: 0.18;
   transform: rotate(-8deg);
 }
 .home-hero__content { position: relative; z-index: 1; width: min(1220px, calc(100% - 2rem)); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 0.88fr) minmax(360px, 0.76fr); gap: clamp(2rem, 5vw, 4.5rem); align-items: center; }
@@ -179,10 +179,55 @@ const h = useHome()
   background-size: 10px 10px;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 18% 80%, transparent 100%);
   mask-image: linear-gradient(90deg, transparent 0, #000 18% 80%, transparent 100%);
-  opacity: 0.3;
+  opacity: 0.16;
 }
 .home-hero__kicker { display: inline-flex; align-items: center; gap: 0.55rem; margin-bottom: 1.1rem; font-size: 0.73rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #2e7d6b; }
 .home-hero h1 { margin: 0; max-width: 46rem; color: #111827; font-size: clamp(3rem, 6.6vw, 6rem); line-height: 0.98; letter-spacing: 0; }
+.home-halftone-title,
+.home-halftone-heading {
+  position: relative;
+  display: inline-block;
+  color: #111827;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.home-halftone-title::after,
+.home-halftone-heading::after {
+  content: attr(data-halftone);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: transparent;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.74) 0 0.92px, transparent 1.08px),
+    radial-gradient(circle, rgba(31, 110, 87, 0.16) 0 0.56px, transparent 0.7px);
+  background-position: 0 0, 4px 5px;
+  background-size: 8px 8px, 12px 12px;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0.58;
+}
+.home-halftone-title::before,
+.home-halftone-heading::before {
+  content: attr(data-halftone);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  color: transparent;
+  background:
+    linear-gradient(120deg, rgba(31, 110, 87, 0.14), rgba(208, 136, 23, 0.1) 56%, transparent 78%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transform: translate(0.025em, 0.035em);
+}
+.home-halftone-heading::after {
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.68) 0 0.78px, transparent 0.94px),
+    radial-gradient(circle, rgba(31, 110, 87, 0.14) 0 0.5px, transparent 0.66px);
+  background-size: 7px 7px, 11px 11px;
+  opacity: 0.5;
+}
 .home-hero__copy > p:not(.home-hero__kicker) { max-width: 38rem; margin-top: 1.35rem; color: #5f6b7a; font-size: clamp(1.02rem, 1.35vw, 1.18rem); line-height: 1.7; }
 .home-hero__search { display: inline-flex; align-items: center; gap: 0.45rem; margin-top: 2rem; border: 1px solid rgba(31, 41, 51, 0.1); border-radius: 999px; background: #ffffff; padding: 0.45rem; box-shadow: 0 18px 48px rgba(17, 24, 39, 0.1); }
 .home-hero__search-main, .home-hero__search-icon { border: 0; cursor: pointer; }
@@ -227,7 +272,7 @@ const h = useHome()
   border-radius: 999px;
   -webkit-mask-image: radial-gradient(circle, #000 0 48%, transparent 70%);
   mask-image: radial-gradient(circle, #000 0 48%, transparent 70%);
-  opacity: 0.66;
+  opacity: 0.36;
 }
 .home-hero__media img { width: 100%; height: 100%; min-height: inherit; object-fit: cover; }
 .home-hero__route-card { position: absolute; z-index: 3; left: 1rem; right: 1rem; bottom: 1rem; border: 1px solid rgba(255,255,255,0.72); border-radius: 18px; background: rgba(255,255,255,0.88); padding: 1rem; backdrop-filter: blur(18px); box-shadow: 0 18px 50px rgba(17,24,39,0.16); }
@@ -249,7 +294,7 @@ const h = useHome()
   border-radius: 999px;
   -webkit-mask-image: radial-gradient(circle, #000 0 48%, transparent 73%);
   mask-image: radial-gradient(circle, #000 0 48%, transparent 73%);
-  opacity: 0.7;
+  opacity: 0.24;
 }
 .home-section__header { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; margin-bottom: 1.4rem; }
 .home-section__header h2 { max-width: 42rem; font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1.04; }
@@ -368,7 +413,7 @@ const h = useHome()
   border-radius: 999px;
   -webkit-mask-image: radial-gradient(circle, #000 0 55%, transparent 76%);
   mask-image: radial-gradient(circle, #000 0 55%, transparent 76%);
-  opacity: 0.72;
+  opacity: 0.24;
 }
 .home-knowledge::after {
   width: clamp(12rem, 26vw, 22rem);
@@ -380,7 +425,7 @@ const h = useHome()
   border-radius: 999px;
   -webkit-mask-image: radial-gradient(circle, #000 0 50%, transparent 74%);
   mask-image: radial-gradient(circle, #000 0 50%, transparent 74%);
-  opacity: 0.62;
+  opacity: 0.22;
 }
 .home-knowledge-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
 .home-knowledge-card, .home-knowledge-feature { overflow: hidden; }
