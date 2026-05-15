@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, onUpdated } from 'vue'
 import { useRouter } from 'vue-router'
 import SiteFooter from '../components/SiteFooter.vue'
 import HomeRiskPreviewMap from '../components/HomeRiskPreviewMap.vue'
@@ -9,12 +9,30 @@ const router = useRouter()
 const h = useHome()
 
 let revealObserver: IntersectionObserver | null = null
+const observedRevealEls = new WeakSet<HTMLElement>()
 
-onMounted(() => {
+function markVisible(el: HTMLElement) {
+  el.classList.add('is-visible')
+}
+
+function observeRevealEls() {
   const revealEls = Array.from(document.querySelectorAll<HTMLElement>('[data-home-reveal]'))
 
+  if (!revealObserver) {
+    revealEls.forEach(markVisible)
+    return
+  }
+
+  revealEls.forEach((el) => {
+    if (observedRevealEls.has(el) || el.classList.contains('is-visible')) return
+    observedRevealEls.add(el)
+    revealObserver?.observe(el)
+  })
+}
+
+onMounted(() => {
   if (!('IntersectionObserver' in window)) {
-    revealEls.forEach((el) => el.classList.add('is-visible'))
+    observeRevealEls()
     return
   }
 
@@ -22,7 +40,7 @@ onMounted(() => {
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible')
+          markVisible(entry.target as HTMLElement)
           revealObserver?.unobserve(entry.target)
         }
       })
@@ -30,7 +48,11 @@ onMounted(() => {
     { rootMargin: '0px 0px -12% 0px', threshold: 0.18 }
   )
 
-  revealEls.forEach((el) => revealObserver?.observe(el))
+  nextTick(observeRevealEls)
+})
+
+onUpdated(() => {
+  nextTick(observeRevealEls)
 })
 
 onBeforeUnmount(() => {
@@ -42,11 +64,6 @@ onBeforeUnmount(() => {
   <div>
   <main class="home-page">
     <section class="home-hero">
-      <div class="home-hero__motion" aria-hidden="true">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
       <div class="home-hero__content">
         <div class="home-hero__copy" data-home-reveal>
           <p class="home-hero__kicker"><span></span>Victoria hiking safety</p>
@@ -189,30 +206,6 @@ onBeforeUnmount(() => {
     linear-gradient(180deg, #ffffff 0%, #ffffff 68%, #f7f7f7 100%);
   isolation: isolate;
 }
-.home-hero__motion {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.home-hero__motion span {
-  position: absolute;
-  display: block;
-  width: clamp(2.3rem, 5vw, 4.5rem);
-  aspect-ratio: 1;
-  border: 1px solid rgba(31, 110, 87, 0.22);
-  border-radius: 18px;
-  background:
-    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.9), transparent 36%),
-    rgba(231, 244, 237, 0.54);
-  box-shadow: 0 18px 40px rgba(31, 110, 87, 0.1);
-  transform: rotate(12deg);
-  animation: home-sprinkle-bob 7s ease-in-out infinite;
-}
-.home-hero__motion span:nth-child(1) { left: 6%; top: 22%; }
-.home-hero__motion span:nth-child(2) { right: 10%; top: 17%; width: clamp(1.4rem, 3vw, 2.4rem); border-radius: 999px; animation-delay: -1.8s; }
-.home-hero__motion span:nth-child(3) { left: 49%; bottom: 12%; width: clamp(1.7rem, 3.4vw, 2.8rem); animation-delay: -3.2s; }
 .home-hero::before,
 .home-hero::after {
   content: "";
@@ -669,7 +662,6 @@ onBeforeUnmount(() => {
   [data-home-reveal].is-visible,
   .home-title-mask > span,
   .home-hero__media img,
-  .home-hero__motion span,
   .home-hero__signal-card,
   .home-float-card,
   .home-scroll-cue,
