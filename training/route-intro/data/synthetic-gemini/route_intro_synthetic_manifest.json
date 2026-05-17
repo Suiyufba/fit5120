@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-05-16T12:01:11.290Z",
+  "seedInput": "/Users/cw2/Documents/Codex/2026-04-25-how-to-pull-a-project-from/HikeShield/training/route-intro/data/bootstrap/reviewed/route_intro_train.reviewed.jsonl",
+  "evalSeedInput": "/Users/cw2/Documents/Codex/2026-04-25-how-to-pull-a-project-from/HikeShield/training/route-intro/data/bootstrap/reviewed/route_intro_eval.reviewed.jsonl",
+  "syntheticExamples": 9,
+  "trainExamples": 8,
+  "evalExamples": 1,
+  "split": 0.9,
+  "seed": 42,
+  "attempts": 120,
+  "geminiOnly": true,
+  "delayMs": 5000,
+  "acceptedSourceCounts": {
+    "synthetic-gemini": 9
+  }
+}

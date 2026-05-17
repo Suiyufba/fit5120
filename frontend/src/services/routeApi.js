@@ -28,6 +28,8 @@ function normalizeRoute(route) {
     riskLevel: route?.riskLevel || 'Low',
     goNoGo: route?.goNoGo || 'Go',
     intro: route?.intro || '',
+    introSource: route?.introSource || '',
+    introModel: route?.introModel || '',
     explanation: route?.explanation || '',
     keyRisks: Array.isArray(route?.keyRisks) ? route.keyRisks : [],
     geographyProfile: route?.geographyProfile || {

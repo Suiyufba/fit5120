@@ -1,0 +1,4 @@
+Write one short user-friendly hiking route introduction from structured route data.
+Use only the facts provided.
+Do not invent scenery, facilities, track names, or safety conditions.
+Keep the paragraph concise, clear, and suitable for hikers reading a route planner.

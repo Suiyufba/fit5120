@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-05-16T12:05:21.727Z",
+  "trainExamples": 837,
+  "evalExamples": 125,
+  "fallbackTrainLimit": 800,
+  "fallbackEvalLimit": 120,
+  "trainStats": {
+    "reviewed-train": {
+      "input": 29,
+      "accepted": 29,
+      "skippedDuplicate": 0,
+      "skippedQuality": 0
+    },
+    "gemini-train": {
+      "input": 8,
+      "accepted": 7,
+      "skippedDuplicate": 0,
+      "skippedQuality": 1
+    },
+    "fallback-train": {
+      "input": 2160,
+      "accepted": 801,
+      "skippedDuplicate": 9,
+      "skippedQuality": 0
+    }
+  },
+  "evalStats": {
+    "reviewed-eval": {
+      "input": 4,
+      "accepted": 4,
+      "skippedDuplicate": 0,
+      "skippedQuality": 0
+    },
+    "gemini-eval": {
+      "input": 1,
+      "accepted": 1,
+      "skippedDuplicate": 0,
+      "skippedQuality": 0
+    },
+    "fallback-eval": {
+      "input": 240,
+      "accepted": 120,
+      "skippedDuplicate": 0,
+      "skippedQuality": 0
+    }
+  }
+}

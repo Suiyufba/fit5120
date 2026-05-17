@@ -314,6 +314,8 @@ const summary = computed(() => {
     goNoGoLabel: formatGoNoGoLabel(route.goNoGo),
     isDangerous: isDangerousGoNoGo(route.goNoGo),
     intro: route.intro || route.explanation,
+    introSource: route.introSource || '',
+    introModel: route.introModel || '',
     explanation: route.explanation,
     zoneSummary: route.zoneSummary || { level1Count: 0, level2Count: 0, level3Count: 0 },
   }
@@ -779,6 +781,9 @@ onUnmounted(() => {
         <div class="go-tag" :class="{ 'go-tag--danger': summary.isDangerous }">
           {{ summary.goNoGoLabel }}
         </div>
+        <p v-if="summary.introSource" class="summary-ai-meta">
+          Intro source: {{ summary.introSource }}<span v-if="summary.introModel"> · {{ summary.introModel }}</span>
+        </p>
         <p class="summary-explain">{{ summary.intro }}</p>
         <p class="summary-explain">{{ summary.explanation }}</p>
         <button class="primary-btn" @click="goToDetails">View Route Details</button>
@@ -1274,6 +1279,13 @@ h1 {
   color: #a20f0f;
   border: 1px solid #ff8a8a;
   box-shadow: 0 0 0 2px rgba(214, 31, 31, 0.16);
+}
+
+.summary-ai-meta {
+  color: #55736a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 .summary-explain {

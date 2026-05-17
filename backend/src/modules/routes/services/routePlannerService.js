@@ -120,6 +120,8 @@ function toRoutePayload(route) {
     riskLevel: route.riskLevel,
     goNoGo: route.goNoGo,
     intro: route.intro || '',
+    introSource: route.introSource || '',
+    introModel: route.introModel || '',
     explanation: route.explanation,
     keyRisks: route.keyRisks,
     zoneSummary: route.zoneSummary,
@@ -145,7 +147,13 @@ async function attachRouteIntroductions(payload) {
 
   const decorate = (route) => {
     if (!route) return route;
-    return { ...route, intro: byId.get(route.id) || route.intro || '' };
+    const narration = byId.get(route.id) || {};
+    return {
+      ...route,
+      intro: narration.intro || route.intro || '',
+      introSource: narration.introSource || route.introSource || '',
+      introModel: narration.introModel || route.introModel || '',
+    };
   };
 
   return {

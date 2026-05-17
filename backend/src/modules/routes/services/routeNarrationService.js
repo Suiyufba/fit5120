@@ -1,5 +1,7 @@
 function getNarrationConfig() {
   return {
+    aiServiceUrl: process.env.AI_SERVICE_URL || '',
+    aiServiceTimeoutMs: Number.parseInt(process.env.AI_SERVICE_TIMEOUT_MS || '8000', 10) || 8000,
     apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '',
     apiUrl: process.env.GEMINI_API_URL || 'https://generativelanguage.googleapis.com/v1beta',
     model: process.env.GEMINI_ROUTE_NARRATION_MODEL || 'gemini-2.5-flash-lite',
@@ -172,6 +174,37 @@ export function extractGeminiText(payload) {
   return '';
 }
 
+async function generateRouteIntroductionWithAiService(route = {}) {
+  const narrationConfig = getNarrationConfig();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), narrationConfig.aiServiceTimeoutMs);
+
+  try {
+    const response = await fetch(`${String(narrationConfig.aiServiceUrl).replace(/\/$/, '')}/route-intro`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(route),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`AI service narration request failed with ${response.status}`);
+    }
+
+    const payload = await response.json();
+    return {
+      intro: String(payload?.intro || '').trim(),
+      introSource: String(payload?.source || '').trim(),
+      introModel: String(payload?.model || '').trim(),
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function generateRouteIntroductionWithGemini(route = {}) {
   const narrationConfig = getNarrationConfig();
   const apiUrl = `${String(narrationConfig.apiUrl).replace(/\/$/, '')}/models/${encodeURIComponent(narrationConfig.model)}:generateContent`;
@@ -204,15 +237,45 @@ async function generateRouteIntroductionWithGemini(route = {}) {
 export async function generateRouteIntroduction(route = {}) {
   const narrationConfig = getNarrationConfig();
   const fallback = buildRouteIntroductionFallback(route);
-  if (!narrationConfig.apiKey) {
-    return fallback;
+  if (!narrationConfig.aiServiceUrl && !narrationConfig.apiKey) {
+    return {
+      intro: fallback,
+      introSource: 'fallback',
+      introModel: 'rule-based',
+    };
   }
 
   try {
+    if (narrationConfig.aiServiceUrl) {
+      const generated = await generateRouteIntroductionWithAiService(route);
+      if (generated?.intro) {
+        return {
+          intro: generated.intro,
+          introSource: generated.introSource || 'ai-service',
+          introModel: generated.introModel || 'ai-service',
+        };
+      }
+      return {
+        intro: fallback,
+        introSource: 'fallback',
+        introModel: 'rule-based',
+      };
+    }
     const generated = await generateRouteIntroductionWithGemini(route);
-    return generated || fallback;
+    if (generated) {
+      return {
+        intro: generated,
+        introSource: 'gemini',
+        introModel: narrationConfig.model,
+      };
+    }
   } catch (error) {
     console.warn('Falling back to rule-based route introduction:', error.message);
-    return fallback;
   }
+
+  return {
+    intro: fallback,
+    introSource: 'fallback',
+    introModel: 'rule-based',
+  };
 }

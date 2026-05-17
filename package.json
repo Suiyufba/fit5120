@@ -11,8 +11,21 @@
   ],
   "scripts": {
     "start": "npm --prefix backend start",
+    "start:ai-service": "npm --workspace ai-service start",
     "build": "rm -rf frontend/node_modules frontend/package-lock.json && npm --prefix frontend install --include=dev --include=optional && npm --prefix frontend run build && rm -rf dist && cp -R frontend/dist dist",
     "dev:frontend": "npm --workspace frontend run dev",
+    "dev:ai-service": "npm --workspace ai-service run dev",
+    "bootstrap:route-intro-history": "node training/route-intro/bootstrap-from-api.mjs",
+    "export:route-intro-dataset": "node training/route-intro/export-dataset.mjs",
+    "export:route-intro-colab-bundle": "node training/route-intro/export-colab-bundle.mjs",
+    "generate:route-intro-synthetic": "node training/route-intro/generate-synthetic.mjs",
+    "generate:route-intro-gemini": "node training/route-intro/generate-synthetic.mjs --gemini-only --delay-ms 5000",
+    "combine:route-intro-datasets": "node training/route-intro/combine-datasets.mjs",
+    "sample:route-intro-dataset": "node training/route-intro/sample-dataset.mjs",
+    "review:route-intro-sample": "node training/route-intro/review-sample.mjs",
+    "merge:route-intro-reviewed": "node training/route-intro/merge-reviewed.mjs",
+    "train:route-intro": "python3 training/route-intro/train_lora.py",
+    "eval:route-intro": "python3 training/route-intro/evaluate_model.py --model training/route-intro/artifacts/qwen2.5-1.5b-route-intro-lora",
     "build:frontend": "npm --workspace frontend run build",
     "preview:frontend": "npm --workspace frontend run preview"
   }

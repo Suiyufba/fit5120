@@ -1,0 +1,7 @@
+{
+  "generatedAt": "2026-05-16T12:41:52.029Z",
+  "trainInput": "/Users/cw2/Documents/Codex/2026-04-25-how-to-pull-a-project-from/HikeShield/training/route-intro/data/combined/route_intro_train.combined.jsonl",
+  "evalInput": "/Users/cw2/Documents/Codex/2026-04-25-how-to-pull-a-project-from/HikeShield/training/route-intro/data/combined/route_intro_eval.combined.jsonl",
+  "trainExamples": 96,
+  "evalExamples": 24
+}

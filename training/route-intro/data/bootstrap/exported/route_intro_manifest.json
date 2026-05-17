@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-05-15T03:28:38.536Z",
+  "input": "training/route-intro/data/bootstrap/route_history_bootstrap.json",
+  "outputDir": "/Users/cw2/Documents/Codex/2026-04-25-how-to-pull-a-project-from/HikeShield/training/route-intro/data/bootstrap/exported",
+  "rowsRead": 6,
+  "examplesWritten": 33,
+  "trainExamples": 29,
+  "evalExamples": 4,
+  "split": 0.9,
+  "seed": 42
+}

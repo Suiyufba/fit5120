@@ -1,0 +1,10 @@
+{
+  "generatedAt": "2026-05-15T03:43:52.763Z",
+  "seedInput": "/Users/cw2/Documents/Codex/2026-04-25-how-to-pull-a-project-from/HikeShield/training/route-intro/data/bootstrap/reviewed/route_intro_train.reviewed.jsonl",
+  "evalSeedInput": "/Users/cw2/Documents/Codex/2026-04-25-how-to-pull-a-project-from/HikeShield/training/route-intro/data/bootstrap/reviewed/route_intro_eval.reviewed.jsonl",
+  "syntheticExamples": 120,
+  "trainExamples": 108,
+  "evalExamples": 12,
+  "split": 0.9,
+  "seed": 42
+}

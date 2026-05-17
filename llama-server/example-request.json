@@ -1,0 +1,11 @@
+{
+  "prompt": "Write one short user-friendly hiking route introduction from structured route data. Use only the facts provided.{\"distanceKm\":12.4,\"durationMin\":205,\"difficulty\":\"Moderate\",\"riskLevel\":\"Moderate\",\"goNoGo\":\"Go\",\"geographyProfile\":{\"terrainType\":\"bush trail\",\"surfaceType\":\"rocky\",\"trailCondition\":\"good\",\"totalAscentM\":520,\"maxSlopePct\":21},\"zoneSummary\":{\"level1Count\":1,\"level2Count\":2,\"level3Count\":0},\"keyRisks\":[{\"title\":\"Bushfire watch\",\"type\":\"fire\",\"severity\":\"high\",\"distanceKm\":1.4}]}",
+  "n_predict": 140,
+  "temperature": 0.1,
+  "stop": [
+    "\n\n{",
+    "\n{\"",
+    "Route data:",
+    "Paragraph:"
+  ]
+}

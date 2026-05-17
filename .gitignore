@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 frontend/.env
+ai-service/.env
+.venv/
+*.gguf
 
 # Editor directories and files
 .vscode/*

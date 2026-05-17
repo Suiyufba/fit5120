@@ -1,0 +1,14 @@
+{
+  "generatedAt": "2026-05-16T13:09:38.293Z",
+  "bundleRoot": "/Users/cw2/Documents/Codex/2026-04-25-how-to-pull-a-project-from/HikeShield/training/route-intro/colab-bundle",
+  "files": [
+    "requirements.txt",
+    "train_lora.py",
+    "evaluate_model.py",
+    "lora.qwen-0.5b.colab.json",
+    "route_intro_train.combined.jsonl",
+    "route_intro_eval.combined.jsonl",
+    "README.md",
+    "RouteIntro_Qwen_Colab.ipynb"
+  ]
+}
