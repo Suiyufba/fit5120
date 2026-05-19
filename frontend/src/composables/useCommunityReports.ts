@@ -29,6 +29,11 @@ const THUMBNAIL_MAX_DIMENSION = 480
 const THUMBNAIL_MIME = 'image/jpeg'
 const THUMBNAIL_QUALITY = 0.78
 const THUMBNAIL_MAX_FILE_BYTES = 8 * 1024 * 1024
+const GEOLOCATION_OPTIONS: PositionOptions = {
+  enableHighAccuracy: false,
+  timeout: 8000,
+  maximumAge: 300000,
+}
 
 export const hazardMeta: Record<string, { label: string; color: string; icon: string }> = {
   fire: { label: 'Bushfire', color: '#D84727', icon: 'local_fire_department' },
@@ -48,6 +53,12 @@ export function getGeolocationErrorMessage(error: GeolocationPositionError | nul
   if (error?.code === 2) return 'Your device could not determine its location. Open System Settings → Privacy & Security → Location Services, ensure Chrome is allowed, then retry — or pick a spot via address search or by clicking the map.'
   if (error?.code === 3) return 'Location lookup timed out. Try again near a window, or use address search / click the map.'
   return 'Could not determine your location. Try address search or click on the map instead.'
+}
+
+function getCurrentBrowserPosition(): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, GEOLOCATION_OPTIONS)
+  })
 }
 
 export function escapeHtml(value = ''): string {
@@ -308,17 +319,14 @@ export function useCommunityReports() {
 
   async function useMyLocation(): Promise<void> {
     submitError.value = ''
+    if (locatingMe.value) return
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       submitError.value = 'Geolocation is not available in this browser.'
       return
     }
     locatingMe.value = true
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true, timeout: 10000, maximumAge: 60000,
-        })
-      })
+      const position = await getCurrentBrowserPosition()
       const { latitude, longitude } = position.coords
       const applied = applyPickedLocation({ lat: latitude, lng: longitude, flyZoom: 14 })
       if (applied) await reverseFillLocationName({ lat: latitude, lng: longitude })
@@ -477,11 +485,14 @@ export function useCommunityReports() {
 
   function locateMapUser(): void {
     if (isViewingUserLocation.value) { recenterCommunityMap(); return }
-    if (!navigator.geolocation || isMapLocatingUser.value) return
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      window.alert('Geolocation is not available in this browser.')
+      return
+    }
+    if (isMapLocatingUser.value) return
     isMapLocatingUser.value = true
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        isMapLocatingUser.value = false
+    getCurrentBrowserPosition()
+      .then((position) => {
         const point = {
           lat: Number(position.coords.latitude.toFixed(6)),
           lng: Number(position.coords.longitude.toFixed(6)),
@@ -503,10 +514,13 @@ export function useCommunityReports() {
         }
         isViewingUserLocation.value = true
         mapInstance?.flyTo([point.lat, point.lng], Math.max(mapInstance.getZoom(), 13), { duration: 0.65 })
-      },
-      () => { isMapLocatingUser.value = false; window.alert('Unable to access your current location.') },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
-    )
+      })
+      .catch((err: GeolocationPositionError) => {
+        window.alert(getGeolocationErrorMessage(err))
+      })
+      .finally(() => {
+        isMapLocatingUser.value = false
+      })
   }
 
   // ── Lifecycle ─────────────────────────────────────────
