@@ -91,14 +91,10 @@ Copy `.env.example` to `.env`:
 
 ```env
 VITE_HAZARD_API_BASE_URL=http://localhost:8080/api
-VITE_SITE_ACCESS_PASSWORD=replace-with-preview-password
 ```
 
 - `VITE_HAZARD_API_BASE_URL` — Backend API base URL. The frontend appends
   path segments (`/hazards/realtime`, `/routes/plan`, etc.).
-- `VITE_SITE_ACCESS_PASSWORD` — Site-wide access gate password shown on first
-  visit. The app fails closed if omitted. This value is bundled into client
-  JavaScript, so it is only a preview gate and not a replacement for backend auth.
 
 ## API Integration
 

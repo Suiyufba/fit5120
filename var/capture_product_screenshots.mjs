@@ -105,9 +105,6 @@ const page = await browser.newPage({
   deviceScaleFactor: 1,
   colorScheme: "light",
 });
-await page.addInitScript(() => {
-  window.localStorage.setItem("hikeshield_site_access_granted", "true");
-});
 await page.addInitScript((routePlan) => {
   window.sessionStorage.setItem("gohiking_route_plan_v1", JSON.stringify(routePlan));
 }, sampleRoutePlan);

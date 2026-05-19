@@ -54,7 +54,6 @@ All services default to `localhost` ports listed above. Copy `.env.example` to `
 | `GEMINI_API_KEY` | AI-Service | Route narration |
 | `AI_SERVICE_AUTH_TOKEN` | AI-Service | Shared service token, required by ai-service in production |
 | `VITE_HAZARD_API_BASE_URL` | Frontend | Backend public API URL, including `/api` |
-| `VITE_SITE_ACCESS_PASSWORD` | Frontend | Preview gate password; client-visible, not backend auth |
 
 ### Recommended for production
 
@@ -77,7 +76,6 @@ See `.env.example` for the full list with defaults.
 4. Set **Output Directory**: `dist`.
 5. Add environment variable in Vercel dashboard:
    - `VITE_HAZARD_API_BASE_URL` = your Railway backend API URL (e.g. `https://hikeshield-backend.railway.app/api`)
-   - `VITE_SITE_ACCESS_PASSWORD` = preview gate password
 
 ## Railway (Backend)
 
