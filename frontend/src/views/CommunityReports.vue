@@ -62,6 +62,11 @@ export default { name: 'CommunityReports' }
           <p class="community-sub">Pick location on map, fill report on left, submit in same page.</p>
         </div>
 
+        <section class="community-declaration" aria-label="Community report declaration">
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+          <p>Community reports are uploaded by members of the public. HikeShield does not independently verify every submission and cannot guarantee its accuracy, completeness, or authenticity.</p>
+        </section>
+
         <section v-if="ctx.isMobileViewport.value" class="community-mobile-summary">
           <article><span>Reports</span><strong>{{ ctx.stats.value.total }}</strong></article>
           <article><span>Point</span><strong>{{ ctx.selectedPoint.value ? 'Selected' : 'Tap map' }}</strong></article>
@@ -226,6 +231,9 @@ export default { name: 'CommunityReports' }
 .community-kicker { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 900; color: #2e7d6b; }
 h1 { margin: 0.25rem 0; font-size: 2.1rem; line-height: 1; font-weight: 700; color: #111827; }
 .community-sub { margin: 0; font-size: 0.88rem; color: #5f6b7a; }
+.community-declaration { display: grid; grid-template-columns: auto 1fr; gap: 0.55rem; align-items: start; padding: 0.72rem 0.78rem; border: 1px solid rgba(208, 136, 23, 0.24); border-radius: 8px; background: #fff8e7; color: #60440f; }
+.community-declaration span { font-size: 1.1rem; line-height: 1.25; color: #b56b0b; }
+.community-declaration p { margin: 0; font-size: 0.78rem; line-height: 1.42; }
 .community-form, .summary-card, .feed-card { background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(31, 41, 51, 0.1); border-radius: 8px; padding: 0.95rem; box-shadow: 0 10px 24px rgba(17, 24, 39, 0.05); }
 .location-picker { background: linear-gradient(180deg, #ffffff 0%, #f7f7f7 100%); border: 1px solid rgba(31, 41, 51, 0.1); border-radius: 8px; padding: 0.8rem 0.85rem 0.9rem; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.45rem; }
 .location-picker__title { margin: 0; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: #2e7d6b; }
