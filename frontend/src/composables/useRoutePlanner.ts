@@ -1,4 +1,4 @@
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   clearRoutePlanHistory,
@@ -83,6 +83,31 @@ export function useRoutePlanner() {
   let endReverseLookupRequestId = 0
   let startSearchTimer: ReturnType<typeof setTimeout> | null = null
   let endSearchTimer: ReturnType<typeof setTimeout> | null = null
+
+  function resolveElement(el: Element | { $el?: Element } | null): HTMLElement | null {
+    const candidate = el && '$el' in el ? el.$el : el
+    return candidate instanceof HTMLElement ? candidate : null
+  }
+
+  function setPlannerPanel(el: Element | { $el?: Element } | null) {
+    plannerPanel.value = resolveElement(el)
+  }
+
+  function setPlannerPanelBody(el: Element | { $el?: Element } | null) {
+    plannerPanelBody.value = resolveElement(el)
+  }
+
+  function setPlannerSummary(el: Element | { $el?: Element } | null) {
+    plannerSummary.value = resolveElement(el)
+  }
+
+  function setPlannerError(el: Element | { $el?: Element } | null) {
+    plannerError.value = resolveElement(el)
+  }
+
+  function setPlannerMap(instance: any) {
+    plannerMap.value = instance
+  }
 
   const canPlan = computed(() => Boolean(startPoint.value && endPoint.value && !loading.value))
   const routeChoices = computed(() => buildRouteChoices(planResult.value))
@@ -181,6 +206,8 @@ export function useRoutePlanner() {
       planResult.value = payload; selectedRouteId.value = buildRouteChoices(payload)[0]?.id || ''
       setLatestRoutePlan({ ...payload, recommendedRoute: buildRouteChoices(payload)[0] || payload.recommendedRoute, start: startPoint.value, end: endPoint.value } as any)
       isSheetExpanded.value = true
+      await nextTick()
+      plannerSummary.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     } catch (e: any) { if (e?.name === 'AbortError') return; error.value = e.message || 'Failed to generate a safe route' }
     finally { loading.value = false }
   }
@@ -250,5 +277,6 @@ export function useRoutePlanner() {
     handleSearchInput, handlePointInputFocus, applyPointSelection,
     handleMapClick, resetSelection, handlePlanRoute, selectRoute, toggleSheet,
     goToDetails, loadHistory, clearAllHistory, clearHistoryItem, applyHistoryPlan,
+    setPlannerPanel, setPlannerPanelBody, setPlannerSummary, setPlannerError, setPlannerMap,
   }
 }

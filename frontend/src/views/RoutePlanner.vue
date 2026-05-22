@@ -12,7 +12,7 @@ const p = useRoutePlanner()
 
 <template>
   <main class="planner-layout">
-    <aside ref="p.plannerPanel.value" class="planner-panel mobile-sheet" :class="{ 'mobile-sheet--expanded': p.isSheetExpanded.value }">
+    <aside :ref="p.setPlannerPanel" class="planner-panel mobile-sheet" :class="{ 'mobile-sheet--expanded': p.isSheetExpanded.value }">
       <div class="mobile-sheet__handle"></div>
       <div class="planner-mobile-actions">
         <button class="mobile-sheet-toggle" @click="p.toggleSheet">
@@ -20,7 +20,7 @@ const p = useRoutePlanner()
           {{ p.isSheetExpanded.value ? 'Show Less' : 'Route Panel' }}
         </button>
       </div>
-      <div ref="p.plannerPanelBody.value" class="mobile-sheet__body planner-panel__body">
+      <div :ref="p.setPlannerPanelBody" class="mobile-sheet__body planner-panel__body">
         <div><p class="planner-kicker">Pre-Hike Safety Planner</p><h1>Plan Route</h1><p class="planner-sub">Click map to set start and destination. Route safety is personalized by your level.</p></div>
 
         <PlannerPointSearch
@@ -33,9 +33,9 @@ const p = useRoutePlanner()
 
         <PlannerActionBar :can-plan="p.canPlan.value" :loading="p.loading.value" @plan-route="p.handlePlanRoute" @reset="p.resetSelection" />
 
-        <p v-if="p.error.value" ref="p.plannerError.value" class="planner-error" role="alert">{{ p.error.value }}</p>
+        <p v-if="p.error.value" :ref="p.setPlannerError" class="planner-error" role="alert">{{ p.error.value }}</p>
 
-        <div ref="p.plannerSummary.value">
+        <div :ref="p.setPlannerSummary">
           <PlannerRouteSummary :route-choices="p.routeChoices.value" :selected-route-id="p.selectedRouteId.value"
             :summary="p.summary.value" @select-route="p.selectRoute" @view-details="p.goToDetails" />
         </div>
@@ -48,7 +48,7 @@ const p = useRoutePlanner()
       </div>
     </aside>
 
-    <PlannerMap ref="p.plannerMap.value" :start-point="p.startPoint.value" :end-point="p.endPoint.value"
+    <PlannerMap :ref="p.setPlannerMap" :start-point="p.startPoint.value" :end-point="p.endPoint.value"
       :route-choices="p.routeChoices.value" :selected-route-id="p.selectedRouteId.value" @map-click="p.handleMapClick" />
   </main>
 </template>
